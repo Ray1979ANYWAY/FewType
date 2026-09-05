@@ -23,7 +23,7 @@ const I18N = {
     hotkeyHint: "先点击书页获得焦点，再按 . 暂停/继续",
     metaEmpty: "尚未提取正文",
     noText:
-      "没有提取到正文，可能原因：当前标签页不是 Play Books / Koodo 阅读页面、书页还没加载完，或这本书的 DOM 结构需要重新适配。",
+      "没有提取到正文，可能原因：当前标签页不是 Play Books / Koodo / 微信读书 阅读页面、书页还没加载完，或这本书的渲染结构需要重新适配。",
     metaCount: (n) => `共 ${n} 段`,
     synthesizing: "正在合成语音…",
     startFailed: (msg) => `启动失败：${msg}`,
@@ -80,7 +80,7 @@ const I18N = {
     hotkeyHint: "先點擊書頁取得焦點，再按 . 暫停/繼續",
     metaEmpty: "尚未擷取正文",
     noText:
-      "沒有擷取到正文，可能原因：目前分頁不是 Play Books / Koodo 閱讀頁面、書頁還沒載入完成，或這本書的 DOM 結構需要重新適配。",
+      "沒有擷取到正文，可能原因：目前分頁不是 Play Books / Koodo / 微信讀書 閱讀頁面、書頁還沒載入完成，或這本書的渲染結構需要重新適配。",
     metaCount: (n) => `共 ${n} 段`,
     synthesizing: "正在合成語音…",
     startFailed: (msg) => `啟動失敗：${msg}`,
@@ -137,7 +137,7 @@ const I18N = {
     hotkeyHint: "Click the page first, then press . to pause/resume",
     metaEmpty: "Not extracted yet",
     noText:
-      "No text extracted. Possible causes: the current tab is not a Play Books / Koodo reading page, the page is still loading, or this book's DOM structure needs adaptation.",
+      "No text extracted. Possible causes: the current tab is not a Play Books / Koodo / WeChat Reading page, the page is still loading, or this book's rendering structure needs adaptation.",
     metaCount: (n) => `${n} segments`,
     synthesizing: "Synthesizing audio...",
     startFailed: (msg) => `Failed to start: ${msg}`,
@@ -194,7 +194,7 @@ const I18N = {
     hotkeyHint: "Haz clic en la página y luego presiona . para pausar o reanudar",
     metaEmpty: "Aún no se ha extraído texto",
     noText:
-      "No se pudo extraer texto. Posibles causas: la pestaña actual no es una página de lectura de Play Books / Koodo, la página aún no terminó de cargar o el DOM de este libro requiere adaptación.",
+      "No se pudo extraer texto. Posibles causas: la pestaña actual no es una página de lectura de Play Books / Koodo / WeChat Reading, la página aún no terminó de cargar o la estructura de renderizado de este libro requiere adaptación.",
     metaCount: (n) => (n === 1 ? "1 segmento" : `${n} segmentos`),
     synthesizing: "Generando audio…",
     startFailed: (msg) => `No se pudo iniciar: ${msg}`,
@@ -251,7 +251,7 @@ const I18N = {
     hotkeyHint: "ページをクリックしてから . キーで一時停止/再開",
     metaEmpty: "まだ抽出されていません",
     noText:
-      "本文を抽出できませんでした。考えられる原因：現在のタブが Play Books / Koodo の読書ページではない、ページが読み込み中、またはこの本のDOM構造に適応が必要。",
+      "本文を抽出できませんでした。考えられる原因：現在のタブが Play Books / Koodo / WeChat Reading の読書ページではない、ページが読み込み中、またはこの本のレンダリング構造に適応が必要。",
     metaCount: (n) => `${n} セグメント`,
     synthesizing: "音声を生成中…",
     startFailed: (msg) => `開始に失敗しました：${msg}`,
@@ -308,7 +308,7 @@ const I18N = {
     hotkeyHint: "페이지를 클릭한 뒤 . 키로 일시정지/계속",
     metaEmpty: "아직 추출되지 않음",
     noText:
-      "본문을 추출하지 못했습니다. 가능한 원인: 현재 탭이 Play Books / Koodo 읽기 페이지가 아님, 페이지가 아직 로딩 중, 또는 이 책의 DOM 구조에 대한 적응이 필요함.",
+      "본문을 추출하지 못했습니다. 가능한 원인: 현재 탭이 Play Books / Koodo / 위챗 리딩 읽기 페이지가 아님, 페이지가 아직 로딩 중, 또는 이 책의 렌더링 구조에 대한 적응이 필요함.",
     metaCount: (n) => `${n}개 문단`,
     synthesizing: "음성 생성 중…",
     startFailed: (msg) => `시작 실패: ${msg}`,
