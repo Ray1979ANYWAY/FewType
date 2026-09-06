@@ -1,11 +1,7 @@
 // ---- 微信读书 (weread.qq.com) content script (isolated world) ----
-//
-// 本文件运行在 isolated world，负责与 background 通信、转发指令给 main world、
-// 模拟键盘翻页。fillText hook 和覆盖层高亮在 content-weread-main.js（main world）中。
-// 两者通过 window.postMessage 通信。
-//
-// manifest.json 中 content-weread-main.js 以 world: "MAIN" 注册，本文件以默认
-// ISOLATED world 注册，均为 run_at: document_start。
+// isolated world 运行，与 background 通信、转发指令给 main world、模拟键盘翻页
+// fillText hook 和高亮在 content-weread-main.js（main world），两者通过 window.postMessage 通信
+// 两个脚本都在 manifest.json 注册为 document_start，main.js 用 world: "MAIN"
 
 (function () {
   "use strict";

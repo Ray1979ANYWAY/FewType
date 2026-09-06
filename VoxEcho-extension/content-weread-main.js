@@ -1,8 +1,6 @@
 ﻿// ---- 微信读书 main world 脚本 ----
-// 在 manifest.json 中以 world: "MAIN" 注册，run_at: document_start。
-// 不受页面 CSP 限制，直接修改页面的 CanvasRenderingContext2D.prototype。
-// 负责：fillText hook、字符采集、坐标索引、覆盖层高亮。
-// 通过 window.postMessage 与 isolated world 的 content-weread.js 通信。
+// MAIN world 注册，document_start 运行，不受页面 CSP 限制，直接 hook CanvasRenderingContext2D.prototype
+// 通过 window.postMessage 与 isolated world 的 content-weread.js 通信
 
 (function () {
   "use strict";
@@ -1186,7 +1184,6 @@
       }
 
       // 章节标题行不跳过：检测到 heading 时从标题首字开始读（划选逻辑），标题后有 \u0001 占位符产生停顿
-      // if (skipFirstLine && Math.abs(c.y - firstLineY) < 3) continue;
 
       if (charAbsTop >= scrollY - 5 && charAbsTop < scrollY + viewportH &&
           charAbsLeft >= -5 && charAbsLeft < viewportW + 5) {

@@ -1,6 +1,4 @@
-// 本文件是 Play Books 平台专属的朗读逻辑：文本提取结果缓存、分块算法、
-// 翻页等待/重试、内容对齐校验等，全部只服务于 Play Books 这一个平台。
-// 被 background.js（路由入口）引入，通过 handlePlaybooksMessage 对外暴露。
+// Play Books 平台专属朗读逻辑，被 background.js 引入，通过 handlePlaybooksMessage 对外暴露
 import { logEvent, textPreview } from "./diagnostics.js";
 import { isCJKChar, isLatinLetter, isAsciiDigit, chunkTextByWords, endsWithAnyPunctuation } from "./chunking.js";
 import { ensureOffscreenDocument, sendToOffscreen } from "./offscreen-client.js";

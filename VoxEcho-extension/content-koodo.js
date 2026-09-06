@@ -2,16 +2,10 @@
 //
 // 跟 content-playbooks.js 完全独立，DOM 结构、注入方式都不一样。
 //
-// 当前实现范围（第二阶段——提取 + 坐标定位起点 + 接入消息链路）：
-//   1. 跨 iframe 边界读取正文，按标签识别
-//   2. 检测"整章刷新"（跨章节），触发重新提取，推送给 background
-//   3. 坐标定位：判断当前视口内显示的是整章文字里的哪一段，用作朗读起点
-// 还没做的部分（下一阶段）：
-//   - 自动翻页跟随朗读进度（这需要先验证"怎么用代码触发翻页"这件事，
-//     目前完全没有验证过，所以先不做，留到朗读能跑通之后再单独攻克）
-//
-// 已确认的关键约束：
-//   - 正文装在 <iframe id="kookit-iframe">，src 是 about:blank，不能往它
+// 关键约束：
+//   - 正文装在 <iframe id="kookit-iframe">，sandbox 没开 allow-scripts，不能注入，
+//     只能从顶层页面跨边界读 contentDocument（sandbox 开了 allow-same-origin）
+//   - 翻页不改变 DOM：整章内容用 CSS 多栏布局一次性渲染，只有跨章节才整体刷新//   - 正文装在 <iframe id="kookit-iframe">，src 是 about:blank，不能往它
 //     内部注入脚本（sandbox 没开 allow-scripts），只能从顶层页面跨边界
 //     读取 contentDocument（sandbox 开了 allow-same-origin，读取是被允许的）
 //   - 翻页不改变 DOM：整章内容用 CSS 多栏布局一次性渲染，只有跨章节才会
