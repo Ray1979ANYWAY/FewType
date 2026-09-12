@@ -453,7 +453,7 @@ const VOICE_GROUPS = [
 ];
 
 // ---- 音色清单：实时从本地 bridge 拉取 Edge TTS 最新音色，失败时回退缓存 / 内置兜底 ----
-const BRIDGE_URL = "http://127.0.0.1:5010";
+const BRIDGE_URL = "http://127.0.0.1:5005";
 const VOICES_CACHE_KEY = "voxechoVoicesCache";
 
 // 浏览器系统语言（小写连字符形式），用于语言下拉的默认选中

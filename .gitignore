@@ -48,11 +48,3 @@ _*.png
 
 # git 目录备份（本地保留，不提交）
 .git.old-bak/
-
-# 本地运行配置（含真实 API Key，绝不入库）
-tauri/backend/engine/bridge_config.json
-
-# Build artifacts (never commit)
-tauri/frontend/node_modules/
-tauri/src-tauri/target/
-tauri/frontend/dist/

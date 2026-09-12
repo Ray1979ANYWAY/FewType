@@ -1,5 +1,0 @@
-﻿
-# PyInstaller 产物
-build/
-dist/
-*.spec

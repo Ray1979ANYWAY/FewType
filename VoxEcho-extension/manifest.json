@@ -15,7 +15,7 @@
     "https://web.koodoreader.com/*",
     "https://web.koodoreader.cn/*",
     "https://weread.qq.com/*",
-    "http://127.0.0.1:5010/*"
+    "http://127.0.0.1:5005/*"
   ],
   "background": {
     "service_worker": "background.js",

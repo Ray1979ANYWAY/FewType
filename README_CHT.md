@@ -1,4 +1,4 @@
-語言: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](README_CHT.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
+語言: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](README_CHT.md) |
 
 ---
 

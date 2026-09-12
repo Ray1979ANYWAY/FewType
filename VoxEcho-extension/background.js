@@ -143,14 +143,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ---- 本地桥接服务心跳检测 ----
-// 扩展向本地服务 (127.0.0.1:5010) 发心跳，本地服务据此判断扩展是否在线。
+// 扩展向本地服务 (127.0.0.1:5005) 发心跳，本地服务据此判断扩展是否在线。
 // 为什么用 chrome.alarms 而不是 setInterval：
 //   MV3 的 service worker 是事件驱动的，Chrome 会在不活跃时挂起 service worker，
 //   挂起后 setInterval 不会继续执行，导致心跳停止。chrome.alarms 是浏览器级别的
 //   定时器，即使 service worker 被挂起也能按时触发并唤醒 worker。
 // 注意：chrome.alarms 的最小间隔是 1 分钟（periodInMinutes 最小为 1），
 //       所以本地服务的心跳超时也相应设为 90 秒（大于 1 分钟，避免状态抖动）。
-const BRIDGE_BASE_URL = "http://127.0.0.1:5010";
+const BRIDGE_BASE_URL = "http://127.0.0.1:5005";
 const HEARTBEAT_ALARM_NAME = "voxecho_heartbeat";
 
 async function sendHeartbeat() {

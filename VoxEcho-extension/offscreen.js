@@ -46,7 +46,7 @@ function fetchChunk(text, voice) {
   // AbortError，fetchChunkWithRetry 会把它当成普通失败走重试；如果直接 abort() 无参
   // 数，fetch reject 成 AbortError，会被当作"主动取消"直接放弃，不重试。
   const timeout = setTimeout(() => controller.abort(new Error("synthesize timeout")), FETCH_TIMEOUT_MS);
-  return fetch("http://127.0.0.1:5010/speak", {
+  return fetch("http://127.0.0.1:5005/speak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, voice }),
