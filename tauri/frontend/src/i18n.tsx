@@ -464,7 +464,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.btn": "Chrome Extension",
     "ebook.support": "Supports",
     "ebook.platform_google": "Google Play Books",
-    "ebook.platform_koodo": "KOReader",
+    "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
       "No extension heartbeat detected. Open chrome://extensions → enable \"Developer mode\" → \"Load unpacked\" → select the VoxEcho-extension folder",
     "ebook.guide_title": "Quick Start Guide",

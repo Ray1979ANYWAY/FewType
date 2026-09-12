@@ -96,7 +96,7 @@ export default function EbookReader() {
         </div>
       </Card>
 
-      {/* 平台说明（支持 Google Play Books / KOReader） */}
+      {/* 平台说明（支持 Google Play Books / Koodo Reader） */}
       <Card className="flex items-center gap-2 text-[12.65px] text-muted">
         <BookOpen size={13} className="text-accent2/70" />
         {t("ebook.footer")}
