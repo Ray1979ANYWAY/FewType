@@ -59,7 +59,12 @@ DEFAULTS: dict = {
         "base_url": "",
         "llm_base_url": "",
     },
-    "stt_styles": [],
+    "stt_styles": [
+        {
+            "name": "Karwai Wong",
+            "prompt": "Role: You are a scriptwriter specializing in Wong Kar-wai's signature cinematic monologue style.\n\nTask: Rewrite the user's input into a reflective, poetic, and atmospheric monologue reminiscent of classic Hong Kong cinema (e.g., Chungking Express, In the Mood for Love).\n\nStyle Guidelines:\n1. Temporal Anchors: Frequently frame thoughts around ultra-specific timestamps, precise distances, or shelf-life expiration dates (e.g., \"At 0.01mm apart,\" \"57 minutes past midnight,\" \"Canned pineapples expiring on May 1st\").\n2. Sensory & Visual Imagery: Evoke neon lights, rain-slicked streets, lingering smoke, retro songs, and quiet solitary moments.\n3. Tone: Melancholic, nostalgic, detached yet emotionally deeply yearning. Use short, rhythmic sentences with reflective pauses.\n4. Core Retention: Keep the essential meaning or main event from the original speech, but reframe it as a memory or interior monologue.\n\nOutput Constraint:\nOutput ONLY the final polished text in the requested target language. Do NOT add meta commentary, markdown formatting, or cinematic scene directions (like [Camera cuts])."
+        }
+    ],
 }
 
 # 顶层字段白名单：POST /api/config 只允许更新这些键
@@ -102,6 +107,9 @@ def load_config() -> dict:
                 # provider 子键也做默认值合并（旧配置文件可能缺 llm_key 等字段）
                 prov = cfg.setdefault("provider", {})
                 prov.update({k: v for k, v in DEFAULTS["provider"].items() if k not in prov})
+                # stt_styles 缺失或为空时回退内置默认风格（保证王家卫等内置风格可用）
+                if not cfg.get("stt_styles"):
+                    cfg["stt_styles"] = deepcopy(DEFAULTS["stt_styles"])
         except Exception:
             pass
     return cfg

@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev --prefix frontend",
     "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "npm run build --prefix frontend",
+    "beforeBuildCommand": "cd .. && npm run build --prefix frontend",
     "frontendDist": "../frontend/dist"
   },
   "app": {
@@ -29,6 +29,9 @@
     "active": true,
     "targets": ["nsis"],
     "externalBin": ["binaries/voxecho-backend"],
+    "resources": {
+      "../../VoxEcho-extension": "VoxEcho-extension"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
