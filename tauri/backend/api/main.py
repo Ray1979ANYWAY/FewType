@@ -143,7 +143,7 @@ logging.getLogger().addHandler(_log_handler)
 def _on_speech_event(ev: dict) -> None:
     """全局事件订阅：热键触发的会话 → 后端自动上屏（其他事件忽略）。"""
     if ev.get("type") == "commit" and ev.get("source") == "hotkey":
-        logger.info(f"[debug] commit 事件路由 → on_commit: {str(ev.get('text'))[:60]}")
+        logger.info("[debug] commit 事件已路由到 on_commit")
         _hotkey.on_commit(ev.get("text", ""))
 
 
@@ -422,7 +422,7 @@ async def api_speech_confirm(payload: dict):
         return {"ok": False, "error": "text 为空"}
     ok = _speech.confirm(text, source, cancel=cancel)
     if ok:
-        logger.info(L("speech_confirmed", text=text[:60]))
+        logger.info(L("speech_confirmed"))
     return {"ok": ok, "cancel": cancel}
 
 

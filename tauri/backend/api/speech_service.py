@@ -239,12 +239,12 @@ class SpeechInputManager:
                 self._emit({"type": "status", "state": "idle", "message": "空闲"})
                 return
             raw = confirmed
-            logger.info(f"[debug] 确认后原文: {raw[:80]}")
+            logger.info("[debug] 原文已确认")
 
         try:
             final = self._polish(provider, raw, mode, translate,
                                  target_lang, custom_prompt)
-            logger.info(f"[debug] 翻译/润色结果: {final[:80]}")
+            logger.info("[debug] 翻译/润色完成")
         except Exception as e:  # noqa: BLE001
             logger.error(L("stt_fail", type=type(e).__name__, err=e))
             self._emit({"type": "status", "state": "error",

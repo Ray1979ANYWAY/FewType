@@ -133,9 +133,9 @@ _MSGS: dict[str, tuple[str, str, str]] = {
         "Speech service restarted by user",
     ),
     "speech_confirmed": (
-        "已确认原文，开始翻译: {text}",
-        "已確認原文，開始翻譯: {text}",
-        "Text confirmed, translating: {text}",
+        "已确认原文，开始翻译",
+        "已確認原文，開始翻譯",
+        "Text confirmed, translating",
     ),
     "workarea_fail": (
         "获取工作区失败: {err}",

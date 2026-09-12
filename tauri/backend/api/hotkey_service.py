@@ -203,7 +203,7 @@ class GlobalHotkeyService:
 
         由 speech 线程调用：写剪贴板 + 模拟 Ctrl+V（钩子 _ignore_all 保险）。
         """
-        logger.info(f"[debug] on_commit 收到文本: {text[:60]}")
+        logger.info("[debug] on_commit 已收到文本")
         cfg = load_config()
         if not cfg.get("stt_auto_commit", True):
             logger.info(L("autocommit_off"))
