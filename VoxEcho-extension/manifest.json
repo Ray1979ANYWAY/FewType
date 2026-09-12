@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_pluginName__",
+  "version": "1.3.0",
+  "description": "__MSG_pluginDesc__",
+  "default_locale": "zh_CN",
+  "permissions": [
+    "storage",
+    "offscreen",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://play.google.com/*",
+    "https://books.googleusercontent.com/*",
+    "https://web.koodoreader.com/*",
+    "https://web.koodoreader.cn/*",
+    "https://weread.qq.com/*",
+    "http://127.0.0.1:5010/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://play.google.com/books/reader*",
+        "https://books.googleusercontent.com/*"
+      ],
+      "all_frames": true,
+      "js": [
+        "content-playbooks.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://web.koodoreader.com/*",
+        "https://web.koodoreader.cn/*"
+      ],
+      "js": [
+        "content-koodo.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://weread.qq.com/*"
+      ],
+      "js": [
+        "content-weread-main.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://weread.qq.com/*"
+      ],
+      "js": [
+        "content-weread.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon/VoxEcho-16.png",
+      "32": "icon/VoxEcho-32.png"
+    }
+  },
+  "icons": {
+    "16": "icon/VoxEcho-16.png",
+    "48": "icon/VoxEcho-48.png",
+    "128": "icon/VoxEcho-128.png"
+  }
+}
