@@ -64,6 +64,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.load": "请加载 Chrome 扩展",
     "ebook.btn": "Chrome 扩展",
     "ebook.support": "支持",
+    "ebook.platform_google": "Google Play 图书",
+    "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
       "未检测到扩展心跳。请打开 chrome://extensions → 开启「开发者模式」→「加载已解压的扩展程序」→ 选择 VoxEcho-extension 文件夹",
     "ebook.guide_title": "快速使用指南",
@@ -265,6 +267,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.load": "請載入 Chrome 擴充功能",
     "ebook.btn": "Chrome 擴充功能",
     "ebook.support": "支援",
+    "ebook.platform_google": "Google Play 圖書",
+    "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
       "未偵測到擴充功能心跳。請開啟 chrome://extensions → 開啟「開發者模式」→「載入已解壓縮的擴充功能」→ 選擇 VoxEcho-extension 資料夾",
     "ebook.guide_title": "快速使用指南",
@@ -459,6 +463,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.load": "Load Chrome extension",
     "ebook.btn": "Chrome Extension",
     "ebook.support": "Supports",
+    "ebook.platform_google": "Google Play Books",
+    "ebook.platform_koodo": "KOReader",
     "ebook.missing":
       "No extension heartbeat detected. Open chrome://extensions → enable \"Developer mode\" → \"Load unpacked\" → select the VoxEcho-extension folder",
     "ebook.guide_title": "Quick Start Guide",

@@ -9,11 +9,11 @@ import { getExtensionStatus } from "../api";
 import { Card, CardTitle, Btn, StatusDot } from "./ui";
 import { useI18n } from "../i18n";
 
-const PLATFORMS = ["微信读书", "Google Play 图书", "Koodo Reader"];
-
 export default function EbookReader() {
   const { t } = useI18n();
   const [online, setOnline] = useState<boolean | null>(null);
+
+  const PLATFORMS = [t("ebook.platform_google"), t("ebook.platform_koodo")];
 
   const GUIDE = [
     t("ebook.guide_1"),
@@ -96,7 +96,7 @@ export default function EbookReader() {
         </div>
       </Card>
 
-      {/* 平台说明（隐含：微信读书等） */}
+      {/* 平台说明（支持 Google Play Books / KOReader） */}
       <Card className="flex items-center gap-2 text-[12.65px] text-muted">
         <BookOpen size={13} className="text-accent2/70" />
         {t("ebook.footer")}
