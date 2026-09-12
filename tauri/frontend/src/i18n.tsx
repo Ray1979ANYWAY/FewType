@@ -630,29 +630,50 @@ const I18nCtx = createContext<I18nCtxValue>({
   t: (k) => k,
 });
 
+/** 检测系统语言：zh 系按繁简分流，其他语言一律英文兜底 */
+function detectSystemLang(): Lang {
+  try {
+    const raw = (navigator.language || (navigator.languages && navigator.languages[0]) || "en-US").toLowerCase();
+    if (raw.startsWith("zh")) {
+      return /(tw|hk|mo|hant)/.test(raw) ? "zh-TW" : "zh-CN";
+    }
+    if (raw.startsWith("en")) {
+      return "en-US";
+    }
+  } catch {
+    /* 忽略 */
+  }
+  return "en-US";
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     try {
       const saved = localStorage.getItem(UI_LANG_KEY);
-      return saved === "zh-TW" || saved === "en-US" ? saved : "zh-CN";
+      if (saved === "zh-CN" || saved === "zh-TW" || saved === "en-US") {
+        return saved;
+      }
+      return detectSystemLang();
     } catch {
-      return "zh-CN";
+      return detectSystemLang();
     }
   });
 
-  // 启动时与后端 ui_lang 对齐
+  // 启动时与后端 ui_lang 对齐（后端未设置时保持系统检测结果，不持久化）
   useEffect(() => {
     let disposed = false;
     getConfig()
       .then((cfg) => {
         if (disposed) return;
-        const l: Lang =
-          cfg.ui_lang === "zh-TW" || cfg.ui_lang === "en-US" ? cfg.ui_lang : "zh-CN";
-        setLangState(l);
-        try {
-          localStorage.setItem(UI_LANG_KEY, l);
-        } catch {
-          /* 忽略 */
+        const ul = cfg.ui_lang;
+        if (ul === "zh-CN" || ul === "zh-TW" || ul === "en-US") {
+          // 后端有明确语言（用户手动设置过）→ 以后端为准
+          setLangState(ul);
+          try {
+            localStorage.setItem(UI_LANG_KEY, ul);
+          } catch {
+            /* 忽略 */
+          }
         }
       })
       .catch(() => {

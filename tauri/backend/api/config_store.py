@@ -42,7 +42,7 @@ CONFIG_PATH = config_path()
 DEFAULTS: dict = {
     "autostart": False,
     "first_run_done": False,
-    "ui_lang": "zh-CN",
+    "ui_lang": "",
     "stt_hotkey": "double_ctrl",
     "stt_auto_commit": True,
     "stt_mode": "verbatim",
