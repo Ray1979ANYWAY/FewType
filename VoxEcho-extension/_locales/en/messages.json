@@ -1,0 +1,8 @@
+{
+  "pluginName": {
+    "message": "VoxEcho"
+  },
+  "pluginDesc": {
+    "message": "E‑books reading service. Supports web‑based Google Play Books, Koodo Reader, and WeChat Reading."
+  }
+}
