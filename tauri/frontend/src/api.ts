@@ -656,29 +656,44 @@ export class SpeechClient {
 
   connect(): Promise<void> {
     this.manualClose = false;
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(`${WS_BASE}/ws/speech-input`);
-      this.ws = ws;
+    return new Promise((resolve) => {
+      let retries = 0;
+      const maxDelay = 5000;
+      const attempt = () => {
+        if (this.manualClose) return;
+        const ws = new WebSocket(`${WS_BASE}/ws/speech-input`);
+        this.ws = ws;
 
-      ws.onopen = () => {
-        this.opts.onOpen?.();
-        resolve();
+        ws.onopen = () => {
+          retries = 0;
+          this.opts.onOpen?.();
+          resolve();
+        };
+        // 不在此 reject：连接失败（如后端刚启动尚未就绪）交由 onclose 统一重连，
+        // 避免“启动时序竞态导致状态条永久失联”的问题
+        ws.onerror = () => {
+          this.opts.onError?.(new Error("WebSocket 连接失败"));
+        };
+        ws.onclose = () => {
+          if (this.manualClose) {
+            this.opts.onClose?.();
+            return;
+          }
+          // 意外断开 / 首次连接失败：指数退避自动重连
+          const delay = Math.min(500 * 2 ** retries, maxDelay);
+          retries += 1;
+          setTimeout(attempt, delay);
+        };
+        ws.onmessage = (msg) => {
+          try {
+            const ev = JSON.parse(msg.data as string) as SpeechEvent;
+            this.opts.onEvent?.(ev);
+          } catch {
+            /* 忽略无法解析的帧 */
+          }
+        };
       };
-      ws.onerror = (e) => {
-        this.opts.onError?.(e);
-        reject(new Error("WebSocket 连接失败"));
-      };
-      ws.onclose = () => {
-        if (!this.manualClose) this.opts.onClose?.();
-      };
-      ws.onmessage = (msg) => {
-        try {
-          const ev = JSON.parse(msg.data as string) as SpeechEvent;
-          this.opts.onEvent?.(ev);
-        } catch {
-          /* 忽略无法解析的帧 */
-        }
-      };
+      attempt();
     });
   }
 

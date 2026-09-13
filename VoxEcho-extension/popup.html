@@ -148,6 +148,24 @@
         white-space: nowrap;
         margin-right: 2px;
       }
+      /* popup 布局调整：Start 占左跨两行大按钮，其他控件挤右侧两行 */
+      .main-controls { display: flex; gap: 8px; margin-bottom: 8px; align-items: stretch; }
+      #start {
+        flex: 0 0 26%;
+        min-height: 64px;
+        padding: 10px 12px;
+        font-size: 15px;
+        font-weight: 700;
+        background: var(--card2);
+        border: 1px solid var(--accent);
+        color: var(--accent2);
+        border-radius: 8px;
+      }
+      #start:hover:not(:disabled) { border-color: var(--accent2); background: var(--card); }
+      .right-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+      .right-col .toolbar { margin-bottom: 0; flex-wrap: nowrap; }
+      #rate { flex: 1 1 auto; min-width: 54px; padding: 4px 6px; }
+      #refresh { margin-left: auto; padding: 4px 8px; }
       .refresh-hint {
         font-size: 11px;
         color: var(--muted2);
@@ -202,32 +220,36 @@
       <label for="voice" class="select-label" data-i18n="voiceLabel">音色</label>
       <select id="voice"></select>
     </div>
-    <div class="refresh-hint" data-i18n="refreshHint">如果没有抓取到文本，请按 F5 刷新页面</div>
-    <div class="toolbar">
-      <button id="refresh" data-i18n="refresh">Refresh</button>
-      <label for="rate" data-i18n="rateLabel">Speed</label>
-      <select id="rate">
-        <option value="0.5">0.5x</option>
-        <option value="0.75">0.75x</option>
-        <option value="1" selected>1x</option>
-        <option value="1.25">1.25x</option>
-        <option value="1.5">1.5x</option>
-        <option value="1.75">1.75x</option>
-        <option value="2">2x</option>
-      </select>
+    <div class="refresh-hint">
+      <div data-i18n="refreshHint">如果没有抓取到文本，请按 F5 刷新页面</div>
+      <div class="hint" data-i18n="hotkeyHint" style="margin-left:0; margin-top:2px">Press . to pause/resume</div>
+    </div>
+    <div class="main-controls">
+      <button id="start" data-i18n="start">🔊 Start Reading</button>
+      <div class="right-col">
+        <div class="toolbar">
+          <label for="rate" data-i18n="rateLabel">Speed</label>
+          <select id="rate">
+            <option value="0.5">0.5x</option>
+            <option value="0.75">0.75x</option>
+            <option value="1" selected>1x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="1.75">1.75x</option>
+            <option value="2">2x</option>
+          </select>
+          <button id="refresh" data-i18n="refresh">Refresh</button>
+        </div>
+        <div class="toolbar">
+          <button id="pauseResume">⏸ Pause</button>
+          <button id="stop" data-i18n="stop">⏹ Stop</button>
+          <span id="statusLight" class="light" title="Gray=idle, green=reading, red=retrying"></span>
+        </div>
+      </div>
     </div>
     <div id="bridgeNotice" class="bridge-notice" hidden></div>
-    <div class="toolbar">
-      <button id="start" data-i18n="start">🔊 Start Reading</button>
-      <button id="pauseResume">⏸ Pause</button>
-      <button id="stop" data-i18n="stop">⏹ Stop</button>
-      <span id="statusLight" class="light" title="Gray=idle, green=reading, red=retrying"></span>
-      <span class="hint" data-i18n="hotkeyHint">Press . to pause/resume</span>
-    </div>
     <div class="annotation" id="startAnnotation" data-i18n="startAnnotation">Start reading from the selected text, or from the beginning of the page.</div>
     <div class="toolbar">
-      <button id="seekBack" data-i18n="seekBack">⏪ -5s</button>
-      <button id="seekForward" data-i18n="seekForward">⏩ +5s</button>
       <a id="sponsorLink" class="sponsor" href="https://ko-fi.com/rayhu" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <rect width="24" height="24" rx="5.5" fill="#72A4F2"/>
