@@ -155,6 +155,12 @@ export async function getVoices(): Promise<VoicesResponse> {
   return request<VoicesResponse>("/api/voices");
 }
 
+/** 拉取 TTS 默认输出目录（用户→文档→VoxEcho_tts_out） */
+export async function getTtsDefaultDir(): Promise<string> {
+  const res = await request<{ dir: string }>("/api/tts/default-dir");
+  return res.dir ?? "";
+}
+
 /** 按语言分组音色，返回 locale -> Voice[] 映射 */
 export function groupVoicesByLocale(voices: Voice[]): Map<string, Voice[]> {
   const map = new Map<string, Voice[]>();
@@ -602,6 +608,11 @@ export interface SpeechReadyEvent {
 export interface SpeechPongEvent {
   type: "pong";
 }
+export interface SpeechOpenSettingsEvent {
+  type: "open_settings";
+  target?: string;
+  message?: string;
+}
 
 export type SpeechEvent =
   | SpeechStatusEvent
@@ -612,7 +623,8 @@ export type SpeechEvent =
   | SpeechLogEvent
   | SpeechErrorEvent
   | SpeechReadyEvent
-  | SpeechPongEvent;
+  | SpeechPongEvent
+  | SpeechOpenSettingsEvent;
 
 export interface SpeechStartConfig {
   mode?: "verbatim" | "fluent" | "formal" | "custom";

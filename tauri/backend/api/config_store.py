@@ -43,7 +43,11 @@ DEFAULTS: dict = {
     "autostart": False,
     "first_run_done": False,
     "ui_lang": "",
-    "stt_hotkey": "double_ctrl",
+    "stt_hotkey": "ctrl+win",
+    # 迁移标记默认置真：新安装/新保存的配置自带标记，load_config 的一次性迁移
+    # （老配置残留 double_ctrl → 改回 ctrl+win）不会误伤用户手动保存的 double_ctrl。
+    # 否则第一次保存 double_ctrl 会被迁移逻辑改回 ctrl+win，表现为"保存两次才生效"。
+    "hotkey_migrated": True,
     "stt_auto_commit": True,
     "stt_mode": "verbatim",
     "stt_custom_style": "",
@@ -99,11 +103,14 @@ PROVIDER_KEYS = {
 def load_config() -> dict:
     """读取配置：默认值打底，文件存在则合并覆盖。失败静默返回默认值。"""
     cfg = deepcopy(DEFAULTS)
+    # 配置文件里原始的迁移标记（不合并 DEFAULTS 的标记，用于判断是否老残留）
+    raw_has_migrated = True
     if CONFIG_PATH.exists():
         try:
             data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
             if isinstance(data, dict):
                 cfg.update(data)
+                raw_has_migrated = bool(data.get("hotkey_migrated"))
                 # provider 子键也做默认值合并（旧配置文件可能缺 llm_key 等字段）
                 prov = cfg.setdefault("provider", {})
                 prov.update({k: v for k, v in DEFAULTS["provider"].items() if k not in prov})
@@ -112,6 +119,15 @@ def load_config() -> dict:
                     cfg["stt_styles"] = deepcopy(DEFAULTS["stt_styles"])
         except Exception:
             pass
+    # 一次性迁移：3.1.0 及更早的默认快捷键是 double_ctrl，3.1.4 起默认改为 ctrl+win。
+    # 老配置文件里残留的 double_ctrl 会覆盖新默认值，首次启动自动迁移（置位标记后不再迁移，
+    # 用户之后手动改回 double_ctrl 不受影响）。
+    # 判断依据必须是配置文件原始标记：DEFAULTS 自带标记为 True（新配置不迁移），
+    # 否则用户手动保存 double_ctrl 会被误判为老残留而改回 ctrl+win（"保存两次才生效"）。
+    if cfg.get("stt_hotkey") == "double_ctrl" and not raw_has_migrated:
+        cfg["stt_hotkey"] = "ctrl+win"
+        cfg["hotkey_migrated"] = True
+        save_config(cfg)
     return cfg
 
 

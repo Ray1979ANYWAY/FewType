@@ -206,6 +206,12 @@ async def voices():
 
 
 # ---------------------------------------------------------------- TTS
+@app.get("/api/tts/default-dir")
+async def tts_default_dir():
+    """TTS 默认输出目录（用户→文档→VoxEcho_tts_out），供前端默认展示。"""
+    return {"dir": str(tts_service.tts_output_dir())}
+
+
 @app.post("/api/tts")
 async def api_tts(req: TTSRequest):
     """长文本 TTS：自动分段合成，返回音频文件路径。"""
@@ -359,6 +365,9 @@ async def post_config(req: dict):
     if not save_config(updated):
         raise HTTPException(status_code=500, detail="配置写入失败")
     logger.info(L("config_updated", keys=sorted(req.keys())))
+    # 记录快捷键保存值（排查"Save 两次"：确认两次保存的值是否一致）
+    if "stt_hotkey" in req:
+        logger.info("hotkey saved: %s -> %s", req.get("stt_hotkey"), updated.get("stt_hotkey"))
     # ui_lang 变化 → 日志语言跟随
     if "ui_lang" in req:
         set_lang(str(updated.get("ui_lang") or "zh-CN"))

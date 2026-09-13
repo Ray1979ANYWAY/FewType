@@ -95,7 +95,7 @@ export default function VoiceInput({
         if (disposed) return;
         const styleList = (cfg.stt_styles ?? []).map((s) => ({ ...s }));
         setStyles(styleList);
-        setHotkeyText(hotkeyDisplay(cfg.stt_hotkey ?? "double_ctrl"));
+        setHotkeyText(hotkeyDisplay(cfg.stt_hotkey || "ctrl+win"));
         setAutoCommit(cfg.stt_auto_commit ?? true);
         setMode((cfg.stt_mode as SpeechStartConfig["mode"]) ?? "verbatim");
         setTranslate(cfg.stt_translate ?? false);
@@ -114,7 +114,9 @@ export default function VoiceInput({
         }
       })
       .catch(() => {
-        /* 配置加载失败不影响使用 */
+        if (disposed) return;
+        // 配置加载失败时也显示默认快捷键，避免 kbd 处留空
+        setHotkeyText(hotkeyDisplay("ctrl+win"));
       });
     return () => {
       disposed = true;

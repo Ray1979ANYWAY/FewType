@@ -40,6 +40,86 @@ VK_V = 0x56
 VK_MENU = 0x12
 VK_LWIN = 0x5B
 VK_RWIN = 0x5C
+VK_ESCAPE = 0x1B
+WM_QUIT = 0x0012
+
+# PeekMessageW：消息循环轮询（GetMessageW 会永久阻塞，导致 rebuild/stop 指令无法及时执行）
+user32.PeekMessageW.argtypes = [ctypes.POINTER(wintypes.MSG), wintypes.HWND, wintypes.UINT, wintypes.UINT, wintypes.UINT]
+user32.PeekMessageW.restype = wintypes.BOOL
+# MsgWaitForMultipleObjectsEx：事件驱动等待（钩子消息零延迟 + 超时兜底）
+user32.MsgWaitForMultipleObjectsEx.argtypes = [wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE), wintypes.DWORD, wintypes.DWORD, wintypes.DWORD]
+user32.MsgWaitForMultipleObjectsEx.restype = wintypes.DWORD
+# 唤醒事件：restart()/stop() 置位 → 消息循环立即处理
+kernel32.CreateEventW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.BOOL, wintypes.LPCWSTR]
+kernel32.CreateEventW.restype = wintypes.HANDLE
+kernel32.SetEvent.argtypes = [wintypes.HANDLE]
+kernel32.SetEvent.restype = wintypes.BOOL
+kernel32.ResetEvent.argtypes = [wintypes.HANDLE]
+kernel32.ResetEvent.restype = wintypes.BOOL
+kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+kernel32.CloseHandle.restype = wintypes.BOOL
+
+
+def _find_app_window() -> int | None:
+    """按进程名定位 VoxEcho 主窗口句柄。
+
+    主窗口标题随系统语言变化（VoxEcho 语音处理平台 / 語音處理平台 / Voice Platform），
+    精确标题匹配不可靠，改为：枚举顶层窗口 → 取属于 voxecho.exe 进程的可见窗口。
+    """
+    import subprocess  # noqa: PLC0415
+
+    try:
+        out = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq voxecho.exe", "/FO", "CSV", "/NH"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout
+    except Exception:  # noqa: BLE001
+        return None
+    pids = set()
+    for line in out.strip().splitlines():
+        parts = line.strip('"').split('","')
+        if len(parts) >= 2 and parts[1].isdigit():
+            pids.add(int(parts[1]))
+    if not pids:
+        return None
+
+    found: list[int] = []
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.IsWindowVisible.restype = wintypes.BOOL
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def _cb(hwnd, _):  # noqa: ANN001
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in pids and user32.IsWindowVisible(hwnd):
+            found.append(hwnd)
+        return True  # 继续枚举
+
+    user32.EnumWindows.argtypes = [ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM), wintypes.LPARAM]
+    user32.EnumWindows(_cb, 0)
+    return found[0] if found else None
+
+
+def _bring_app_to_front() -> None:
+    """把 VoxEcho 主窗口带到前台。
+
+    模拟一次 Alt 按下/抬起绕过 Windows 前台锁定（与上屏前恢复焦点同一技巧，
+    该路径用户已实测有效），再 SetForegroundWindow 主窗口。
+    用于热键触发但 Provider 未配置时，保证设置窗在最前面，用户能看到。
+    """
+    try:
+        user32.keybd_event(VK_MENU, 0, 0, 0)
+        user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+        time.sleep(0.02)
+        hwnd = _find_app_window()
+        if hwnd:
+            user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+            user32.SetForegroundWindow.restype = wintypes.BOOL
+            user32.SetForegroundWindow(hwnd)
+    except Exception:  # noqa: BLE001
+        logger.debug("bring app to front failed", exc_info=True)
 
 
 def _simulate_ctrl_v() -> None:
@@ -79,6 +159,7 @@ class GlobalHotkeyService:
         self._thread: threading.Thread | None = None
         self._cmd_q: queue.Queue = queue.Queue()
         self._stop_event = threading.Event()
+        self._wake_event = None  # Win32 事件句柄：唤醒消息循环（零延迟处理 rebuild/stop）
         self._active_combo: tuple = ()
         self._hotkey_source = "hotkey"  # 标记热键触发的会话，commit 时后端上屏
         self._prev_window = None        # 录音开始时的前台窗口（上屏前恢复焦点用）
@@ -94,35 +175,64 @@ class GlobalHotkeyService:
 
     def stop(self) -> None:
         self._stop_event.set()
+        # 唤醒消息循环立即退出（避免 join 卡满超时）
+        if self._wake_event:
+            kernel32.SetEvent(self._wake_event)
         if self._thread:
             self._thread.join(timeout=3)
             self._thread = None
 
     def restart(self) -> None:
-        """配置变更后重建钩子（指令投递到钩子线程执行）。"""
+        """配置变更后重建钩子（指令投递到钩子线程执行）。
+
+        若钩子线程已死（消息循环异常退出），直接重启线程，否则重启指令将永久无效。
+        """
         if self._thread and self._thread.is_alive():
             self._cmd_q.put("rebuild")
+            if self._wake_event:
+                kernel32.SetEvent(self._wake_event)  # 立即唤醒，零延迟执行 rebuild
+        else:
+            logger.warning("hotkey 线程已退出，重新启动")
+            self._thread = None
+            self.start()
 
     # ------------------------------------------------------------ 钩子线程
     def _run(self) -> None:
         self._rebuild()
-        # Windows 消息循环：LL 钩子回调由系统投递到此线程队列
+        # Windows 消息循环：LL 钩子回调由系统投递到此线程队列。
+        # 等待策略：MsgWaitForMultipleObjectsEx（事件驱动 + 200ms 超时兜底）。
+        #  - 钩子消息到达 → 立即返回处理（零延迟，按键响应与 GetMessageW 阻塞式一样快）
+        #  - restart()/stop() 置位唤醒事件 → 立即处理 rebuild/退出
+        #  - 200ms 超时 → 周期性兜底检查 stop_event / 指令队列
+        # （不用 GetMessageW：无消息时永久阻塞，rebuild 指令无法及时执行；
+        #   也不用 PeekMessage+sleep 轮询：50ms 空转让每个按键响应变肉）
+        self._wake_event = kernel32.CreateEventW(None, False, False, None)
         msg = wintypes.MSG()
-        while not self._stop_event.is_set():
-            # 处理指令队列（rebuild）
-            try:
-                cmd = self._cmd_q.get_nowait()
-                if cmd == "rebuild":
-                    self._rebuild()
-            except queue.Empty:
-                pass
-            r = user32.GetMessageW(ctypes.byref(msg), None, 0, 0)
-            if r == 0:
-                break
-            if r == -1:
-                break
-            user32.TranslateMessage(ctypes.byref(msg))
-            user32.DispatchMessageW(ctypes.byref(msg))
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    cmd = self._cmd_q.get_nowait()
+                    if cmd == "rebuild":
+                        self._rebuild()
+                except queue.Empty:
+                    pass
+                rc = user32.MsgWaitForMultipleObjectsEx(
+                    1, ctypes.byref(wintypes.HANDLE(self._wake_event)),
+                    200, 0xFF, 0)  # QS_ALLINPUT = 0xFF
+                if rc == 0:  # WAIT_OBJECT_0：唤醒事件被置位
+                    kernel32.ResetEvent(self._wake_event)
+                    continue
+                # 否则是窗口消息（WAIT_OBJECT_0 + 1）或超时（WAIT_TIMEOUT）
+                while user32.PeekMessageW(ctypes.byref(msg), None, 0, 0, 1):  # PM_REMOVE
+                    if msg.message == WM_QUIT:
+                        self._stop_event.set()
+                        break
+                    user32.TranslateMessage(ctypes.byref(msg))
+                    user32.DispatchMessageW(ctypes.byref(msg))
+        finally:
+            if self._wake_event:
+                kernel32.CloseHandle(self._wake_event)
+                self._wake_event = None
         # 退出前卸载钩子
         self._teardown()
 
@@ -133,10 +243,12 @@ class GlobalHotkeyService:
                 old.stop()
             except Exception:
                 pass
+            self._hook = None
         cfg = load_config()
         combo = (cfg.get("stt_hotkey") or "double_ctrl").strip().lower()
         mode = "double_ctrl" if combo == "double_ctrl" else "combo"
         mods, trigger = hotkey_hook.parse_combo(combo) if mode == "combo" else ([], None)
+        logger.info(f"[debug] 重建热键钩子: combo={combo} mode={mode}")
         try:
             hook = hotkey_hook.WinHotkey(
                 mods, trigger, self._on_begin, self._on_end, mode=mode
@@ -176,6 +288,19 @@ class GlobalHotkeyService:
         except Exception:
             self._prev_window = None
         cfg = load_config()
+        # Provider 未配置 API Key 时无法转写：不开始录音，通知前端弹出 Provider 设置窗口
+        provider_cfg = cfg.get("provider") or {}
+        if not (provider_cfg.get("api_key") or "").strip():
+            logger.info(L("provider_key_missing"))
+            # 用户此刻在其他应用里（热键触发），先把主窗口带到前台，
+            # 否则 Provider 设置窗在后台弹出，用户看不到还在傻等
+            _bring_app_to_front()
+            self._speech.notify({
+                "type": "open_settings",
+                "target": "provider",
+                "message": "provider_key_missing",
+            })
+            return
         mode = cfg.get("stt_mode", "verbatim")
         custom_prompt: str | None = None
         if mode == "custom":
@@ -214,29 +339,35 @@ class GlobalHotkeyService:
             return
         if not cfg.get("stt_auto_commit", True):
             return
-        # 恢复录音前的焦点窗口，避免 Ctrl+V 落到 HUD 悬浮窗
-        if self._prev_window:
-            try:
-                # ALT 按下再抬起：绕过 Windows 前台锁定限制
-                user32.keybd_event(VK_MENU, 0, 0, 0)
-                user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
-                user32.SetForegroundWindow(self._prev_window)
-                time.sleep(0.08)
-            except Exception as e:  # noqa: BLE001
-                logger.error(f"[debug] 恢复前台窗口失败: {e}")
-        # 打印粘贴前焦点窗口标题，用于验证焦点是否已回到目标窗口
-        try:
-            hwnd = user32.GetForegroundWindow()
-            length = user32.GetWindowTextLengthW(hwnd)
-            buf = ctypes.create_unicode_buffer(length + 1)
-            user32.GetWindowTextW(hwnd, buf, length + 1)
-            logger.info(f"[debug] 粘贴前前台窗口: {buf.value}")
-        except Exception:  # noqa: BLE001
-            pass
         hook = self._hook
         if hook is not None:
             hook._ignore_all = True
         try:
+            # 恢复录音前的焦点窗口，避免 Ctrl+V 落到 HUD 悬浮窗
+            if self._prev_window:
+                try:
+                    # ALT 按下再抬起：绕过 Windows 前台锁定限制
+                    user32.keybd_event(VK_MENU, 0, 0, 0)
+                    user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+                    user32.SetForegroundWindow(self._prev_window)
+                    time.sleep(0.08)
+                    # ALT 按下/抬起会激活目标窗口的菜单栏（记事本等 Win32 菜单应用），
+                    # 后续模拟 Ctrl+V 的 'V' 会被菜单栏当作助记键吃掉（等效 Alt+V 打开"查看"菜单）。
+                    # 补发一次 ESC：菜单栏激活时 ESC 仅关闭菜单栏，不产生其他副作用。
+                    user32.keybd_event(VK_ESCAPE, 0, 0, 0)
+                    user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
+                    time.sleep(0.02)
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"[debug] 恢复前台窗口失败: {e}")
+            # 打印粘贴前焦点窗口标题，用于验证焦点是否已回到目标窗口
+            try:
+                hwnd = user32.GetForegroundWindow()
+                length = user32.GetWindowTextLengthW(hwnd)
+                buf = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buf, length + 1)
+                logger.info(f"[debug] 粘贴前前台窗口: {buf.value}")
+            except Exception:  # noqa: BLE001
+                pass
             time.sleep(0.05)  # 等剪贴板就绪
             _simulate_ctrl_v()
         finally:

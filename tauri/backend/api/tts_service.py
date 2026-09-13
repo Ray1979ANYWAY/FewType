@@ -19,8 +19,6 @@ from pathlib import Path
 
 import edge_tts
 
-from config_store import find_engine_dir
-
 logger = logging.getLogger("voxecho.tts")
 
 DEFAULT_VOICE = "zh-CN-XiaoxiaoNeural"
@@ -34,12 +32,44 @@ _VOICES_CACHE_TIME = 0.0
 VOICES_CACHE_TTL = 24 * 60 * 60
 
 
+def _user_documents_dir() -> Path:
+    """Windows 用户文档目录（SHGetKnownFolderPath FOLDERID_Documents），兼容 OneDrive 重定向。"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class GUID(ctypes.Structure):
+            _fields_ = [
+                ("Data1", wintypes.DWORD),
+                ("Data2", wintypes.WORD),
+                ("Data3", wintypes.WORD),
+                ("Data4", wintypes.BYTE * 8),
+            ]
+
+        # FOLDERID_Documents = {A8C1F832-2D62-4B68-A0FB-B36D1F2A1D6B}
+        guid = GUID(0xA8C1F832, 0x2D62, 0x4B68,
+                    (0xA0, 0xFB, 0xB3, 0x6D, 0x1F, 0x2A, 0x1D, 0x6B))
+        shell32 = ctypes.windll.shell32
+        shell32.SHGetKnownFolderPath.argtypes = [
+            ctypes.POINTER(GUID), wintypes.DWORD, wintypes.HANDLE,
+            ctypes.POINTER(ctypes.c_wchar_p),
+        ]
+        shell32.SHGetKnownFolderPath.restype = ctypes.c_long
+        buf = ctypes.c_wchar_p()
+        hr = shell32.SHGetKnownFolderPath(ctypes.byref(guid), 0, None, ctypes.byref(buf))
+        if hr == 0 and buf.value:
+            return Path(buf.value)
+    except Exception:
+        pass
+    return Path.home() / "Documents"
+
+
 def tts_output_dir() -> Path:
-    """输出目录：环境变量 VOXECHO_OUTPUT_DIR 优先，否则默认引擎目录下的 tts_output/。"""
+    """输出目录：环境变量 VOXECHO_OUTPUT_DIR 优先，否则默认"用户→文档→VoxEcho_tts_out"。"""
     d = os.environ.get("VOXECHO_OUTPUT_DIR")
     if d:
         return Path(d)
-    return find_engine_dir() / "tts_output"
+    return _user_documents_dir() / "VoxEcho_tts_out"
 
 
 # ---------------------------------------------------------------- 音色清单

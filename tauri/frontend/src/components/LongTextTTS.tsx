@@ -14,9 +14,13 @@ import {
   Play,
   Zap,
   Wand2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   getVoices,
+  getConfig,
+  getTtsDefaultDir,
   groupVoicesByLocale,
   ttsGenerate,
   ttsSpeak,
@@ -117,11 +121,15 @@ function needsTranslation(text: string, outputLang: string): boolean {
 
 /** 输出目录记忆（localStorage） */
 const OUTPUT_DIR_KEY = "voxecho.tts.outputDir";
-const DEFAULT_DIR = "D:/Output";
+// 空字符串 = 未指定，使用后端默认（用户→文档→VoxEcho_tts_out）
+const DEFAULT_DIR = "";
+// 旧版本硬编码的默认目录：升级后视为"未指定"并清理
+const LEGACY_DIR = "D:/Output";
 
 function loadSavedDir(): string {
   try {
-    return localStorage.getItem(OUTPUT_DIR_KEY) || DEFAULT_DIR;
+    const v = localStorage.getItem(OUTPUT_DIR_KEY);
+    return v && v !== LEGACY_DIR ? v : DEFAULT_DIR;
   } catch {
     return DEFAULT_DIR;
   }
@@ -132,6 +140,83 @@ function langToOutputLang(l: string): string {
   if (l === "zh-TW") return "繁體中文";
   if (l === "en-US") return "English";
   return "简体中文";
+}
+
+/**
+ * 可放大的文本编辑框：右下角 Maximize2 按钮 → 全屏沉浸式编辑弹窗。
+ * 弹窗内直接编辑同一个受控 state（value/onChange），收起即同步回原文本框。
+ */
+function ExpandableTextarea({
+  value,
+  onChange,
+  placeholder,
+  className,
+  title,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  title: string;
+}) {
+  const { t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="relative">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={className}
+      />
+      {/* 右下角放大编辑按钮 */}
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        title={t("tts.expand_edit")}
+        className="absolute right-3 bottom-3 z-10 rounded-md border border-emerald-500/20 bg-[#090D0A]/80 p-1.5 text-emerald-500/60 backdrop-blur-sm transition-all cursor-pointer hover:bg-emerald-500/20 hover:text-emerald-400"
+      >
+        <Maximize2 size={14} />
+      </button>
+
+      {/* 全屏沉浸式编辑弹窗（高透明黑底蒙版 + 居中弹窗） */}
+      {expanded ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="flex h-[85%] w-[92%] max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
+            {/* 标题栏：左侧标题，右侧收起按钮 */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-2.5">
+              <span className="truncate text-[14px] font-bold text-text">{title}</span>
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                title={t("tts.collapse")}
+                className="rounded-md border border-emerald-500/20 p-1.5 text-emerald-500/70 transition-colors cursor-pointer hover:bg-emerald-500/20 hover:text-emerald-400"
+              >
+                <Minimize2 size={15} />
+              </button>
+            </div>
+            {/* 大字号多行滚动编辑区 */}
+            <textarea
+              autoFocus
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className="w-full flex-1 resize-none bg-transparent px-5 py-3 text-[16px] leading-relaxed text-text outline-none placeholder:text-muted"
+            />
+            {/* 底部操作栏：完成按钮 */}
+            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border/60 px-4 py-2.5">
+              <span className="mr-auto truncate text-[11.5px] text-muted">
+                {value.length} {t("tts.char_count")}
+              </span>
+              <Btn variant="primary" onClick={() => setExpanded(false)}>
+                {t("tts.done")}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 /** 表单控件宽度（px）：按界面语言区分（英文标签更长，需要单独调整）。
@@ -155,7 +240,12 @@ function formWidths(lang: string) {
   };
 }
 
-export default function LongTextTTS() {
+export default function LongTextTTS({
+  onOpenProvider,
+}: {
+  /** 需要 LLM 但 Provider 未配置时，通知上层弹出 Provider 设置 */
+  onOpenProvider?: () => void;
+}) {
   const { t, lang } = useI18n();
   const fw = formWidths(lang);
   const [text, setText] = useState("");
@@ -169,6 +259,7 @@ export default function LongTextTTS() {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false); // 翻译/试听/合成中：禁用按钮防重复
   const [outputDir, setOutputDir] = useState(loadSavedDir);
+  const [defaultDir, setDefaultDir] = useState(""); // 后端默认目录（用户→文档→VoxEcho_tts_out）
   const [lastPath, setLastPath] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const outputLangTouched = useRef(false); // 用户手动改过输出语言后不再自动跟随界面语言
@@ -180,6 +271,19 @@ export default function LongTextTTS() {
     }
   }, [lang]);
 
+  // 拉取后端默认输出目录（用于未指定时展示）
+  useEffect(() => {
+    let disposed = false;
+    getTtsDefaultDir()
+      .then((dir) => {
+        if (!disposed) setDefaultDir(dir);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
   // 拉取音色清单
   useEffect(() => {
     let disposed = false;
@@ -189,8 +293,7 @@ export default function LongTextTTS() {
         setVoices(res.voices);
         setVoiceGroups(groupVoicesByLocale(res.voices));
         setStatus(`🟢 ${t("tts.ready")} | ${t("tts.voices_loaded", { n: res.voices.length })}`);
-        const zh = res.voices.find((v) => v.locale === "zh-CN");
-        if (zh) setVoice(zh.shortName);
+        // 不自动选中任何音色：默认保持空，由用户显式选择（避免默认落到 zh-CN-Xiaoxiao）
       })
       .catch(() => {
         if (!disposed) setStatus(`🔴 ${t("tts.status_voices_failed")}`);
@@ -246,13 +349,25 @@ export default function LongTextTTS() {
     label: voiceLabel(v, lang),
   }));
 
-  /** 显示路径：指定过 → 显示指定值；否则显示上次生成位置目录或默认 */
-  const shownDir =
-    outputDir !== DEFAULT_DIR
-      ? outputDir
-      : lastPath
-        ? lastPath.replace(/\/[^/]+$/, "")
-        : DEFAULT_DIR;
+  /** 显示路径：指定过 → 显示指定值；否则显示上次生成位置目录或后端默认目录 */
+  const shownDir = outputDir
+    ? outputDir
+    : lastPath
+      ? lastPath.replace(/\/[^/]+$/, "")
+      : defaultDir || DEFAULT_DIR;
+
+  /** Provider 是否可用：需要 LLM 时先查 API Key，未配置 → 弹设置窗口并提示 */
+  const ensureProviderReady = async (): Promise<boolean> => {
+    try {
+      const cfg = await getConfig();
+      if (cfg.provider?.has_api_key) return true;
+    } catch {
+      return true; // 读配置失败不阻塞流程
+    }
+    onOpenProvider?.();
+    setStatus(`⚠️ ${t("tts.status_provider_first")}`);
+    return false;
+  };
 
   /** 预览：一致 → 原文；不一致 → LLM 翻译 */
   const handlePreview = async () => {
@@ -267,6 +382,8 @@ export default function LongTextTTS() {
       setStatus(`🟢 ${t("tts.status_no_translate")}`);
       return;
     }
+    // 需要 LLM 翻译：Provider 未配置时先弹出设置
+    if (!(await ensureProviderReady())) return;
     setBusy(true);
     setStatus(t("tts.status_translating"));
     try {
@@ -294,6 +411,8 @@ export default function LongTextTTS() {
     const need = needsTranslation(text, outputLang);
     let src: string;
     if (need) {
+      // 试听依赖翻译预览：Provider 未配置时先弹出设置
+      if (!(await ensureProviderReady())) return;
       if (!preview.trim()) {
         setStatus(`⚠️ ${t("tts.status_listen_translate_first")}`);
         return;
@@ -333,9 +452,12 @@ export default function LongTextTTS() {
     const need = needsTranslation(text, outputLang);
     const src = preview.trim() || text.trim();
     if (need && !preview.trim()) {
+      // 生成依赖翻译预览：Provider 未配置时先弹出设置
+      if (!(await ensureProviderReady())) return;
       setStatus(`⚠️ ${t("tts.status_translate_first")}`);
       return;
     }
+    if (need && !(await ensureProviderReady())) return;
     setBusy(true);
     setStatus(t("tts.status_generating"));
     try {
@@ -344,7 +466,7 @@ export default function LongTextTTS() {
         voice,
         rate,
         volume,
-        output_dir: outputDir === DEFAULT_DIR ? undefined : outputDir,
+        output_dir: outputDir || undefined,
       });
       setLastPath(res.path);
       setStatus(`🟢 ${t("tts.status_generated", { seg: res.segments, kb: (res.bytes / 1024).toFixed(0) })}`);
@@ -361,7 +483,7 @@ export default function LongTextTTS() {
   };
 
   const handlePickDir = async () => {
-    const picked = await pickOutputDir(outputDir === DEFAULT_DIR ? undefined : outputDir);
+    const picked = await pickOutputDir(outputDir || undefined);
     if (picked) {
       setOutputDir(picked);
       try {
@@ -381,10 +503,11 @@ export default function LongTextTTS() {
           <AudioLines size={14} className="text-accent2" />
           <span className="text-[14.95px] font-bold text-text">{t("tts.input_title")}</span>
         </div>
-        <textarea
+        <ExpandableTextarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={setText}
           placeholder={t("tts.input_placeholder")}
+          title={t("tts.input_title")}
           className="h-[125px] w-full resize-none rounded-xl border border-border bg-input px-3 py-2 text-[13.8px] text-text outline-none placeholder:text-muted focus:border-accent"
         />
         {/* 表单：输出语言 / 语速 / 音量 / 音色 同一行（列宽按界面语言锁定） */}
@@ -436,10 +559,11 @@ export default function LongTextTTS() {
           <Wand2 size={14} className="text-accent2" />
           <span className="text-[14.95px] font-bold text-text">{t("tts.output_title")}</span>
         </div>
-        <textarea
+        <ExpandableTextarea
           value={preview}
-          onChange={(e) => setPreview(e.target.value)}
+          onChange={setPreview}
           placeholder={t("tts.output_placeholder")}
+          title={t("tts.output_title")}
           className="h-[125px] w-full resize-none rounded-xl border border-border bg-input px-3 py-2 text-[13.8px] text-text outline-none placeholder:text-muted focus:border-accent"
         />
       </Card>

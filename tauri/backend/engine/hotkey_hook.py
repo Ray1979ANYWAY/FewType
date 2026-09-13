@@ -101,6 +101,8 @@ class WinHotkey:
         self.rec = False
         self._swallow_keys = set()  # 本次录音需吞掉 release 的成员键（防止两键同松时第二个 release 漏吞→弹开始菜单）
         self._ignore_all = False    # 模拟 Ctrl+V 自动上屏期间临时忽略所有按键事件，避免钩子与模拟互相干扰
+        self._pending = []          # 组合键模式：被吞住等待组合判定的按键序列 [(vk, down), ...]
+        self._pending_start = 0     # 起始被吞的成员键 vk（其松开 → 触发按序补发）
         self._hook = None
         self._proc = None
 
@@ -125,34 +127,105 @@ class WinHotkey:
         return self._on_event_combo(vk_raw, down)
 
     def _on_event_combo(self, vk_raw, down):
-        """组合键模式状态机（原 _on_event 逻辑）。"""
+        """组合键模式状态机（防 Win 键先按弹开始菜单版）。
+
+        问题：旧逻辑只吞"组合成立之后"的成员键。若用户先按 Win（或 Win 事件先到），
+        Win 的按下已传给系统 → 开始菜单弹出 → 焦点落在搜索栏，录音/上屏全跑偏。
+
+        新逻辑：成员键按下时【一律先吞住】并进入 pending；组合成立 → 触发录音，
+        全部吞掉（系统对组合键无感知）；组合未成立（单独按 Win / Win+E 等原生组合）
+        → 起始键松开时【按序补发】被吞的按键，系统行为与原生一致。
+        """
         vk = _NORM_VK.get(vk_raw, vk_raw)
+        is_member = vk in self._member_vks
+
+        # ---- 录音中（rec=True）：成员键一律直接吞掉，不污染 pending / 状态机 ----
+        # 关键：按住热键说话超过键盘 auto-repeat 延迟（约 500ms）时，Windows 会重复投递
+        # 成员键的 WM_KEYDOWN。旧逻辑让 repeat 进入 pending，松开时 pending 因 rec=True
+        # 永不补发/清理 → 之后所有按键被钩子吞掉（"键盘粘滞"，只能杀进程+重启恢复）。
+        if self.rec:
+            if not is_member:
+                return False  # 非成员键照常放行
+            if down:
+                return True   # auto-repeat / 重按：吞掉，保持录音
+            self._pressed[vk] = False
+            if not self._combo_down():
+                # 组合不再完整 → 结束录音（任一成员键松开即停止）
+                self.rec = False
+                self._swallow_keys.clear()
+                try:
+                    self.on_end()
+                except Exception:
+                    pass
+            return True
+
+        # ---- pending：成员键已被吞住，等待组合判定 ----
+        if self._pending:
+            if down:
+                self._pressed[vk] = True
+                if self._combo_down() and not self.rec:
+                    # 组合成立 → 触发录音，pending 全部吞掉
+                    self.rec = True
+                    self._swallow_keys = set(self._member_vks)
+                    self._pending = []
+                    try:
+                        self.on_begin()
+                    except Exception:
+                        pass
+                else:
+                    self._pending.append((vk, down))
+            else:
+                self._pressed[vk] = False
+                self._pending.append((vk, down))
+                if vk == self._pending_start and not self.rec:
+                    # 起始成员键已松开且组合从未成立 → 按序补发被吞的按键
+                    self._replay_pending()
+                    self._pending = []
+            return True  # pending 期间一律吞
+
         if down:
             self._pressed[vk] = True
-        else:
-            self._pressed[vk] = False
-        combo = self._combo_down()
+            if is_member:
+                # 成员键按下：吞住并进入 pending
+                self._pending = [(vk, down)]
+                self._pending_start = vk
+                if self._combo_down() and not self.rec:
+                    # 其他成员键已按住（如 Ctrl 已按），组合直接成立
+                    self.rec = True
+                    self._swallow_keys = set(self._member_vks)
+                    self._pending = []
+                    try:
+                        self.on_begin()
+                    except Exception:
+                        pass
+                return True
+            return False  # 非成员键正常放行
+
+        # ---- up（无 pending）----
+        self._pressed[vk] = False
         was_rec = self.rec
-        if combo and not self.rec:
-            self.rec = True
-            self._swallow_keys = set(self._member_vks)  # begin：所有成员键的 release 都待吞
-            try:
-                self.on_begin()
-            except Exception:
-                pass
-        elif not combo and self.rec:
+        if is_member and not self._combo_down() and was_rec:
+            # 最后一个成员键松开 → 结束录音
             self.rec = False
+            self._swallow_keys.clear()
             try:
                 self.on_end()
             except Exception:
                 pass
-        # 吞判定：组合激活中 / 录音中 / 结束录音的那个松开 / 待吞集合中的 release（防两键同松时第二个漏吞）
-        swallow = vk in self._member_vks and (
-            combo or self.rec or (was_rec and not down) or (not down and vk in self._swallow_keys)
-        )
-        if swallow and not down:
-            self._swallow_keys.discard(vk)
-        return swallow
+            return True  # 吞掉结束松开的 up
+        return False
+
+    def _replay_pending(self):
+        """按序补发 pending 中被吞的按键（keybd_event 注入，钩子对注入事件放行不递归）。
+
+        例：单独按 Win → 补发 [Win down, Win up]，开始菜单正常弹出。
+        Win+E → 补发 [Win down, E down, E up, Win up]，Win+E 原生行为保持。
+        """
+        try:
+            for vk, is_down in self._pending:
+                user32.keybd_event(vk, 0, 0 if is_down else KEYEVENTF_KEYUP, 0)
+        except Exception:
+            pass
 
     def _on_event_double_ctrl(self, vk_raw, down):
         """双击 Ctrl 模式状态机（严格校验版）：第二下长按讲话，松开自动上屏。
@@ -251,9 +324,16 @@ class WinHotkey:
 
         else:
             # ---- 其他键 ----
-            # 忽略修饰键本身的切换码（shift/ctrl/alt/win），防止修饰键干扰双击检测
+            # 录音期间（含双击候选期）按 Win 键：吞掉，防止开始菜单弹出抢焦点。
+            # 焦点一丢，上屏就贴到搜索栏去了（用户实测 Cortana 窗口）。
+            # 非录音期正常放行，Win+E / Win+D 等原生快捷键完全不受影响。
+            if vk in (0x5B, 0x5C):  # Win 左右
+                if self._dc_first_pressed or self._dc_recording:
+                    return True  # 吞掉 Win 按下/松开，系统感知不到 Win 被按过
+                return False
+            # 忽略修饰键本身的切换码（shift/ctrl/alt），防止修饰键干扰双击检测
             # 只有真正的字符键/功能键才取消双击资格
-            if vk not in (0x10, 0x11, 0x12, 0x5B, 0x5C):
+            if vk not in (0x10, 0x11, 0x12):
                 if self._dc_first_pressed and not self._dc_recording:
                     self._dc_other_key_intervened = True
             return False  # 其他键一律不吞
@@ -293,9 +373,25 @@ class WinHotkey:
             except Exception:
                 pass
             self._hook = None
+        # 卸载钩子前补发所有被吞未放的按键，避免系统残留修饰键按下状态（键盘卡死）
+        try:
+            # 1) pending 中被吞的按键按序补发（保持原生语义）
+            if self._pending:
+                self._replay_pending()
+            # 2) 仍处于按下状态的成员键补发 keyup（孤儿 keyup 无害，可清理任何残留）
+            for vk, held in list(self._pressed.items()):
+                if held and vk in self._member_vks:
+                    user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+            # 3) 双击 Ctrl 模式：第一次 Ctrl 按下已传给系统，退出时补发松开清理状态
+            if self._dc_first_pressed or self._dc_recording:
+                user32.keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0)
+        except Exception:
+            pass
         self._proc = None
         self._pressed.clear()
         self._swallow_keys.clear()
+        self._pending = []
+        self._pending_start = 0
         self.rec = False
         # 重置双击 Ctrl 状态机
         self._dc_first_pressed = False

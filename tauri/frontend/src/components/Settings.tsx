@@ -17,10 +17,12 @@ export default function Settings({
   onOpenProvider,
   onOpenHotkey,
   onOpenAbout,
+  refreshKey = 0,
 }: {
   onOpenProvider: () => void;
   onOpenHotkey: () => void;
   onOpenAbout: () => void;
+  refreshKey?: number;
 }) {
   const { t, setLang: setI18nLang } = useI18n();
   const [lang, setLang] = useState("简体中文");
@@ -48,7 +50,7 @@ export default function Settings({
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshKey]);
 
   const setPref = async (patch: Partial<AppConfig>) => {
     try {

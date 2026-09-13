@@ -76,6 +76,11 @@ _MSGS: dict[str, tuple[str, str, str]] = {
         "熱鍵觸發但已有會話在錄，忽略",
         "Hotkey triggered while a session is recording; ignored",
     ),
+    "provider_key_missing": (
+        "Provider API Key 未配置，热键触发改为弹出 Provider 设置",
+        "Provider API Key 未配置，熱鍵觸發改為彈出 Provider 設定",
+        "Provider API Key not configured; opening Provider settings instead",
+    ),
     "hotkey_recording": (
         "热键开始录音 mode={mode} style={style}: {ok}",
         "熱鍵開始錄音 mode={mode} style={style}: {ok}",

@@ -93,7 +93,13 @@ fn kill_backend(app: &AppHandle) {
                         let _ = c.wait();
                     }
                     BackendChild::Sidecar(c) => {
-                        let _ = c.kill();
+                        // PyInstaller onefile：sidecar 引导器会解压出真正的 Python 子进程，
+                        // kill() 只杀引导器、子进程会成孤儿继续跑（表现为"退出后热键仍能录音"）。
+                        // 这里用 taskkill /T 杀整棵进程树，并阻塞等待完成后再退出主程序。
+                        let pid = c.pid();
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/PID", &pid.to_string(), "/T", "/F"])
+                            .status();
                     }
                 }
             }

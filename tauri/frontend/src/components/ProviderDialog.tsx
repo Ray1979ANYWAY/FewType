@@ -139,12 +139,16 @@ export default function ProviderDialog({
   open,
   onClose,
   onSaved,
+  notice,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  /** 自动弹出原因提示（如"热键触发但未配置 API Key"），显示数秒后自动消失 */
+  notice?: string | null;
 }) {
   const { t } = useI18n();
+  const [showNotice, setShowNotice] = useState(false);
   const [platform, setPlatform] = useState("groq");
   const [fields, setFields] = useState<Fields>({
     platform: "groq", api_key: "", llm_key: "", asr: "", llm: "", url: "", llm_url: "",
@@ -186,6 +190,28 @@ export default function ProviderDialog({
       .catch((e) => setMsg(t("provider.msg_load_failed", { msg: (e as Error).message })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // 自动弹出原因提示：打开且带 notice 时显示，4 秒后自动消失
+  useEffect(() => {
+    if (!open || !notice) {
+      setShowNotice(false);
+      return;
+    }
+    setShowNotice(true);
+    const timer = setTimeout(() => setShowNotice(false), 4000);
+    return () => clearTimeout(timer);
+  }, [open, notice]);
+
+  // 自动弹出原因提示：打开且带 notice 时显示，4 秒后自动消失
+  useEffect(() => {
+    if (!open || !notice) {
+      setShowNotice(false);
+      return;
+    }
+    setShowNotice(true);
+    const timer = setTimeout(() => setShowNotice(false), 4000);
+    return () => clearTimeout(timer);
+  }, [open, notice]);
 
   const defn = () => PLATFORMS[platform] ?? PLATFORMS.groq;
 
@@ -527,6 +553,12 @@ export default function ProviderDialog({
 
   return (
     <Modal open={open} onClose={onClose} title={t("provider.title")} width={560}>
+      {showNotice && notice ? (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[12.65px] leading-snug text-amber-200">
+          <span className="shrink-0 text-amber-300">ℹ️</span>
+          <span>{notice}</span>
+        </div>
+      ) : null}
       {body}
     </Modal>
   );

@@ -168,6 +168,10 @@ class SpeechInputManager:
             except Exception:
                 pass
 
+    def notify(self, ev: dict) -> None:
+        """外部广播任意事件（如热键触发但 Provider 未配置时通知前端打开设置）。"""
+        self._emit(ev)
+
     # ------------------------------------------------------------ 主流程
     def _run(self, cfg: dict) -> None:
         """后台线程主流程：录音 → 转写 → 润色 → 上屏事件。"""

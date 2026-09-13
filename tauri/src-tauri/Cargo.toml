@@ -1,6 +1,6 @@
 [package]
 name = "voxecho"
-version = "3.1.1"
+version = "3.1.5"
 description = "VoxEcho 语音处理平台"
 edition = "2021"
 

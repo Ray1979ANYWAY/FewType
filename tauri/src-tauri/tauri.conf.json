@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VoxEcho",
-  "version": "3.1.1",
+  "version": "3.1.5",
   "identifier": "com.rayanyway.voxecho",
   "build": {
-    "beforeDevCommand": "npm run dev --prefix frontend",
+    "beforeDevCommand": "npm --prefix D:/Documents/VoxEcho/tauri/frontend run dev",
     "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "npm run build --prefix frontend",
+    "beforeBuildCommand": "npm --prefix D:/Documents/VoxEcho/tauri/frontend run build",
     "frontendDist": "../frontend/dist"
   },
   "app": {

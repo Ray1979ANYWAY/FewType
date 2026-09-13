@@ -15,7 +15,7 @@ import ProviderDialog from "./components/ProviderDialog";
 import HotkeyDialog from "./components/HotkeyDialog";
 import AboutDialog from "./components/AboutDialog";
 import { resizeForTab, inTauri } from "./lib/window";
-import { getLogs } from "./api";
+import { getLogs, SpeechClient } from "./api";
 import { useI18n } from "./i18n";
 
 const VIEW_TITLES: Record<ViewKey, string> = {
@@ -32,7 +32,11 @@ export default function App() {
   /** 风格管理保存后 +1：通知 VoiceInput 重新加载风格列表 */
   const [stylesRev, setStylesRev] = useState(0);
   const [providerOpen, setProviderOpen] = useState(false);
+  /** Provider 弹窗自动弹出时的原因提示（tooltip 显示数秒后消失） */
+  const [providerReason, setProviderReason] = useState<string | null>(null);
   const [hotkeyOpen, setHotkeyOpen] = useState(false);
+  /** 快捷键保存后 +1：通知 VoiceInput / Settings 重新加载快捷键显示 */
+  const [hotkeyRev, setHotkeyRev] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
 
   // 日志抽屉
@@ -47,6 +51,42 @@ export default function App() {
 
   /** 日志卷帘：窗口向右扩展 320px（842→1162），高度锁死 668。
    *  main 固定 778px（842-64 侧边栏），与面板宽度完全解耦 → 动画期间内容零跳动 */
+  // 全局监听后端事件：热键触发但 Provider 未配置时，后端广播 open_settings → 弹出 Provider 设置
+  useEffect(() => {
+    if (!inTauri()) return;
+    let disposed = false;
+    const client = new SpeechClient({
+      onEvent: (ev) => {
+        if (disposed) return;
+        if (ev.type === "open_settings") {
+          setProviderReason(t("provider.notice_missing_key"));
+          setProviderOpen(true);
+          // 用户此刻在其他应用里（热键触发），必须把主窗口强制置顶 + 聚焦，
+          // 否则 Provider 设置窗在后台弹出，用户看不到还在傻等。
+          // 用 setAlwaysOnTop 而非仅 setFocus：Windows 前台锁定规则不允许后台进程
+          // 的窗口抢前台（按键被后端钩子接收，前端进程没有前台权利），setFocus 会被静默拒绝。
+          (async () => {
+            try {
+              const { getCurrentWindow } = await import("@tauri-apps/api/window");
+              const win = getCurrentWindow();
+              await win.unminimize();
+              await win.show();
+              await win.setAlwaysOnTop(true);
+              await win.setFocus();
+            } catch (e) {
+              console.warn("[provider] 窗口置顶失败", e);
+            }
+          })();
+        }
+      },
+    });
+    client.connect().catch(() => {});
+    return () => {
+      disposed = true;
+      client.close();
+    };
+  }, []);
+
   const toggleLog = async () => {
     const next = !showLog;
     if (inTauri()) {
@@ -207,16 +247,27 @@ export default function App() {
           {view === "voice" ? (
             <VoiceInput
               onOpenStyles={() => setStylesOpen(true)}
-              refreshKey={stylesRev}
+              refreshKey={stylesRev + hotkeyRev}
             />
           ) : null}
           {view === "ebook" ? <EbookReader /> : null}
-          {view === "tts" ? <LongTextTTS /> : null}
+          {view === "tts" ? (
+            <LongTextTTS
+              onOpenProvider={() => {
+                setProviderReason(t("provider.notice_missing_key"));
+                setProviderOpen(true);
+              }}
+            />
+          ) : null}
           {view === "settings" ? (
             <Settings
-              onOpenProvider={() => setProviderOpen(true)}
+              onOpenProvider={() => {
+                setProviderReason(null);
+                setProviderOpen(true);
+              }}
               onOpenHotkey={() => setHotkeyOpen(true)}
               onOpenAbout={() => setAboutOpen(true)}
+              refreshKey={hotkeyRev}
             />
           ) : null}
         </div>
@@ -233,10 +284,36 @@ export default function App() {
       />
       <ProviderDialog
         open={providerOpen}
-        onClose={() => setProviderOpen(false)}
-        onSaved={() => setProviderOpen(false)}
+        notice={providerReason}
+        onClose={() => {
+          setProviderOpen(false);
+          // 解除热键触发时的强制置顶，恢复正常窗口层级
+          (async () => {
+            try {
+              const { getCurrentWindow } = await import("@tauri-apps/api/window");
+              await getCurrentWindow().setAlwaysOnTop(false);
+            } catch {
+              /* 忽略 */
+            }
+          })();
+        }}
+        onSaved={() => {
+          setProviderOpen(false);
+          (async () => {
+            try {
+              const { getCurrentWindow } = await import("@tauri-apps/api/window");
+              await getCurrentWindow().setAlwaysOnTop(false);
+            } catch {
+              /* 忽略 */
+            }
+          })();
+        }}
       />
-      <HotkeyDialog open={hotkeyOpen} onClose={() => setHotkeyOpen(false)} />
+      <HotkeyDialog
+        open={hotkeyOpen}
+        onClose={() => setHotkeyOpen(false)}
+        onSaved={() => setHotkeyRev((r) => r + 1)}
+      />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       {/* 右侧卷帘日志抽屉：窗口向右扩展 320px 时占新增区域，左侧内容零变化 */}
