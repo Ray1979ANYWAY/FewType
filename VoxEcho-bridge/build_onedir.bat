@@ -27,7 +27,9 @@ if defined ICON_FILE (
 )
 
 echo [1/2] PyInstaller onedir...
-python -m PyInstaller --noconfirm --clean --onedir --windowed --name VoxEcho-bridge %ICON_ARGS% %ADD_ICON% --add-data "server.py;." --add-data "kofi_badge.png;." --hidden-import edge_tts --hidden-import flask --hidden-import flask_cors --hidden-import pystray --hidden-import PIL launcher.py
+set VERSION_ARGS=
+if exist "version_info.txt" set VERSION_ARGS=--version-file version_info.txt
+python -m PyInstaller --noconfirm --clean --onedir --windowed --name VoxEcho-bridge %ICON_ARGS% %ADD_ICON% %VERSION_ARGS% --add-data "server.py;." --add-data "kofi_badge.png;." --hidden-import edge_tts --hidden-import flask --hidden-import flask_cors --hidden-import pystray --hidden-import PIL --collect-binaries lameenc --collect-binaries sounddevice launcher.py
 if errorlevel 1 (
   echo ERROR: PyInstaller failed.
   pause

@@ -2191,11 +2191,11 @@ def run_gui(test_hook=None):
         cfg["stt_styles"] = [
             {
                 "name": {
-                    "zh-CN": "王家卫风", "zh-TW": "王家衛風",
-                    "en": "Karwai Wong Style", "ja": "ウォン・カーウァイ・スタイル",
-                    "ko": "왕가위 스타일", "es": "Estilo Wong Kar-wai",
-                    "fr": "Style Wong Kar-wai", "de": "Wong Kar-wai Stil",
-                }.get(_LANG, "Karwai Wong Style"),
+                    "zh-CN": "Karwai Wong", "zh-TW": "Karwai Wong",
+                    "en": "Karwai Wong", "ja": "Karwai Wong",
+                    "ko": "Karwai Wong", "es": "Karwai Wong",
+                    "fr": "Karwai Wong", "de": "Karwai Wong",
+                }.get(_LANG, "Karwai Wong"),
                 "prompt": (
                     "Role: You are a scriptwriter specializing in Wong Kar-wai's signature cinematic monologue style.\n\n"
                     "Task: Rewrite the user's input into a reflective, poetic, and atmospheric monologue reminiscent of classic Hong Kong cinema (e.g., Chungking Express, In the Mood for Love).\n\n"
@@ -2209,6 +2209,19 @@ def run_gui(test_hook=None):
                 ),
             }
         ]
+        save_config(cfg)
+    # 迁移旧风格名 → Karwai Wong（已有配置也生效，界面统一显示新名）
+    _migrated = False
+    for _s in cfg.get("stt_styles", []):
+        _n = _s.get("name")
+        if isinstance(_n, str) and _n in (
+            "王家卫风", "王家衛風", "Karwai Wong Style",
+            "ウォン・カーウァイ・スタイル", "왕가위 스타일",
+            "Estilo Wong Kar-wai", "Style Wong Kar-wai", "Wong Kar-wai Stil",
+        ):
+            _s["name"] = "Karwai Wong"
+            _migrated = True
+    if _migrated:
         save_config(cfg)
     root = tk.Tk()
     root.title(t("title"))
