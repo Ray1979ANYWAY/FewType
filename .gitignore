@@ -56,3 +56,5 @@ tauri/backend/engine/bridge_config.json
 tauri/frontend/node_modules/
 tauri/src-tauri/target/
 tauri/frontend/dist/
+
+dist/
