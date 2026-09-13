@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_pluginName__",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "__MSG_pluginDesc__",
   "default_locale": "zh_CN",
   "permissions": [
@@ -15,7 +15,7 @@
     "https://web.koodoreader.com/*",
     "https://web.koodoreader.cn/*",
     "https://weread.qq.com/*",
-    "http://127.0.0.1:5005/*"
+    "http://127.0.0.1:5010/*"
   ],
   "background": {
     "service_worker": "background.js",

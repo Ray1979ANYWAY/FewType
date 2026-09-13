@@ -39,14 +39,25 @@ function abortAllPending() {
   activeAbortControllers = [];
 }
 
-function fetchChunk(text, voice) {
+let _bridgeModulePromise = null;
+function ensureBridgeModule() {
+  if (!_bridgeModulePromise) {
+    _bridgeModulePromise = import("./bridge-url.js");
+  }
+  return _bridgeModulePromise;
+}
+
+async function fetchChunk(text, voice) {
+  const { voxResolveBridgeUrl } = await ensureBridgeModule();
+  const base = await voxResolveBridgeUrl();
+  if (!base) throw new Error("本地桥接服务未启动");
   const controller = new AbortController();
   activeAbortControllers.push(controller);
   // 超时用 abort(reason) 传一个普通 Error：这样 fetch reject 的是这个 Error 而不是
   // AbortError，fetchChunkWithRetry 会把它当成普通失败走重试；如果直接 abort() 无参
   // 数，fetch reject 成 AbortError，会被当作"主动取消"直接放弃，不重试。
   const timeout = setTimeout(() => controller.abort(new Error("synthesize timeout")), FETCH_TIMEOUT_MS);
-  return fetch("http://127.0.0.1:5005/speak", {
+  return fetch(base + "/speak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, voice }),

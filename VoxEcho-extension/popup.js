@@ -453,8 +453,17 @@ const VOICE_GROUPS = [
 ];
 
 // ---- 音色清单：实时从本地 bridge 拉取 Edge TTS 最新音色，失败时回退缓存 / 内置兜底 ----
-const BRIDGE_URL = "http://127.0.0.1:5005";
+// 端口自动探测：bridge-url.js（ES module）提供 voxResolveBridgeUrl()（主线 5010 / 旧版 5005）。
+// 本文件是普通 <script>，无法静态 import，这里用动态 import() 确保拿到函数再调用。
 const VOICES_CACHE_KEY = "voxechoVoicesCache";
+
+let _bridgeModulePromise = null;
+function ensureBridgeModule() {
+  if (!_bridgeModulePromise) {
+    _bridgeModulePromise = import("./bridge-url.js");
+  }
+  return _bridgeModulePromise;
+}
 
 // 浏览器系统语言（小写连字符形式），用于语言下拉的默认选中
 let BROWSER_LANG = "";
@@ -656,7 +665,10 @@ async function loadVoices() {
   const loadingEl = document.getElementById("voiceLoading");
   if (loadingEl) loadingEl.hidden = false;
   try {
-    const res = await fetch(BRIDGE_URL + "/voices", { cache: "no-store" });
+    const { voxResolveBridgeUrl } = await ensureBridgeModule();
+    const base = await voxResolveBridgeUrl();
+    if (!base) throw new Error("bridge unavailable");
+    const res = await fetch(base + "/voices", { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (!Array.isArray(data.voices) || data.voices.length === 0) throw new Error("empty voices");
@@ -766,11 +778,6 @@ function syncButtons(state) {
   stopBtn.disabled = !isReading;
   pauseResumeBtn.textContent = isPaused ? t("resume") : t("pause");
 
-  const seekBackBtn = document.getElementById("seekBack");
-  const seekForwardBtn = document.getElementById("seekForward");
-  seekBackBtn.disabled = !isReading;
-  seekForwardBtn.disabled = !isReading;
-
   light.classList.remove("green", "red");
   if (isReading) {
     light.classList.add(connectionStatus === "error" ? "red" : "green");
@@ -877,13 +884,6 @@ document.getElementById("start").addEventListener("click", startReading);
 document.getElementById("pauseResume").addEventListener("click", togglePauseResume);
 document.getElementById("stop").addEventListener("click", stopReading);
 
-document.getElementById("seekBack").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "SEEK", delta: -5 });
-});
-document.getElementById("seekForward").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "SEEK", delta: 5 });
-});
-
 // 导出诊断日志：把 background.js 汇总的完整时间线（content/background/offscreen 三方事件）
 // 打包成一个文本文件下载下来，复现问题后把这个文件发出去，不用再分别打开三个不同的 devtools
 // console 去对时间线。
@@ -927,10 +927,19 @@ startPolling();
 //   MV3 的 service worker 会被 Chrome 挂起，挂起后异步 fetch 可能发不出去；
 //   popup 打开时是持续运行的页面，直接发心跳更可靠。
 //   background.js 的 chrome.alarms 作为保底（每分钟一次），popup 心跳作为即时触发。
-fetch(BRIDGE_URL + "/extension_heartbeat", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ timestamp: Date.now(), source: "popup" }),
-}).catch(() => {
-  // 本地服务未启动时静默失败
-});
+// 端口自动探测（bridge-url.js 是 type=module 延迟执行，这里放到下一个宏任务再取）。
+setTimeout(() => {
+  ensureBridgeModule()
+    .then(({ voxResolveBridgeUrl }) => voxResolveBridgeUrl())
+    .then((base) => {
+      if (!base) return;
+      return fetch(base + "/extension_heartbeat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timestamp: Date.now(), source: "popup" }),
+      });
+    })
+    .catch(() => {
+      // 本地服务未启动时静默失败
+    });
+}, 0);
