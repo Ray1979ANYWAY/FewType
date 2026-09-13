@@ -468,6 +468,15 @@ def ui_log(msg: str) -> None:
     log_queue.put("[%s] %s" % (ts, msg))
 
 
+def _focus_dbg(msg: str) -> None:
+    """焦点调试专用日志（不含原文，落盘排查上屏失败）"""
+    try:
+        with open(Path(__file__).resolve().parent / "stt_focus_debug.log", "a", encoding="utf-8") as f:
+            f.write("%s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
+    except Exception:
+        pass
+
+
 def load_config() -> dict:
     defaults = {
         "autostart": False,
@@ -4788,27 +4797,16 @@ def run_gui(test_hook=None):
                 ui_log("stt_stream: finish ok (%d chars)" % len(text))
                 if not text.strip():
                     raise ProviderError("转写结果为空")
-                final = text
-                if not _fast_path:
-                    _stt_anim_start("润色转写中", "Polishing")
-                    prov = _provider_from_cfg()
-                    try:
-                        final = stt_engine.process_result(
-                            prov, text, _mode, _tr, _lang,
-                            custom_prompt=_custom_prompt, timeout=30,
-                        )
-                    except Exception as e:
-                        # LLM 润色失败/超时：fallback 到 ASR 原始结果上屏，不丢弃
-                        ui_log("LLM 润色失败，上屏原始结果: %s" % e)
-                        final = text
-                        root.after(0, lambda: _stt_banner_show(
-                            "润色超时，已上屏原始结果", "#ffb74d"))
-                        root.after(0, lambda: root.after(2500, _stt_banner_hide))
-                else:
+                if _fast_path:
                     # fast path（忠实记录/单通道）：不调 LLM，但仍需过 normalize 去空格/补标点
                     from normalize import normalize_text
                     final = normalize_text(text.strip())
-                root.after(0, lambda final=final: _stt_commit(final))
+                    root.after(0, lambda final=final: _stt_commit(final))
+                else:
+                    # 需要 LLM（风格/翻译）：先弹确认窗口，确认后再翻译上屏
+                    _stt_anim_stop()
+                    root.after(0, lambda raw=text: _stt_ask_confirm(
+                        raw, _mode, _tr, _lang, _custom_prompt))
             except Exception as e:
                 root.after(0, lambda e=e: _stt_error(e))
             finally:
@@ -5064,30 +5062,47 @@ def run_gui(test_hook=None):
         # 避免 bridge 主窗口被状态条唤出抢占焦点，导致 Ctrl+V 粘贴到 bridge 自己窗口
         try:
             target_hwnd = _stt_target.get("hwnd", 0)
+            try:
+                _fg0 = user32.GetForegroundWindow()
+            except Exception:
+                _fg0 = 0
+            ui_log("commit-focus: target=%s fg_before=%s" % (target_hwnd, _fg0))
+            _focus_dbg("commit-focus target=%s fg_before=%s" % (target_hwnd, _fg0))
             if target_hwnd:
                 import ctypes as _ct
                 _user32 = _ct.windll.user32
                 _kernel32 = _ct.windll.kernel32
-                # 获取窗口标题用于诊断
-                def _win_title(h):
+                if not _user32.IsWindow(target_hwnd):
+                    ui_log("commit-focus: target invalid (window closed)")
+                    target_hwnd = 0
+                if target_hwnd:
+                    fg_thread = _user32.GetWindowThreadProcessId(target_hwnd, None)
+                    cur_thread = _kernel32.GetCurrentThreadId()
+                    # 模拟 ALT 按下/释放：让 Windows 认为本进程有用户输入，
+                    # 解锁 SetForegroundWindow 权限（确认窗口刚关闭后前台被系统接管）
                     try:
-                        buf = _ct.create_unicode_buffer(256)
-                        _user32.GetWindowTextW(h, buf, 256)
-                        return buf.value[:60]
+                        _user32.keybd_event(0x12, 0, 0, 0)
+                        _user32.keybd_event(0x12, 0, 0x0002, 0)
+                        time.sleep(0.03)
                     except Exception:
-                        return "?"
-                cur_fg = _user32.GetForegroundWindow()
-                fg_thread = _user32.GetWindowThreadProcessId(target_hwnd, None)
-                cur_thread = _kernel32.GetCurrentThreadId()
-                _user32.AttachThreadInput(cur_thread, fg_thread, True)
-                _user32.BringWindowToTop(target_hwnd)
-                _user32.SetForegroundWindow(target_hwnd)
-                _user32.AttachThreadInput(cur_thread, fg_thread, False)
-                time.sleep(0.08)  # 等待焦点切换完成
-                # 验证焦点是否真的切换成功
-                new_fg = _user32.GetForegroundWindow()
-        except Exception:
-            pass
+                        pass
+                    # 重试直到焦点真正落到目标窗口（最多 5 次），失败也不静默继续
+                    for _attempt in range(5):
+                        _user32.AttachThreadInput(cur_thread, fg_thread, True)
+                        _user32.BringWindowToTop(target_hwnd)
+                        _user32.SetForegroundWindow(target_hwnd)
+                        _user32.AttachThreadInput(cur_thread, fg_thread, False)
+                        time.sleep(0.08)
+                        if _user32.GetForegroundWindow() == target_hwnd:
+                            ui_log("commit-focus: ok attempt=%d" % _attempt)
+                            _focus_dbg("commit-focus OK attempt=%d" % _attempt)
+                            break
+                    else:
+                        ui_log("commit-focus: FAILED all attempts, fg=%s" % _user32.GetForegroundWindow())
+                        _focus_dbg("commit-focus FAILED fg=%s" % _user32.GetForegroundWindow())
+        except Exception as e:
+            ui_log("commit-focus: exception %s" % e)
+            _focus_dbg("commit-focus EXC %s" % e)
         try:
             # 2. 模拟 Ctrl+V（此时无钩子，不会被吞）
             # 先 Ctrl down：系统知道 Ctrl 按下
@@ -5103,6 +5118,7 @@ def run_gui(test_hook=None):
             user32.keybd_event(VK_V, 0, KEYUP, 0)
             user32.keybd_event(VK_CONTROL, 0, KEYUP, 0)
             time.sleep(0.03)  # 确保模拟事件处理完
+            _focus_dbg("keybd_event ctrl+v sent")
         except Exception as e:
             ui_log(_pd("自动上屏失败，请手动 Ctrl+V", "Auto-commit failed, press Ctrl+V manually") + ": %s" % e)
             # 异常路径也强制 release，防止半发送序列留物理键卡住
@@ -5121,6 +5137,114 @@ def run_gui(test_hook=None):
                 hook_obj._ignore_all = True
                 hook_obj._swallow_keys.clear()
                 root.after(80, lambda: setattr(hook_obj, '_ignore_all', False))
+
+    def _stt_ask_confirm(raw, mode, tr, lang, custom_prompt):
+        """确认原文再翻译：转写完成后弹出确认窗口（原文可编辑）。
+        回车或「翻译上屏」→ LLM 翻译 → 上屏；取消 → 丢弃。
+        - 窗口置顶 + 聚焦文本末尾（用户可直接回车确认）
+        - 长文本 max_tokens 动态放大（512 对长句会截断/空响应，Tauri 版踩过坑）
+        - 上屏复用 _stt_commit（含焦点恢复到录音前窗口）"""
+        win = tk.Toplevel(root)
+        win.title(_pd("确认原文", "Confirm text"))
+        win.configure(bg=BG)
+        win.overrideredirect(True)  # 无边框无任务栏（确认窗口不占任务栏条目）
+        win.resizable(False, False)
+        win.attributes("-topmost", True)
+        win.update_idletasks()
+        w = 520
+        # 文本自适应高度：一行时只留一行高；长文本封顶 6 行（11pt 中文字符约 19px 宽）
+        body_w = w - 14 * 2 - 2
+        chars_per_line = max(10, body_w // 19)
+        _n_lines = 0
+        for _line in raw.split("\n"):
+            _n_lines += max(1, (len(_line) + chars_per_line - 1) // chars_per_line)
+        h_lines = max(1, min(_n_lines, 6))
+        h = 92 + h_lines * 26 + 8  # 提示行+按钮行+边距 92，Text 每行 26px
+        sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+        x = (sw - w) // 2
+        y = max(60, sh - 52 - h - 12)  # 贴任务栏上方
+        win.geometry(f"{w}x{h}+{x}+{y}")
+        win.lift()
+
+        card = tk.Frame(win, bg="#121A15", bd=0)
+        card.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
+        tk.Label(card, text=_pd("确认原文：回车翻译上屏 · ESC 取消",
+                                "Confirm: Enter translate & commit · ESC cancel"),
+                 bg="#121A15", fg="#8A9A90",
+                 font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=14, pady=(10, 6))
+        txt = tk.Text(card, height=h_lines, wrap="word",
+                      bg="#0B0F0C", fg="#E8EAED", insertbackground="#E8EAED",
+                      relief=tk.FLAT, bd=0,
+                      highlightthickness=1, highlightbackground="#1F3A2E",
+                      highlightcolor=ACCENT, font=("Microsoft YaHei UI", 11))
+        txt.pack(fill=tk.BOTH, expand=True, padx=14)
+        txt.insert("1.0", raw)
+        txt.mark_set("insert", "end")
+        txt.see("end")  # 长文本滚动到末尾
+        win.focus_force()  # 激活窗口（Windows 前台锁定下 lift 不够，必须强抢）
+        txt.focus_force()  # 强制键盘焦点到原文编辑框
+        # 延迟再强一次：等窗口真正映射完成（刚创建时 focus 可能被系统丢弃）
+        win.after(80, lambda: (win.focus_force(), txt.focus_force()))
+
+        btn_row = tk.Frame(card, bg="#121A15")
+        btn_row.pack(fill=tk.X, padx=14, pady=12)
+        cancel_btn = tk.Button(btn_row, text=_pd("取消", "Cancel"),
+                               bg="#0B0F0C", fg="#9CA3AF", relief=tk.FLAT, bd=0,
+                               font=("Microsoft YaHei UI", 9), cursor="hand2",
+                               padx=18, pady=5, activebackground="#1F2937",
+                               activeforeground="#E8EAED")
+        cancel_btn.pack(side=tk.LEFT)
+        ok_btn = tk.Button(btn_row, text=_pd("翻译上屏", "Translate & Commit"),
+                           bg=ACCENT, fg=BG, relief=tk.FLAT, bd=0,
+                           font=("Microsoft YaHei UI", 9, "bold"), cursor="hand2",
+                           padx=22, pady=5, activebackground=ACCENT2,
+                           activeforeground=BG)
+        ok_btn.pack(side=tk.RIGHT)
+
+        def _on_cancel():
+            win.destroy()
+            _stt_busy[0] = False  # 释放 busy，恢复可录音
+            stt_status.set(_pd("已取消", "Cancelled"))
+            root.after(150, _stt_banner_hide)
+
+        def _do_translate():
+            edited = txt.get("1.0", "end-1c").strip()
+            if not edited:
+                return
+            win.destroy()
+            _stt_busy[0] = True  # 翻译期间继续占 busy，防并发
+            _stt_anim_start(_pd("翻译中…", "Translating…"))
+
+            def work2():
+                try:
+                    if _stt_cancel.is_set():
+                        return
+                    prov = _provider_from_cfg()
+                    # 长文本放大 max_tokens（512 对长句会截断/空响应）
+                    mt = max(2048, min(len(edited) * 3, 4096))
+                    final = stt_engine.process_result(
+                        prov, edited, mode, tr, lang,
+                        custom_prompt=custom_prompt, timeout=45, max_tokens=mt,
+                    )
+                    if not final or not final.strip():
+                        raise ProviderError("LLM 返回为空")
+                except Exception as e:
+                    ui_log("LLM 处理失败，上屏原始结果: %s" % e)
+                    final = edited
+                    root.after(0, lambda: _stt_banner_show(
+                        _pd("LLM 处理失败，已上屏原文", "LLM failed, committed original"), "#ffb74d"))
+                    root.after(0, lambda: root.after(2500, _stt_banner_hide))
+                root.after(0, lambda final=final: _stt_commit(final))
+
+            threading.Thread(target=work2, daemon=True).start()
+
+        cancel_btn.configure(command=_on_cancel)
+        ok_btn.configure(command=_do_translate)
+        txt.bind("<Return>", lambda e: (_do_translate(), "break")[1])
+        txt.bind("<Control-Return>", lambda e: (txt.insert("insert", "\n"), "break")[1])
+        win.bind("<Escape>", lambda e: _on_cancel())
+        win.protocol("WM_DELETE_WINDOW", _on_cancel)
+        win.grab_set()  # 模态：确认窗口打开期间主 UI 不响应
 
     def _stt_commit(final: str):
         _stt_busy[0] = False
@@ -5173,6 +5297,8 @@ def run_gui(test_hook=None):
             try:  # 记录说话前的前台窗口，松开后无感上屏到它（ctypes 调用无 GIL 风险）
                 import ctypes
                 _stt_target["hwnd"] = ctypes.windll.user32.GetForegroundWindow()
+                ui_log("begin: record target hwnd=%s" % _stt_target["hwnd"])
+                _focus_dbg("begin target hwnd=%s" % _stt_target["hwnd"])
             except Exception:
                 _stt_target["hwnd"] = 0
             _hk["pending"] = "begin"
