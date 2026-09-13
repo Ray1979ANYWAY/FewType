@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 APP_NAME = "VoxEcho"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
