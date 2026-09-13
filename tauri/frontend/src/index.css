@@ -1,6 +1,23 @@
 @import "tailwindcss";
 
 /* ============================================================
+   透明窗口强制规则：html/body/#root 必须全透明，
+   否则 WebView2 默认白底会在圆角裁切处露出白角。
+   置于最顶部（!important 防任何工具类/预置样式覆盖）
+   ============================================================ */
+html,
+body,
+#root {
+  background: transparent !important;
+  background-color: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================
    VoxEcho Moss Black 主题（Tailwind v4 @theme）
    ============================================================ */
 @theme {
@@ -23,12 +40,8 @@
   --font-mono: "Cascadia Code", Consolas, "Menlo", monospace;
 }
 
-/* 基础暗色铺底（避免任何原生白闪） */
-html,
-body,
-#root {
-  height: 100%;
-  background-color: var(--color-bg);
+/* 基础铺底：主窗口底色由 App 根容器 bg-bg 承担，HUD/Provider 各自容器兜底 */
+body {
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

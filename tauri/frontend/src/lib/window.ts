@@ -10,7 +10,7 @@ export interface TabSize {
   height: number;
 }
 
-/** 统一规格（默认 = 最小，实测确认值） */
+/** 统一规格（842×668，双层卡片：外层黑绿基底 p-2.5 + 内层悬浮卡片） */
 export const TAB_SIZES: Record<ViewKey, TabSize> = {
   voice: { width: 842, height: 668 },
   ebook: { width: 842, height: 668 },

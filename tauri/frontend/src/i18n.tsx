@@ -33,6 +33,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.log_close": "收起运行日志",
     "app.log_title": "运行日志 (System Logs)",
     "app.log_empty": "暂无日志…",
+    "app.window_minimize": "最小化",
+    "app.window_close": "关闭",
 
     // 语音输入
     "voice.hint": "在任意文本框激活快捷键，即刻语音转文字",
@@ -244,6 +246,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.log_close": "收起運行日誌",
     "app.log_title": "運行日誌 (System Logs)",
     "app.log_empty": "暫無日誌…",
+    "app.window_minimize": "最小化",
+    "app.window_close": "關閉",
 
     "voice.hint": "在任意文字框啟動快捷鍵，即刻語音轉文字",
     "voice.no_mic": "需要插麥克風",
@@ -446,6 +450,8 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.log_close": "Hide run logs",
     "app.log_title": "Run Logs",
     "app.log_empty": "No logs yet…",
+    "app.window_minimize": "Minimize",
+    "app.window_close": "Close",
 
     "voice.hint": "Press the hotkey in any text box and speak — it turns into text",
     "voice.no_mic": "Plug in a mic",
