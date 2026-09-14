@@ -2169,7 +2169,9 @@ LL 钩子时代用 `return 1` 真正吞键了，但吞键逻辑有漏洞（先�
    - _stt_begin / _stt_commit / _stt_error 调用
    确保任何 Tk 操作激活 root 后都被立即拉回隐藏状态。
 
-5. **_force_root_withdrawn() 改为检查 oot.state()**：不依赖 _tray_mode 标志（可能在 show/hide 切换时不同步），直接检查 oot.state() == 'withdrawn'，只要当前是隐藏状态就强制保持。
+5. **_force_root_withdrawn() 改为检查 
+oot.state()**：不依赖 _tray_mode 标志（可能在 show/hide 切换时不同步），直接检查 
+oot.state() == 'withdrawn'，只要当前是隐藏状态就强制保持。
 
 ### 验证（用户真机 2026-09-10）
 - ✅ 任务栏不再出现两个 VoxEcho（状态条 WS_EX_TOOLWINDOW 生效）
@@ -2192,3 +2194,294 @@ LL 钩子时代用 `return 1` 真正吞键了，但吞键逻辑有漏洞（先�
 - Gemini：Toplevel(None) + -disabled + wm_transient，切断 master 绑定
 - DeepSeek：所有 stt_status.set() 改独立状态窗口 + _stt_begin/_stt_commit 主动 root.withdraw()
 - 最终根因由用户观察"任务栏两个 VoxEcho"锁定 → SWP_FRAMECHANGED 缺失
+
+---
+
+## 2026-09-11 扩展心跳检测 + Flask 端点重复定义坑
+
+### 背景
+电子书朗读面板需要实时显示 Chrome 扩展是否在线（已就绪/请加载）。之前是纯文本静态显示，扩展开了关了都不更新。
+
+### 实现
+- server.py 添加两个端点：`POST /extension_heartbeat`（扩展发心跳）、`GET /extension_status`（bridge 轮询状态）
+- 心跳超时 90 秒：扩展关闭后 90 秒内 bridge 自动识别为离线
+- 启动策略：前 5 次每 1 秒快速同步（确保 server.py 启动后尽快对齐），之后每 3 秒稳定轮询
+- 扩展侧：chrome.alarms 每分钟发一次心跳，popup 打开时立即发一次
+
+### 关键坑位：Flask 端点重复定义
+**症状**：server.py 启动时直接崩溃，报 `AssertionError: View function mapping is overwriting an existing endpoint function: extension_heartbeat`。
+**根因**：之前的对话已经加过一次 `/extension_heartbeat`，新对话又加了一次，同名函数被重复 `@app.route` 注册。Flask 不允许同名 endpoint。
+**教训**：多人/多对话协作改同一个 Flask 服务时，先 `grep "@app.route" server.py` 确认端点不存在再加。
+
+---
+
+## 2026-09-11 Tkinter 子线程 root.after 不可靠 → 主线程轮询模式
+
+### 背景
+TTS 长文本生成时，子线程里用 `root.after(0, callback)` 回调主线程更新 UI。但用户反馈：切换场景后状态消失、按钮不变灰、合成完按钮不恢复。
+
+### 根因
+**子线程里的 `root.after(0, callback)` 在某些情况下不执行**。Tkinter 的 after 事件队列依赖主线程进入 event loop，如果子线程在主线程繁忙时 post 事件，事件可能被丢弃或延迟到不可预测的时机。在 TTS 这种长时间任务中尤其明显。
+
+### 方案：主线程轮询共享变量
+子线程只做网络请求，把结果存到共享变量（`_result_holder = {}`）；主线程每 200ms 用 `root.after(200, poll)` 轮询共享变量，发现有结果就更新 UI。
+- 子线程：`_result_holder["text"] = result`
+- 主线程：检查 `_result_holder`，有结果就更新按钮状态、播放音效、清空变量
+
+### 教训（Tkinter 架构经验）
+1. **子线程永远不要直接操作 Tkinter 控件**——即使包了 `root.after`，在 Windows 上也可能不可靠
+2. **跨线程通信的可靠模式**：子线程写共享变量（dict/list），主线程用 `after` 轮询。不要依赖 `root.after(0, callback)` 从子线程唤醒主线程
+3. **超时保护必须有两层**：子线程里的 `requests` timeout + 主线程里的 `_tts_timeout()` 兜底，防止网络卡死导致 UI 永久假死
+4. **ttk 按钮 disabled 样式必须显式配置**：默认 ttk 主题下 disabled 按钮颜色和 normal 一样，必须 `style.configure("TButton", background=[("disabled", "#374151")])`，否则用户不知道按钮被禁用了
+
+---
+
+## 2026-09-11 Toplevel + overrideredirect 在 Windows 不可靠 → Frame + place 方案
+
+### 背景
+语音配置面板里，火山引擎的"控制台"链接需要悬停时弹出一个可交互的悬浮面板（含 ASR + LLM 两个链接）。要求类似 Tooltip，但停留时间够长让用户能移过去点击。
+
+### 第一版（失败）：Toplevel + overrideredirect
+用 `tk.Toplevel` + `overrideredirect(True)` + `withdraw/deiconify` 实现。
+**症状**：调试日志显示事件触发了、`deiconify()` 调用了、geometry 也设置了，但面板就是不显示。
+**根因**：Tkinter 在 Windows 上，`overrideredirect(True)` 的 Toplevel 配合 `withdraw()`/`deiconify()` 有已知 bug，窗口可能创建了但不映射到屏幕。这是 Tkinter 跨平台不一致的经典坑。
+
+### 第二版（成功）：Frame + place
+直接在对话框的 `card` 容器里创建一个 `tk.Frame`，用 `place()` 定位在链接旁边。
+- 显示：`popup.place(x=..., y=...)`
+- 隐藏：`place_forget()`
+- 延迟隐藏 800ms（让用户有时间把鼠标移到面板上点击链接）
+- 定位用 `link_lbl.winfo_rootx() - card.winfo_rootx()` 换算成相对于 card 的坐标
+
+### 教训（Tkinter 架构经验）
+1. **Windows 上不要依赖 Toplevel + overrideredirect + withdraw/deiconify 做悬浮面板**——事件触发了但窗口不显示，调试极困难
+2. **同窗口内的悬浮面板用 Frame + place**——100% 可靠，因为是父容器的子组件，不存在跨窗口映射问题
+3. **place 定位用 winfo_rootx 差值换算**：控件在屏幕上的绝对坐标减去父容器的绝对坐标，得到 place 需要的相对坐标
+
+---
+
+## 2026-09-12 多对话协作导致的两组 UI 代码问题
+
+### 背景
+用户在多个对话窗口（豆包、Grok、Gemini）之间来回修改 launcher.py，每个对话都基于自己看到的版本改代码。
+
+### 症状
+改了一个 bug，用户说"还是有问题"。排查发现 launcher.py 里存在**两组完全独立的 UI 代码**：
+- 第一组：约 2200-3300 行
+- 第二组：约 3300-4400 行
+- 两组都定义了 `show_scene()`、`_tts_with_text()`、`do_tts()`、`load_voices()` 等同名函数
+- 后定义的函数会覆盖先定义的，所以用户实际用的是第二组
+- 但每次修改只改了一组，另一组还是旧代码
+
+### 教训（协作经验）
+1. **多对话改同一个文件是高危操作**——每个对话都以为自己看到的是最新版本，实际上可能基于旧版本修改，导致代码重复或覆盖
+2. **修改前先 `grep` 确认有几处**：用 `c.count(old_string)` 确认替换了几处，预期替换 N 处就必须看到 N，否则说明有重复代码
+3. **长期建议**：UI 组件应该拆成独立函数/类，避免在一个 5000 行的文件里重复定义两套
+4. **CRLF 文件注意**：launcher.py 是纯 CRLF 文件，Edit 工具直接失败，必须用 Python 补丁脚本（`Path.read_text` → `replace` → `write_text`）修改
+
+---
+
+## 2026-09-12 双击 Ctrl 长按快捷键状态机
+
+### 背景
+ALT+Win 组合键有几率弹出开始菜单（两键同松时第二个 release 漏吞），且在 PowerShell 等应用里 ALT 快捷键冲突多。用户想改成"双击 Ctrl，第二下按住说话"。
+
+### 初版失败
+简单地在 Ctrl 按下事件里判断时间间隔，但**键盘硬件有微秒级抖动/重复码**——按住 Ctrl 不放时 Windows 会重复发送 keydown 事件，导致第一下按下就触发录音。
+
+### 最终状态机
+四个关键状态：
+1. `_dc_first_pressed`：第一次 Ctrl 已按下
+2. `_dc_first_released`：第一次 Ctrl 已物理松开
+3. `_dc_first_press_time` / `_dc_release_time`：时间戳
+4. `_dc_other_key_intervened`：中间有没有按其他键
+
+**判定条件（第二次按下时）**：
+- 距离第一次松开 > 50ms（排除键盘硬件抖动）
+- 距离第一次按下 < 350ms（双击时间窗口）
+- 中间没有按其他键（排除 Ctrl+C / Ctrl+V 等正常操作）
+
+**松开逻辑**：第二次松开时结束录音并发送。第一次松开时只记录时间戳，不触发任何动作。
+
+### 教训
+1. **全局热键必须考虑键盘硬件抖动**——Windows 按住不放会重复发 keydown，不能只看"又收到一个 keydown"就认为是新的按键
+2. **修饰键组合的 release 事件容易丢**——ALT+Win 两键同松时第二个 release 可能被系统吞掉，这是开始菜单弹出的根因
+3. **双击类快捷键必须有"中间按了其他键就取消"的逻辑**——否则 Ctrl+C / Ctrl+V 会被误判为双击
+
+---
+
+## 2026-09-13 PyInstaller 打包坑汇总
+
+### 坑 1：sounddevice / PortAudio DLL 没打包
+**症状**：`OSError: PortAudio library not found`，`cannot load library .../libportaudio64bit.dll: error 0x7e`
+**根因**：`--hidden-import sounddevice` 只告诉 PyInstaller 导入模块，不收集 DLL。
+**修复**：`--collect-binaries sounddevice`（同时收集 lameenc）
+
+### 坑 2：base_library.zip 找不到
+**症状**：`[Errno 2] No such file or directory: '...\_MEIxxxxxx\base_library.zip'`
+**根因**：onefile 模式运行时把所有文件解压到临时目录 `_MEIxxxxxx`，杀毒软件（Windows Defender）把临时解压的文件隔离/删除了。
+**修复**：把 exe 所在文件夹加入杀毒软件白名单排除项。
+
+### 坑 3：Tcl/Tk 找不到
+**症状**：`Can't find a usable init.tcl in the following directories... This probably means that Tcl wasn't installed properly.`
+**根因**：PyInstaller 没有正确收集 Tcl/Tk 运行时文件。
+**建议**：升级 PyInstaller 到最新版本，或用 onedir 模式。
+
+### 最终建议：onedir 模式
+onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇到：
+- 杀毒软件误报/拦截临时解压
+- 各种 DLL/运行时文件收集不全
+- 启动慢（每次都要解压到临时目录）
+
+**onedir 模式（build_onedir.bat）稳定性好很多**：所有文件都在一个文件夹里，不需要临时解压，杀毒软件干扰小。分发时把整个文件夹打成 zip 即可。
+
+---
+
+## 2026-09-13 其他 Tkinter 踩坑记录
+
+### Tkinter font 不支持字体回退
+**症状**：`_tkinter.TclError: expected integer but got "Consolas"`
+**根因**：`font=("Cascadia Code", "Consolas", 8)` 这种写法，Tkinter 把第二个元素 `"Consolas"` 当成 size 参数了。Tkinter 不支持字体回退元组。
+**修复**：只能传一个字体名 `font=("Cascadia Code", 8)`，不要写 fallback 列表。
+
+### Tkinter 高度硬编码同步问题
+改窗口高度时，必须同时改以下所有位置：
+1. 初始 `root.geometry("530x400")` 和 `root.minsize(500, 400)`
+2. 两组 UI 的 `show_scene()` 函数里的 geometry 和 minsize
+3. `_toggle_log()` 里的硬编码 `_h = 520 if scene2 else 400`
+4. 所有 `root.after(120, lambda: root.geometry(...))` 强制回调
+
+漏改任何一处，切换场景或展开日志时高度就会跳变。
+
+### ttk 样式暗色化要点
+- Combobox 暗色：需要同时配置 `fieldbackground`、`foreground`、`arrowcolor`、`selectbackground`
+- RadioButton/Checkbutton 暗色：`background`、`foreground`、`indicatorcolor`、`indicatorbackground`
+- Entry 只读样式：用 `state="readonly"` + 自定义 `ReadOnly.TEntry` 样式（fieldbackground 暗一点、foreground 灰一点）
+- 按钮 disabled 颜色：必须用 `style.map("TButton", background=[("disabled", "#374151")])`，否则禁用时还是亮绿色
+
+
+---
+
+## 2026-09-14 V2.0.1 发布与 GitHub release 维护经验（TK 线）
+
+### zip 发布结构
+- 便携版 zip = PyInstaller onedir 产物整个文件夹 + 根目录放 VoxEcho-extension（扩展 load unpacked 用）
+- 包内 README.txt（英文）+ README_ZH.txt（中文）：说明扩展加载方法；不使用电子书朗读的用户可跳过
+- 未签名 exe：SmartScreen / 杀软会提示，说明文件里要写清"加入白名单即可"
+
+### GitHub release 维护
+- 只留最新版 + 旧大版本（3.1.x 最新 + 2.0.x）；有功能缺陷的旧 release 删除（tag 保留）
+- 发布正文中英双语 + 英文截图（GitHub 面向国际用户）；截图从 tkinter 便携版切 ui_lang=en 截取，不用切系统语言
+- 版本号必须前后端一致（前端 VERSION 常量 + 后端版本 + release tag）
+
+### 发布工具链坑（curl / GitHub API）
+- token 取法：git credential fill（stdin 传 protocol/https + host/github.com），password 行 len=40
+- PowerShell 里 curl --data-binary "@绝对路径" 读不了文件，必须 cd 到文件所在目录用相对路径 @file.json
+- PATCH release body 时，全角括号（3.1.6）和半角 (3.1.6) 是两回事，replace 要两种都处理
+- release body 的截图 URL 用 raw.githubusercontent.com/owner/repo/master/...（branch 名）比 tag 稳：tag 固定后无法再放新文件
+- GitHub repo PATCH 不更新 topics，必须单独 PUT /repos/{owner}/{repo}/topics
+
+---
+
+## 2026-09-14 git 双线结构维护（Tauri 主线 + TK 支线）
+
+### 当前结构
+- master = Tauri 3.1.x 主线（D:\Documents\VoxEcho）
+- tkinter-legacy = TK 2.0.1 支线（D:\Documents\VoxEcho-tk，worktree 关联 D:/Documents/VoxEcho/.git/worktrees/VoxEcho-tk）
+- 每个分支各自维护 README 三语（README 是跟分支走的，不是全项目一份）
+
+### 坑：worktree 指针指向 temp
+- 曾出现 .git 是指针文件（gitdir: D:/temp/voxecho-git），真 git 元数据全在 temp——temp 一清理两端全断
+- 迁移：Move-Item temp 目录到 Documents\VoxEcho\.git，重写两处指针文件；GitHub Desktop / explorer 开着会锁句柄导致失败，先退出/关闭
+- 迁移后 GitHub Desktop 报"找不到仓库"是缓存问题：Remove（别勾 Also move to Trash）→ Add Local Repository 重新挂载
+
+### 远端分支
+- origin/tkinter-legacy 是远端跟踪镜像，不是独立分支，删不了也不该删（等于砍 TK 支线）
+- GitHub 网页分支列表只显示真分支（master + tkinter-legacy），多出来的 origin/* 是 GH Desktop 幽灵缓存
+
+---
+
+## 2026-09-14 隐私决策 + 扩展双端口自适应
+
+### 隐私（已实施）
+- 日志只记错误（网络不通 / model 未触达 / API key 不对 / 排查用），不记录每次转写原文
+- 转写内容不落盘
+- 日志可划选复制（排查时有用）
+
+### VoxEcho-extension 自适应双端口
+- 扩展自动探测本地 bridge：先试 5010（Tauri 线），失败再试 5005（TK 线）——两条线不用来回改配置
+- 扩展版本号不必与 bridge 版本一致
+
+
+---
+
+## 2026-09-15 对话共建回顾：Tauri 3.1.x + TK 2.0.x 经验汇总
+
+> 本对话跨 Tauri 主线与 TK 支线的共建回顾，供后续维护参考。每条 = 背景 → 结论/坑。
+
+## Tauri 线（3.1.x）
+
+### HUD 翻译/确认小面板
+- 面板自适应高度：文本一行就一行高，随文本增长；按钮排顶部、快捷键提醒小字排底部；确认按钮固定右侧
+- 面板固定不可调大小（用户明确要求）
+- CTRL+Enter 在文本框不能换行——不要展示"CTRL+Enter 换行"提示（Tauri/TK 都验证过）
+- 小面板弹出后焦点必须落在文本框末尾，否则短句没法直接回车确认
+- 面板位置锚定任务栏（workarea bottom=1040 之类）；每次改代码要重新验证贴底，容易回退
+- 面板四角透明是老大难：html/body 白底 + Tauri 原生窗口白底都会漏白角
+
+### 焦点恢复与上屏（核心链路）
+- 粘贴前必须恢复前台窗口到录音时的窗口（日志锚：`粘贴前前台窗口`）
+- 焦点没恢复 → 上屏失败，要手动 Ctrl+V；恢复 OK → 正常上屏
+- 静置较久后容易出现反应慢/双上屏——钩子/焦点链路时序问题，改动后需实机验证
+- LLM 空响应（`finish_reason=length` / `content=''`）会导致翻译为空——max_tokens 要够，超长文本要加大
+- 网络不好时 LLM 请求（HTTPSConnectionPool / SSLEOFError）会拖慢整个链路，需重试+超时兜底
+
+### 热键
+- 双击 Ctrl 状态机：防键盘硬件抖动（按住重复发 keydown）、中间按其他键取消（详见 2026-09-12 TK 章节）
+- 3.1.x 验证：双击第二下放开即触发（不用长按）也是可用路径
+- Ctrl+Win 与微信语音转文字快捷键冲突（微信的 Ctrl+Win 失效）——退出 VoxEcho 即恢复，确认是全局钩子抢占
+- Win 键粘滞/键盘全乱：keybd_event 异步 + _ignore_all 恢复太早是根因；最终方案=卸载钩子→模拟按键→重装钩子
+- 用户曾误以为是硬件问题（换电池、重启）——实际是应用钩子，改动后必须实测键盘
+
+### Provider / API Key 弹窗
+- 首次使用 API key 为空时按快捷键 → 自动弹出 Provider 窗口 + tooltip 说明（显示几秒）
+- 弹窗必须置顶跳到最前（否则用户傻等在文本框）
+- 英文界面下，Groq 等海外平台不需要"国内需代理"提示（那是给国内用户看的）
+- 网络好时 Groq 响应比火山快（尤其需要 LLM 时）——用户实测观察
+
+### 无边框 + 透明窗口（大改动，用户最怕）
+- tauri.conf：decorations:false + transparent:true 才能让 CSS 渲染大圆角
+- 四角白边根因：html/body 默认白底 + Tauri 原生窗口白底——html/body/#root 设 transparent + 外层深色基底
+- 最终方案：双层卡片——外层 #040705 不透明基底（p-2.5 rounded-xl）+ 内层实体卡片带阴影，避免 Windows 白角/灰框
+- 拖拽：data-tauri-drag-region + onMouseDown 避开交互元素（button/input/textarea/select）
+- 自定义最小化/关闭按钮放日志按钮上方一行；日志小箭头始终贴右
+- 光标：拖拽区也不该变光标（用户明确：任何地方都保持正常箭头）
+- 透明裁切的直角残留 Windows 上无法彻底消除——用户接受妥协（"累了，就这样吧"）
+
+### 日志与隐私
+- 日志放开划选复制（排查必需，用户反复要求）
+- 日志只记错误（网络不通/model 未触达/API key 不对），不记每次转写原文（隐私）
+- 状态条不要抢最上层（当前界面靠下时会挡住）
+
+### 其他 Tauri 经验
+- 版本号必须前后端一致（前端 VERSION 常量 + 后端版本 + 主界面 + About 弹窗）
+- "退出"语义：用户要求退出=全退（不是隐藏）——避免偷感 + 与别的应用快捷键冲突
+- 自定义快捷键有时要 Save 两次才生效（改后必须验证，主界面显示与实际生效不一致是常见 bug 源）
+- 打包用 tauri build；onefile 单 exe 易触发杀软/缺组件，onedir 更稳
+- 观察：任务管理器常驻两个 voxecho-backend.exe（前后端分离架构，待确认是否预期）
+
+## TK 线（2.0.x）补充
+
+### 翻译窗口（确认原文再翻译）
+- 窗口比 Tauri 版窄；文本一行就只留一行高（自适应）
+- 焦点自动落到原文最后一个字（否则短句没法直接回车）
+- 焦点没落回光标原位 → 上屏失败，要手动 Ctrl+V（与 Tauri 线同源问题）
+- 小面板自身会占一个任务栏位（overrideredirect 方案注意）
+
+## 跨线与对外维护（2026-09-15 补充）
+
+- extension 自适应 5010/5005 双端口（先 Tauri 后 TK）——两条线不用来回改配置
+- git 双线：master=Tauri / tkinter-legacy=TK，worktree 关联，README 各自三语（详见 09-14 git 章节）
+- Release 只留最新 + 旧大版本；截图英文版；正文中英双语（详见 09-14 发布章节）
+- SEO：GitHub 搜索索引主要看 仓库名 + description + topics + README 全文；description/topics 已改为语音助手定位；dictation / read-aloud 是英文高频搜索词（Windows 自带功能就叫 Dictation），中文对应"语音听写"
+- README 语言行只放真实提供的语言（现在 EN/ZH/CHT 三种），不挂死链
