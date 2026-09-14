@@ -2380,6 +2380,10 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - PATCH release body 时，全角括号（3.1.6）和半角 (3.1.6) 是两回事，replace 要两种都处理
 - release body 的截图 URL 用 raw.githubusercontent.com/owner/repo/master/...（branch 名）比 tag 稳：tag 固定后无法再放新文件
 - GitHub repo PATCH 不更新 topics，必须单独 PUT /repos/{owner}/{repo}/topics
+- **git push 显示 "Everything up-to-date" 但远端分支没动（3.1.11 实测）**：本地 ref 缓存偶发——推送后必须 `git ls-remote origin master` 验证远端 HEAD，tag 推送会带上 commit 对象但不会更新分支 ref，master 要单独 push 再验证
+- **Python urllib 上传 40+MB 大文件持续 SSL EOF（_ssl.c:2396），重试无效**：换 `curl.exe --data-binary @文件` 一次成功；PowerShell 下 curl 仍要 cd 到文件目录用相对路径
+- **curl -w "%%{http_code}" 经 Python subprocess 时 %% 不会转义成 %**（那是 shell/printf 的行为）——code 提取会错；直接解析响应体 JSON 判断成功即可
+- **同名 asset 重复上传返回 422 already_exists**——可当"已上传"判断，幂等重试的哨兵
 
 ---
 
@@ -2435,6 +2439,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 静置较久后容易出现反应慢/双上屏——钩子/焦点链路时序问题，改动后需实机验证
 - LLM 空响应（`finish_reason=length` / `content=''`）会导致翻译为空——max_tokens 要够，超长文本要加大
 - 网络不好时 LLM 请求（HTTPSConnectionPool / SSLEOFError）会拖慢整个链路，需重试+超时兜底
+- **ESC 不能无条件补发（3.1.11 核心坑）**：Alt 焦点恢复技巧之后曾无条件模拟 ESC 清理菜单栏——这个 ESC 会误关现代应用浮层：微信被最小化 / Chrome 的 Gemini 侧栏收起 / 豆包搜索框消失。修复：`GetMenu(目标窗口)` 返回非 NULL（确有 Win32 菜单栏，如记事本）才补发 ESC；微信/Chrome/豆包等自绘或现代 UI 不再收到 ESC。Alt 模拟保留（解锁 SetForegroundWindow 仍需）。验证：微信/Chrome/豆包三场景全部正常，记事本行为不变
 
 ### 热键
 - 双击 Ctrl 状态机：防键盘硬件抖动（按住重复发 keydown）、中间按其他键取消（详见 2026-09-12 TK 章节）
