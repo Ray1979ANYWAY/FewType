@@ -2440,6 +2440,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - LLM 空响应（`finish_reason=length` / `content=''`）会导致翻译为空——max_tokens 要够，超长文本要加大
 - 网络不好时 LLM 请求（HTTPSConnectionPool / SSLEOFError）会拖慢整个链路，需重试+超时兜底
 - **ESC 不能无条件补发（3.1.11 核心坑）**：Alt 焦点恢复技巧之后曾无条件模拟 ESC 清理菜单栏——这个 ESC 会误关现代应用浮层：微信被最小化 / Chrome 的 Gemini 侧栏收起 / 豆包搜索框消失。修复：`GetMenu(目标窗口)` 返回非 NULL（确有 Win32 菜单栏，如记事本）才补发 ESC；微信/Chrome/豆包等自绘或现代 UI 不再收到 ESC。Alt 模拟保留（解锁 SetForegroundWindow 仍需）。验证：微信/Chrome/豆包三场景全部正常，记事本行为不变
+- **Alt 模拟会激活自绘菜单栏（3.1.12 根治）**：Chrome/Edge/Firefox 的菜单栏是自绘的，`GetMenu` 返回 NULL → ESC 清理不触发 → Alt 解锁后菜单栏一直开着，Ctrl+V 的 V 被菜单栏吞掉 → Gemini/ChatGPT/GitHub/百度/Google 等网页文本框上屏失败（豆包客户端/记事本成功，因为豆包自绘无菜单、记事本有 HMENU 走 ESC 清理）。过渡方案=按窗口类名名单（Chrome_WidgetWin_1 覆盖 Chromium+Electron、MozillaWindowClass 覆盖 Firefox）走 AttachThreadInput；**最终决策=全量 AttachThreadInput**：任何窗口都不产生 Alt 键、菜单永不激活，从根上消灭这类问题（不可能逐个应用补类名，谁知道什么应用自绘菜单）；fallback 才用 Alt 模拟 + GetMenu 条件 ESC。Electron 应用（GitHub Desktop）菜单是原生 HMENU，旧逻辑本就覆盖——名单/全量对它们均无害
 
 ### 热键
 - 双击 Ctrl 状态机：防键盘硬件抖动（按住重复发 keydown）、中间按其他键取消（详见 2026-09-12 TK 章节）
