@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.0.3"
 APP_NAME = "VoxEcho"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
@@ -1028,6 +1028,109 @@ def _bind_text_menu(widget):
     # macOS 右键是 Button-2
     widget.bind("<Button-2>", show_menu)
     return widget
+
+
+def _open_fullscreen_editor(widget, title):
+    """全屏放大编辑：把文本框内容放进独立的 Toplevel 窗口，用大字号滚动编辑。
+
+    对应 Tauri 版 TTS 面板右下角的 Maximize2「全屏编辑」按钮。
+    - 「✅ 完成」：把编辑结果保存回原文本框并关闭
+    - Esc / 窗口 X：关闭且不保存（避免误触覆盖原文，与原框内容隔离）
+    - 大字号（14px）+ 支持 Ctrl+Z 撤销 + 右键菜单
+    """
+    root_win = widget.winfo_toplevel()
+    top = tk.Toplevel(root_win)
+    top.title(title)
+    top.configure(bg=BG)
+    top.transient(root_win)  # 跟随主窗口
+    # 尺寸 = 主面板当前大小，位置 = 主面板左上角（正好盖住主面板）。
+    # 用 withdraw→geometry→deiconify 三段式：先隐藏窗口再设 geometry，
+    # 最后显示——直接设 geometry 时部分系统 WM 会把窗口重新放回屏幕左上角（实测坑）。
+    top.withdraw()
+    try:
+        root_win.update_idletasks()
+        _rw, _rh = root_win.winfo_width(), root_win.winfo_height()
+        if _rw < 400:  # 主窗口尚未完成渲染时回退到固定尺寸
+            _rw, _rh = 820, 620
+        _rx, _ry = root_win.winfo_rootx(), root_win.winfo_rooty()
+        top.geometry("%dx%d+%d+%d" % (_rw, _rh, _rx, _ry))
+    except Exception:
+        pass
+    top.deiconify()
+    try:
+        top.attributes("-topmost", True)  # 置顶，避免被主窗口盖住
+    except Exception:
+        pass
+
+    # 编辑区：大字号 Text + 滚动条（深色主题与主界面一致）
+    edit_frame = tk.Frame(top, bg=BG)
+    edit_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(12, 6))
+    editor = tk.Text(
+        edit_frame, wrap=tk.WORD, bg=INPUT, fg=TEXT, insertbackground=TEXT,
+        font=("Segoe UI", 14), relief="flat", bd=0, highlightthickness=1,
+        highlightbackground=BORDER, highlightcolor=ACCENT, padx=12, pady=12,
+        undo=True,  # 支持 Ctrl+Z
+    )
+    _bind_text_menu(editor)
+    sb = tk.Scrollbar(edit_frame, width=8, bg=INPUT, troughcolor=BG,
+                      activebackground=ACCENT, relief="flat", bd=0, highlightthickness=0)
+    editor.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    sb.pack(side=tk.RIGHT, fill=tk.Y)
+    sb.config(command=editor.yview)
+    editor.config(yscrollcommand=sb.set)
+
+    _snapshot = widget.get("1.0", "end-1c")  # 打开瞬间的原文快照，供「恢复」回滚
+    editor.insert("1.0", _snapshot)  # 复制原文
+    editor.focus_set()
+
+    def _save_and_close():
+        try:
+            content = editor.get("1.0", "end-1c")
+            widget.delete("1.0", tk.END)
+            widget.insert("1.0", content)  # 同步回原文本框
+        except Exception:
+            pass
+        top.destroy()
+
+    def _restore(_e=None):
+        # 恢复：把编辑器重置为打开瞬间的原文（Ctrl+Z 之外的后悔药）
+        editor.delete("1.0", tk.END)
+        editor.insert("1.0", _snapshot)
+        editor.focus_set()
+
+    def _close_no_save(_e=None):
+        top.destroy()
+
+    top.protocol("WM_DELETE_WINDOW", _close_no_save)  # 点 X = 不保存（可用「恢复」找回原文）
+    top.bind("<Escape>", _close_no_save)
+
+    # 底部操作栏：左提示 + 中「恢复原文」+ 右「完成」主按钮
+    bar = tk.Frame(top, bg=BG)
+    bar.pack(fill=tk.X, padx=12, pady=(0, 12))
+    tk.Label(bar, text=_pd("完成保存回原框；恢复回到打开时原文；Esc/X 放弃", "Done saves back; Restore reverts to the opened text; Esc/X discards"),
+             bg=BG, fg="#9CA3AF", font=("Segoe UI", 9)).pack(side=tk.LEFT)
+    ttk.Button(bar, text=_pd("↺ 恢复原文", "↺ Restore"), style="Muted.TButton",
+               command=_restore).pack(side=tk.LEFT, padx=(10, 0))
+    ttk.Button(bar, text=_pd("✅ 完成", "✅ Done"), style="Primary.TButton",
+               command=_save_and_close).pack(side=tk.RIGHT)
+
+
+def _attach_fullscreen_button(wrap_frame, text_widget, title):
+    """在文本框右下角叠加一个低调的「全屏编辑」小按钮（⤢）。
+
+    对应 Tauri 版 TTS 面板的 Maximize2 按钮：点击进入全屏大字编辑。
+    - place(in_=text_widget) 把按钮锚定在 Text 自身右下角（不遮滚动条）
+    - 悬停时高亮（绿底），平时与输入框底色融合的低调样式
+    """
+    btn = tk.Label(
+        wrap_frame, text="⤢", bg=INPUT, fg="#10B981", font=("Segoe UI Symbol", 9, "bold"),
+        cursor="hand2", padx=2, pady=0,
+    )
+    btn.place(in_=text_widget, relx=1.0, rely=1.0, x=0, y=0, anchor="se")  # 紧贴 Text 右下角
+    btn.bind("<Button-1>", lambda e: _open_fullscreen_editor(text_widget, title))
+    btn.bind("<Enter>", lambda e: btn.configure(bg=ACCENT, fg="#090D0A"))
+    btn.bind("<Leave>", lambda e: btn.configure(bg=INPUT, fg="#10B981"))
+    return btn
 
 
 def _platform_name(key: str) -> str:
@@ -3580,6 +3683,8 @@ def run_gui(test_hook=None):
     text_sb.pack(side=tk.RIGHT, fill=tk.Y)
     text_sb.config(command=text_input.yview)
     text_input.config(yscrollcommand=text_sb.set)
+    # 右下角全屏编辑按钮（对应 Tauri 版 Maximize2）
+    _attach_fullscreen_button(text_wrap, text_input, _pd("输入文本 - 全屏编辑", "Input text - Full-screen edit"))
 
     # 控件区：Grid+Sticky 两列（标签列固定 / 控件列 weight=1 拉伸，右缘与大输入框对齐）
     form_frame = ttk.Frame(scene2)
@@ -3642,6 +3747,8 @@ def run_gui(test_hook=None):
     preview_sb.pack(side=tk.RIGHT, fill=tk.Y)
     preview_sb.config(command=preview_text.yview)
     preview_text.config(yscrollcommand=preview_sb.set)
+    # 右下角全屏编辑按钮（对应 Tauri 版 Maximize2）
+    _attach_fullscreen_button(preview_wrap, preview_text, _pd("输出预览 - 全屏编辑", "Output preview - Full-screen edit"))
 
     btn_row = ttk.Frame(scene2)
     btn_row.pack(fill=tk.X, pady=6)

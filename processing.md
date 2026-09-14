@@ -2490,3 +2490,22 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - Release 只留最新 + 旧大版本；截图英文版；正文中英双语（详见 09-14 发布章节）
 - SEO：GitHub 搜索索引主要看 仓库名 + description + topics + README 全文；description/topics 已改为语音助手定位；dictation / read-aloud 是英文高频搜索词（Windows 自带功能就叫 Dictation），中文对应"语音听写"
 - README 语言行只放真实提供的语言（现在 EN/ZH/CHT 三种），不挂死链
+
+## TK 线 2.0.2 上屏修复（2026-09-15 同步 Tauri）
+
+- 用户实测本地 2.0.1 包确认 ESC 与 Alt 两个问题在 TK 同样存在（微信最小化 / Chrome 侧栏 / 豆包搜索框消失 / 网页文本框上屏失败）
+- 按 Tauri 3.1.12 模板修复（launcher.py _simulate_ctrl_v）：
+  - ESC 改为 GetMenu(目标窗口) 非 NULL 才补发（Win32 菜单栏才需要清），argtypes/restype 需 64 位安全声明
+  - 删掉焦点恢复前的 Alt 模拟，改为 AttachThreadInput 为主、5 次全失败才 fallback Alt
+- 版本 2.0.1 → 2.0.2，PyInstaller onedir 打包，用户实机验证通过后 commit + 发布
+
+## TK 线 2.0.3 TTS 全屏编辑（2026-09-15）
+
+- 需求：把 Tauri 版 TTS 文本框右下角 ⤢ 全屏编辑移植到 TK
+- 三个坑（用户逐轮反馈）：
+  1. **Toplevel 定位不能直接 geometry**：直接设 geometry 会被 Windows 甩到屏幕左上角 → 必须 withdraw() → 读主窗口 geometry 计算位置 → geometry() → deiconify() 三段式，弹窗正好盖住主面板
+  2. **关窗丢文本风险**：打开瞬间快照原文，底部加「↺ 恢复原文」按钮（重置回快照），Esc/X 关闭无心理负担
+  3. **贴角极限**：按钮 place(in_=text_widget, relx=1.0, rely=1.0, anchor='se') + padx 压到 2 —— 剩的缝隙是 Text 自带 8px 内边距（文字显示区离边框固有留白），按钮边框已贴 Text 右下角，属控件几何极限
+- 编辑器本体：14px 大字、undo=True 支持 Ctrl+Z、复用 _bind_text_menu 右键菜单、深色主题、底部栏 = 提示 + 恢复 + 完成 三元素
+- 挂载点：show_scene 里 text_input 与 preview_text 两个 Text
+- 版本 2.0.2 → 2.0.3，测试目录刷新被占用时重试即可（瞬时句柄/杀软扫描）
