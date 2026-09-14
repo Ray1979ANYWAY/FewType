@@ -2384,6 +2384,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - **Python urllib 上传 40+MB 大文件持续 SSL EOF（_ssl.c:2396），重试无效**：换 `curl.exe --data-binary @文件` 一次成功；PowerShell 下 curl 仍要 cd 到文件目录用相对路径
 - **curl -w "%%{http_code}" 经 Python subprocess 时 %% 不会转义成 %**（那是 shell/printf 的行为）——code 提取会错；直接解析响应体 JSON 判断成功即可
 - **同名 asset 重复上传返回 422 already_exists**——可当"已上传"判断，幂等重试的哨兵
+- **PowerShell `Set-Content -Encoding utf8` 会写 UTF-8 BOM（3.1.12 实测）**：用它对 package.json/tauri.conf.json/TS 文件做版本号替换后，vite 的 JSON 解析器不认 BOM → `type: module` 探测失败 → config 被当 CJS → 报假象 "ESM file cannot be loaded by require"（@tailwindcss/vite）+ "Failed to load PostCSS config"。改版本号必须用无 BOM 写入（Python `open(...,'wb')` 或 .NET `UTF8Encoding($false)`）；已中招用 Python strip 前 3 字节 `\xef\xbb\xbf` 修复
 
 ---
 

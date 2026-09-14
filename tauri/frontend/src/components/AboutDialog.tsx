@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 关于弹窗（对应 Tk 版 open_about_dialog）
  * 版本 / GitHub / 赞助 / 技术栈
  * 外链通过 Tauri shell 插件在系统浏览器打开（Tauri 2 会拦截 <a target=_blank>）
@@ -8,7 +8,7 @@ import { Modal } from "./ui";
 import { inTauri } from "../lib/window";
 import { useI18n } from "../i18n";
 
-const VERSION = "3.1.11";
+const VERSION = "3.1.12";
 const GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho";
 const KO_FI_URL = "https://ko-fi.com/rayhu";
 
