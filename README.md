@@ -43,6 +43,13 @@ English · 简体中文 · 繁體中文 — follows the system language on first
 - You bring your own **API key** for the STT / LLM providers.
 - This is an actively maintained hobby project — capabilities may change. Bugs and suggestions are welcome in the [Issues](https://github.com/Ray1979ANYWAY/VoxEcho/issues) tab.
 
+### 🔒 Security & Privacy
+
+- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\com.rayanyway.voxecho\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
+- The release package ships **without any config file**; safe defaults are built in and generated on first launch.
+- Packaging scripts abort with a system-language warning if a config file is detected, so secrets can never sneak into a release build.
+- **The uninstaller deletes your app data (API key included)** automatically.
+
 ### ☕ Support the Project
 
 If you find VoxEcho useful, consider buying me a coffee!

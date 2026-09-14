@@ -50,7 +50,8 @@
         "languages": [
           "SimpChinese",
           "English"
-        ]
+        ],
+        "deleteAppDataOnUninstall": true
       }
     }
   }

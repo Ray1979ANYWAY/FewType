@@ -2,12 +2,15 @@
 """VoxEcho 配置存储层（FastAPI 版）。
 
 从 launcher.py 剥离的 load_config / save_config 逻辑，独立成模块：
-- 配置文件：VoxEcho-bridge/bridge_config.json（与 Tk 版共用，保证迁移期间两版配置互通）
+- 配置文件：%APPDATA%\\VoxEcho-tauri\\bridge_config.json（含 API Key 与风格 Prompt，
+  绝不能放在程序目录——否则打包/复制/转移程序文件夹会带走密钥）
 - 提供 GET 用安全视图（API Key 遮罩）与 POST 用白名单更新
 """
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -27,8 +30,20 @@ def find_engine_dir() -> Path:
     return p.parent.parent
 
 
-def config_path() -> Path:
-    """配置文件路径：打包后位于 exe 旁，源码运行位于引擎目录 engine/ 下。"""
+def config_dir() -> Path:
+    """配置文件目录：%APPDATA%\\com.rayanyway.voxecho（与 Tauri identifier 一致，
+    卸载时 NSIS deleteAppDataOnUninstall 才能一并删除，不留含 Key 的残留）。"""
+    base = os.environ.get("APPDATA") or str(Path.home())
+    d = Path(base) / "com.rayanyway.voxecho"
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return d
+
+
+def _legacy_config_path() -> Path:
+    """旧版配置路径（打包后位于 exe 旁，源码运行位于引擎目录 engine/ 下）。"""
     if getattr(sys, "frozen", False):
         base = Path(sys.executable).resolve().parent
     else:
@@ -36,7 +51,58 @@ def config_path() -> Path:
     return base / "bridge_config.json"
 
 
+def config_path() -> Path:
+    """配置文件路径：%APPDATA%\\com.rayanyway.voxecho（含 API Key，不随程序目录被拖走）。"""
+    return config_dir() / "bridge_config.json"
+
+
 CONFIG_PATH = config_path()
+
+
+def _migrate_legacy_config() -> None:
+    """把旧位置的配置迁到新目录并删除源文件（含 API Key，不能留在任何程序目录）。
+    迁移来源（按顺序）：
+      1) %APPDATA%\\VoxEcho-tauri（上一版 APPDATA 目录名）
+      2) 程序目录 / engine 目录（更早的旧版）
+    迁移后打包、压缩、复制、移动整个程序文件夹都不会带走密钥。"""
+    _base = os.environ.get("APPDATA") or str(Path.home())
+    candidates = [
+        Path(_base) / "VoxEcho-tauri" / "bridge_config.json",  # 上一版 APPDATA 目录
+        _legacy_config_path(),                                   # 程序目录/engine 目录
+    ]
+    _dst = CONFIG_PATH
+    for _src in candidates:
+        try:
+            if _src.exists():
+                if not _dst.exists():
+                    import shutil
+                    shutil.copy2(_src, _dst)
+                try:
+                    _src.unlink()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+
+def _lock_config_file() -> None:
+    """给配置文件加“拒绝删除/移动”ACL（Everyone 拒绝 DELETE）：
+    资源管理器里拖动/删除会提示“拒绝访问”（提示语言跟随系统）。
+    复制仍允许——Windows 没有“复制时弹警告”的机制；真正防泄露靠 config 不在程序目录。
+    注意：因此 save_config 不能再用 tmp.replace（replace 需要 DELETE 权限），改直接 write_text。"""
+    try:
+        p = CONFIG_PATH
+        if not p.exists():
+            return
+        subprocess.run(["icacls", str(p), "/deny", "*S-1-1-0:(DE)"],
+                       capture_output=True, timeout=10)
+    except Exception:
+        pass
+
+
+# 迁移旧版程序目录里的 config（须在 load_config 首次调用前完成）
+_migrate_legacy_config()
+_lock_config_file()
 
 # 默认配置（与 launcher.load_config 保持一致，另补全 Tk 版实际使用的字段）
 DEFAULTS: dict = {
@@ -132,12 +198,10 @@ def load_config() -> dict:
 
 
 def save_config(cfg: dict) -> bool:
-    """写入配置（原子写：先写临时文件再替换）。失败返回 False。"""
+    """写入配置（直接写。不能用 tmp.replace——文件带“拒绝删除”ACL，replace 需要 DELETE 权限）。"""
     try:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tmp = CONFIG_PATH.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(CONFIG_PATH)
+        CONFIG_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
         return True
     except Exception:
         return False

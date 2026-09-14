@@ -2492,3 +2492,26 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - Release 只留最新 + 旧大版本；截图英文版；正文中英双语（详见 09-14 发布章节）
 - SEO：GitHub 搜索索引主要看 仓库名 + description + topics + README 全文；description/topics 已改为语音助手定位；dictation / read-aloud 是英文高频搜索词（Windows 自带功能就叫 Dictation），中文对应"语音听写"
 - README 语言行只放真实提供的语言（现在 EN/ZH/CHT 三种），不挂死链
+
+
+## 2026-09-15 配置安全改造：config 迁出程序目录（Tauri 线）
+
+### 背景
+- 本地 bridge_config.json 含真实 API Key + 风格 Prompt；程序目录 / 源码目录一旦被复制、压缩、转移就会带走密钥（engine/bridge_config.json 实测含 key）
+- 用户实测确认：压缩/复制外层文件夹（D:\Documents）会带走 key
+
+### 方案（与 TK 线同步）
+- config 一律迁到 %APPDATA%\com.rayanyway.voxecho\bridge_config.json（目录名 = identifier，卸载可删到）；程序目录不存任何配置
+- 启动自动迁移旧位置（程序目录 / engine 目录 / 旧 APPDATA 目录 VoxEcho-tauri）并删除源文件
+- 发布包不再带 config；默认风格（Karwai Wong）内置在 DEFAULTS，首次启动自动生成
+- 打包脚本递归扫描，发现 config 即中止 + 系统语言警告
+- ACL：Everyone DENY DELETE（拦移动/删除，非管理员有效）；复制拦不住（Windows 无此机制）；管理员可绕过（SeBackupPrivilege）——主防线是"源头无文件"
+
+### 坑
+- **save_config 不能用 tmp.replace**：文件带 DENY DELETE ACL 后，replace 需要 DELETE 权限会失败 → 改直接 write_text
+- **NSIS deleteAppDataOnUninstall 删的是 %APPDATA%\<identifier>**：config 目录名必须与 identifier 一致，卸载时才能删到
+- 管理员账户实测可绕过 ACL 删除（删除测试时误删过 APPDATA config，用读到的原内容完整恢复）
+- 前端的 Rust/JS 不直接读配置文件，改 config_store.py 一处全链路生效
+
+### 卸载
+- tauri.conf.json: bundle.windows.nsis.deleteAppDataOnUninstall = true（卸载自动删 app data，含 key）

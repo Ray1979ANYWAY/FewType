@@ -43,6 +43,13 @@ English · 简体中文 · 繁體中文——首次启动跟随系统语言，�
 - 需要自备 **API Key**（STT / LLM 服务商）。
 - 这是一个活跃维护的个人项目——能力可能随版本变化。Bug 与建议欢迎提交到 [Issues](https://github.com/Ray1979ANYWAY/VoxEcho/issues)。
 
+### 🔒 安全与隐私
+
+- **你的 API Key 与风格 Prompt 永不存放在程序目录**——统一保存在 `%APPDATA%\com.rayanyway.voxecho\bridge_config.json`。复制、压缩、移动程序文件夹（或本仓库）都不会带走任何密钥。
+- 发布包**不含任何配置文件**；内置安全默认值，首次启动自动生成。
+- 打包脚本若检测到配置文件会以系统语言弹出警告并中止，密钥不可能混入发布包。
+- **卸载时自动删除应用数据（含 API Key）**。
+
 ### ☕ 支持项目
 
 如果 VoxEcho 对你有用，请考虑请我喝杯咖啡！
