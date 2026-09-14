@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.2"
 APP_NAME = "VoxEcho"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
@@ -5063,11 +5063,32 @@ def run_gui(test_hook=None):
         # 1. 卸载钩子（完全消除钩子与模拟按键的竞态）
         if hook_obj is not None:
             hook_obj.stop()
-        # 1.2 清理 ALT + 发 ESC（ALT KEYUP 和 ESC 不会弹开始菜单，可以在 Ctrl down 前做）
+        # 1.2 清理 ALT + 按需发 ESC：
+        # - ALT KEYUP：只释放用户可能卡住的 ALT（纯释放，无副作用）
+        # - ESC：仅在目标窗口【确有 Win32 菜单栏】（GetMenu 非 NULL，如记事本）时才发，
+        #   用于关闭 Alt 激活的菜单栏，避免后续 Ctrl+V 的 'V' 被菜单栏当作助记键吃掉。
+        #   无条件发 ESC 会误关现代应用浮层：微信被最小化 / Chrome 侧栏收起 / 豆包搜索框消失
+        #   （Tauri 3.1.11 同款坑，用户实测 2.0 同样中招）。
+        #   自绘菜单应用（Chrome/Firefox/Electron）GetMenu 返回 NULL 且下面焦点恢复
+        #   不再模拟 Alt（见 1.5），菜单根本不会被激活，无需也不该发 ESC。
         try:
+            # GetMenu 需要 64 位安全的句柄参数声明（不设 argtypes 会按 32 位截断）
+            try:
+                user32.GetMenu.argtypes = [ctypes.c_void_p]
+                user32.GetMenu.restype = ctypes.c_void_p
+            except Exception:
+                pass
             user32.keybd_event(VK_MENU, 0, KEYUP, 0)  # ALT KEYUP（用户先按 ALT 时 ALT 卡住）
-            user32.keybd_event(0x1B, 0, 0, 0)  # ESC down
-            user32.keybd_event(0x1B, 0, KEYUP, 0)  # ESC up（关闭可能弹出的菜单）
+            _need_esc = False
+            try:
+                _esc_tgt = _stt_target.get("hwnd", 0)
+                if _esc_tgt and user32.GetMenu(_esc_tgt):
+                    _need_esc = True
+            except Exception:
+                pass
+            if _need_esc:
+                user32.keybd_event(0x1B, 0, 0, 0)  # ESC down
+                user32.keybd_event(0x1B, 0, KEYUP, 0)  # ESC up（清理 Alt 激活的菜单栏）
             time.sleep(0.03)
         except Exception:
             pass
@@ -5091,26 +5112,47 @@ def run_gui(test_hook=None):
                 if target_hwnd:
                     fg_thread = _user32.GetWindowThreadProcessId(target_hwnd, None)
                     cur_thread = _kernel32.GetCurrentThreadId()
-                    # 模拟 ALT 按下/释放：让 Windows 认为本进程有用户输入，
-                    # 解锁 SetForegroundWindow 权限（确认窗口刚关闭后前台被系统接管）
-                    try:
-                        _user32.keybd_event(0x12, 0, 0, 0)
-                        _user32.keybd_event(0x12, 0, 0x0002, 0)
-                        time.sleep(0.03)
-                    except Exception:
-                        pass
+                    # 不再模拟 ALT 解锁（旧逻辑）——Alt 按下/抬起会激活 Chrome/Firefox/Electron
+                    # 的自绘菜单栏（这些窗口 GetMenu 返回 NULL，上面 1.2 的 ESC 判定不触发），
+                    # 菜单栏一直开着会吞掉 Ctrl+V 的 'V' → Gemini/ChatGPT/GitHub/百度/Google
+                    # 等网页文本框上屏失败（Tauri 3.1.12 同款坑，用户实测 2.0 同样中招）。
+                    # 改用 AttachThreadInput：让本线程临时共享前台线程的输入队列，
+                    # Windows 即认为本进程有前台资格，SetForegroundWindow 不再被前台锁定拒绝，
+                    # 全程不产生任何按键事件，菜单栏永不激活。
                     # 重试直到焦点真正落到目标窗口（最多 5 次），失败也不静默继续
                     for _attempt in range(5):
-                        _user32.AttachThreadInput(cur_thread, fg_thread, True)
-                        _user32.BringWindowToTop(target_hwnd)
-                        _user32.SetForegroundWindow(target_hwnd)
-                        _user32.AttachThreadInput(cur_thread, fg_thread, False)
+                        _attached = False
+                        try:
+                            _attached = bool(_user32.AttachThreadInput(cur_thread, fg_thread, True))
+                        except Exception:
+                            _attached = False
+                        try:
+                            _user32.BringWindowToTop(target_hwnd)
+                            _user32.SetForegroundWindow(target_hwnd)
+                        except Exception:
+                            pass
+                        if _attached:
+                            try:
+                                _user32.AttachThreadInput(cur_thread, fg_thread, False)
+                            except Exception:
+                                pass
                         time.sleep(0.08)
                         if _user32.GetForegroundWindow() == target_hwnd:
                             ui_log("commit-focus: ok attempt=%d" % _attempt)
                             _focus_dbg("commit-focus OK attempt=%d" % _attempt)
                             break
                     else:
+                        # AttachThreadInput 不可用 / 5 次均被拒：fallback 旧逻辑（模拟 ALT 解锁），
+                        # 仅极端情况走到，对自绘菜单应用可能仍失败，但总比焦点不恢复好
+                        try:
+                            _user32.keybd_event(0x12, 0, 0, 0)
+                            _user32.keybd_event(0x12, 0, 0x0002, 0)
+                            time.sleep(0.03)
+                            _user32.BringWindowToTop(target_hwnd)
+                            _user32.SetForegroundWindow(target_hwnd)
+                            time.sleep(0.08)
+                        except Exception:
+                            pass
                         ui_log("commit-focus: FAILED all attempts, fg=%s" % _user32.GetForegroundWindow())
                         _focus_dbg("commit-focus FAILED fg=%s" % _user32.GetForegroundWindow())
         except Exception as e:
