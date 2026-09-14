@@ -8,10 +8,10 @@ Voice typing (STT), ebook reading, long-text TTS and translation in one free Win
 
 ### ✨ Key Features
 
-- **Voice Typing (STT)** — Press the hotkey, speak, and the text lands right where your cursor is — in any window. Verbatim mode faithfully records exactly what you said, no LLM rewriting.
+- **Voice Typing / Dictation (STT)** — Press the hotkey, speak, and the text lands right where your cursor is — in any window. Verbatim mode faithfully records exactly what you said, no LLM rewriting.
 - **Translate & Paste** — Confirm the original text, translate it, and paste it straight into any window. Optional translation styles (e.g. the "Karwai Wong" flavor) for a bit of character.
 - **Long-text TTS** — Type or paste long text and generate natural neural speech with per-line preview, then export audio files.
-- **E-book Reading** — The companion extension adds natural TTS playback to web e-book readers: Google Play Books & Koodo Reader, with auto-paging and visual text sync.
+- **E-book Read-aloud** — The companion extension adds natural TTS read-aloud playback to web e-book readers: Google Play Books & Koodo Reader, with auto-paging and visual text sync.
 - **Multiple Providers** — Volcengine, Groq and more for STT / LLM / TTS; a fast provider when the network is good, a reliable one when it isn't.
 - **Privacy-minded** — Logs keep errors only; voice transcripts are never recorded.
 
