@@ -140,61 +140,29 @@ def _bring_app_to_front() -> None:
         logger.debug("bring app to front failed", exc_info=True)
 
 
-_ALT_MENU_APP_CLASSES = {
-    # Chromium 系：Chrome / Edge / 所有 Electron 应用（VS Code、Slack、Discord、Notion…）
-    "Chrome_WidgetWin_1",
-    "Chrome_WidgetWin_0",
-    # Firefox：Alt 同样激活自绘菜单栏
-    "MozillaWindowClass",
-}
-
-
-def _is_alt_menu_app(hwnd: int) -> bool:
-    """目标窗口是否属于「Alt 会激活自绘菜单栏」的应用。
-
-    Alt 模拟（解锁前台锁定）对这类窗口有副作用：激活的自绘菜单栏不在 Win32
-    HMENU 体系里（GetMenu 返回 NULL），旧的「GetMenu 非 NULL 才发 ESC 清理」
-    不会触发，Ctrl+V 的 V 会被菜单栏吞掉 → 上屏失败。
-    实测：Gemini/ChatGPT/GitHub/百度/Google 等 Chrome 网页文本框全部失败（2026-09-15）。
-    """
-    try:
-        buf = ctypes.create_unicode_buffer(64)
-        user32.GetClassNameW(hwnd, buf, 64)
-        return buf.value in _ALT_MENU_APP_CLASSES
-    except Exception:  # noqa: BLE001
-        return False
-
-
 def _restore_foreground(hwnd: int) -> None:
     """把 hwnd 恢复为前台窗口（解锁 Windows 前台锁定）。
 
-    - Alt 自绘菜单应用（Chrome/Edge/Electron/Firefox）：用 AttachThreadInput 解锁——
-      不产生任何按键事件，不会激活自绘菜单栏，Ctrl+V 直达文本框。
-    - 其他窗口：Alt 模拟 + GetMenu 条件 ESC（3.1.11 已验证，行为不变）。
+    全量 AttachThreadInput：不产生任何按键事件，任何应用都不会被 Alt 激活菜单栏
+    ——Chrome/Firefox 自绘菜单、Electron 原生菜单、Win32 菜单应用全部免疫，
+    从根上消灭「Alt 模拟吞掉 Ctrl+V」这一类问题（用户实测 Gemini/ChatGPT/GitHub/
+    百度/Google 等网页文本框上屏失败，2026-09-15）。
+    仅当 AttachThreadInput 不可用 / SetForegroundWindow 被拒时才 fallback 到
+    Alt 模拟 + GetMenu 条件 ESC（3.1.11 已验证路径，作兜底）。
     """
-    if _is_alt_menu_app(hwnd):
-        cur_tid = kernel32.GetCurrentThreadId()
-        fg = user32.GetForegroundWindow()
-        fg_tid = user32.GetWindowThreadProcessId(fg, None) if fg else 0
-        attached = False
-        if fg_tid and fg_tid != cur_tid:
-            attached = bool(user32.AttachThreadInput(cur_tid, fg_tid, True))
-        ok = user32.SetForegroundWindow(hwnd)
-        time.sleep(0.08)
-        if attached:
-            user32.AttachThreadInput(cur_tid, fg_tid, False)
-        if ok:
-            return
-        # AttachThreadInput 不可用 / SetForegroundWindow 被拒：fallback Alt 模拟（与旧逻辑一致）
-        user32.keybd_event(VK_MENU, 0, 0, 0)
-        user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
-        user32.SetForegroundWindow(hwnd)
-        time.sleep(0.08)
-        if user32.GetMenu(hwnd):
-            user32.keybd_event(VK_ESCAPE, 0, 0, 0)
-            user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
+    cur_tid = kernel32.GetCurrentThreadId()
+    fg = user32.GetForegroundWindow()
+    fg_tid = user32.GetWindowThreadProcessId(fg, None) if fg else 0
+    attached = False
+    if fg_tid and fg_tid != cur_tid:
+        attached = bool(user32.AttachThreadInput(cur_tid, fg_tid, True))
+    ok = user32.SetForegroundWindow(hwnd)
+    time.sleep(0.08)
+    if attached:
+        user32.AttachThreadInput(cur_tid, fg_tid, False)
+    if ok:
         return
-    # 非 Alt 自绘菜单应用：Alt 模拟解锁 + GetMenu 条件 ESC（3.1.11 逻辑原样）
+    # fallback：Alt 模拟解锁 + GetMenu 条件 ESC（原逻辑）
     user32.keybd_event(VK_MENU, 0, 0, 0)
     user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
     user32.SetForegroundWindow(hwnd)
