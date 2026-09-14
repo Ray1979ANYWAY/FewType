@@ -324,11 +324,13 @@ class WinHotkey:
 
         else:
             # ---- 其他键 ----
-            # 录音期间（含双击候选期）按 Win 键：吞掉，防止开始菜单弹出抢焦点。
+            # 录音中按 Win 键：吞掉，防止开始菜单弹出抢焦点。
             # 焦点一丢，上屏就贴到搜索栏去了（用户实测 Cortana 窗口）。
-            # 非录音期正常放行，Win+E / Win+D 等原生快捷键完全不受影响。
+            # 【候选期不吞 Win】：双击状态机在"第一次 Ctrl 按下"后就进入候选态，
+            # 而 Ctrl+Win 组合键（微信等应用）总是 Ctrl 先到 → Win 必被误吞。
+            # 只有真正录音中才吞 Win；其余时刻（含候选期）一律放行。
             if vk in (0x5B, 0x5C):  # Win 左右
-                if self._dc_first_pressed or self._dc_recording:
+                if self._dc_recording:
                     return True  # 吞掉 Win 按下/松开，系统感知不到 Win 被按过
                 return False
             # 忽略修饰键本身的切换码（shift/ctrl/alt），防止修饰键干扰双击检测
