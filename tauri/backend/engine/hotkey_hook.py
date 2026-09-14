@@ -11,8 +11,11 @@ LL 钩子 return 1 只吞掉该按键本身，监听持续有效。
 - 组合激活/录音期间，成员键的按下+释放都被吞掉（系统不知道组合键被按过，防 Win 键弹系统 UI）
 """
 import ctypes
+import logging
 import time
 from ctypes import wintypes
+
+logger = logging.getLogger("voxecho.hotkey")
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -278,6 +281,9 @@ class WinHotkey:
 
                 if (0.05 < time_since_release) and (time_since_first_press < 0.35) and not self._dc_other_key_intervened:
                     # 确认是真正的第二次双击长按！
+                    logger.info(
+                        f"[hook-diag] 双击成立: press_dt={time_since_first_press*1000:.0f}ms "
+                        f"rel_dt={time_since_release*1000:.0f}ms → RECORDING")
                     self._dc_recording = True
                     self.rec = True
                     try:
@@ -287,6 +293,10 @@ class WinHotkey:
                     return True  # 吞掉第二次按下
                 else:
                     # 不满足双击条件（太快/太慢/中间有其他键），重置为新的"第一次按下"
+                    logger.info(
+                        f"[hook-diag] 双击校验失败: press_dt={time_since_first_press*1000:.0f}ms "
+                        f"rel_dt={time_since_release*1000:.0f}ms "
+                        f"intervened={self._dc_other_key_intervened} → 重置为第一次")
                     self._dc_first_pressed = True
                     self._dc_first_released = False
                     self._dc_first_press_time = now
@@ -298,6 +308,7 @@ class WinHotkey:
             # ---- Ctrl 松开 ----
             if self._dc_recording:
                 # 【第二次松开】结束录音
+                logger.info("[hook-diag] 第二下松开 → 结束录音/上屏")
                 self._dc_recording = False
                 self.rec = False
                 self._dc_first_pressed = False
@@ -330,6 +341,11 @@ class WinHotkey:
             # 而 Ctrl+Win 组合键（微信等应用）总是 Ctrl 先到 → Win 必被误吞。
             # 只有真正录音中才吞 Win；其余时刻（含候选期）一律放行。
             if vk in (0x5B, 0x5C):  # Win 左右
+                logger.info(
+                    f"[hook-diag] Win {'down' if down else 'up'} "
+                    f"rec={self._dc_recording} first={self._dc_first_pressed} "
+                    f"rel={self._dc_first_released} → "
+                    f"{'SWALLOW' if self._dc_recording else 'PASS'}")
                 if self._dc_recording:
                     return True  # 吞掉 Win 按下/松开，系统感知不到 Win 被按过
                 return False

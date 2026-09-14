@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 左侧极简 Icon 侧边栏（Spokenly 风格）
  * 语音输入 / 电子书朗读 / 长文本 TTS / 设置
  */
@@ -54,7 +54,7 @@ export default function Sidebar({
       {/* 底部版本 */}
       <div className="flex flex-col items-center gap-1 text-[10.35px] text-muted/60">
         <span>VoxEcho</span>
-        <span>V3.1.9</span>
+        <span>V3.1.10</span>
       </div>
     </aside>
   );
