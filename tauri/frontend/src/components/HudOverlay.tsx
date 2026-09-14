@@ -97,6 +97,8 @@ export default function HudOverlay() {
       const win = getCurrentWindow();
       winRef.current = win;
       try {
+        // 状态条必须置顶：当前窗口靠下时也不会被遮挡（always-on-top）
+        await win.setAlwaysOnTop(true).catch(() => {});
         await win.setIgnoreCursorEvents(true);
         // 后端取主显示器工作区（排除任务栏），胶囊贴在工作区底部居中
         let wa = { left: 0, top: 0, right: 0, bottom: 0 };
