@@ -43,6 +43,9 @@ VK_RWIN = 0x5C
 VK_ESCAPE = 0x1B
 WM_QUIT = 0x0012
 
+# GetMenu：判断目标窗口是否有 Win32 菜单栏（决定是否补发 Esc 清理 Alt 激活的菜单）
+user32.GetMenu.argtypes = [wintypes.HWND]
+user32.GetMenu.restype = ctypes.c_void_p
 # PeekMessageW：消息循环轮询（GetMessageW 会永久阻塞，导致 rebuild/stop 指令无法及时执行）
 user32.PeekMessageW.argtypes = [ctypes.POINTER(wintypes.MSG), wintypes.HWND, wintypes.UINT, wintypes.UINT, wintypes.UINT]
 user32.PeekMessageW.restype = wintypes.BOOL
@@ -375,9 +378,12 @@ class GlobalHotkeyService:
                     time.sleep(0.08)
                     # ALT 按下/抬起会激活目标窗口的菜单栏（记事本等 Win32 菜单应用），
                     # 后续模拟 Ctrl+V 的 'V' 会被菜单栏当作助记键吃掉（等效 Alt+V 打开"查看"菜单）。
-                    # 补发一次 ESC：菜单栏激活时 ESC 仅关闭菜单栏，不产生其他副作用。
-                    user32.keybd_event(VK_ESCAPE, 0, 0, 0)
-                    user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
+                    # 只在目标窗口【确有 Win32 菜单栏】时才补发 ESC 清理菜单栏；
+                    # 微信/Chrome/豆包等自绘或现代 UI 无 Win32 菜单（GetMenu 返回 NULL），
+                    # 补发 ESC 会关闭其搜索框/侧栏/最小化窗口（用户实测三个场景都中招）。
+                    if user32.GetMenu(self._prev_window):
+                        user32.keybd_event(VK_ESCAPE, 0, 0, 0)
+                        user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
                     time.sleep(0.02)
                 except Exception as e:  # noqa: BLE001
                     logger.error(f"[debug] 恢复前台窗口失败: {e}")
