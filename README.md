@@ -50,6 +50,13 @@ VoxEcho is not code-signed yet, so you may run into the following when installin
 
 The source code is open (MIT licensed), so you're welcome to review it before running.
 
+### 🔒 Security & Privacy
+
+- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\VoxEcho\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
+- The release package ships **without any config file**; safe defaults are built in and generated on first launch.
+- Packaging scripts abort with a system-language warning if a config file is detected, so secrets can never sneak into a release build.
+- **Uninstall**: run `uninstall.bat` in the program folder (removes local config, API key included), or manually delete the program folder and `%APPDATA%\VoxEcho`.
+
 ### ☕ Support the Project
 
 If you find VoxEcho helpful, consider buying me a coffee!

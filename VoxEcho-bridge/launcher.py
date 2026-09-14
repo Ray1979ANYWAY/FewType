@@ -104,6 +104,58 @@ GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho"
 KO_FI_ICON_B64 = "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAD1ElEQVR4nJWUX2gcRRzHP/Nn9/bucneStA1tqq3RmFBCHwotFrFFVIJ5qLVQFCwoKFTsg6IUH0sf9FFQUbAKIlKQ9sEHY+tTiyL+qWhQLFaM2pimtsnlrpfby93e7szIXkwaJRZdmIednfnu5zu/7/yEc04IIRzA4ffDUdCjzpqcMUZwo0eCUtoIqc7WquUPjh3sWzhyxMl0k3jmnWrJC/zjSmdGhZAgbqy1/LgOB9a0v49a7Udeeaz4ozhy1un5S/Njhe7iSH2uZsR/FVvWdGSLJdVqhJPCsEOH0/P3+0HXSL0ynwgp9f9SS+0JQatei4Ou0qZWIzykHfJBIaUTcB3NORw2Xb4aU2e+czRLM0KouN12ztk9GlywcqdzFu35SJ3t2FmdCkx7AWNMh3AFbCa1aFeKeX6Wyuxl6pe+Qet/noDAOYNTObo3byeXzZIk8QocYbVzi68pjfZ9KrOX6K2d5tmHt5PNFzo0SxTpmnSUy2XePXWSxq37yGZ87F+KDidWIDiEDqhPfs7RQ/exYdPgvxaifwCazQWOfTHBmm07qc9dW/6mU8fCLQ5nDPnAxw/yWGsXc6bUsiO3VBJjuGlNHzM/f4RpXKZveOS6oJEBkZa0vALa0zTxsSZBpgZSsfIUjL0OPX2I6hXsthHk8C6isEr54jgiDhHSo3/HHuJWA702/JVSZHHhDDbbQ649hc7vAqmgGcJL++HCV5DNQ9KGU2/Ca19jlKR7wxY2bNlNvTy5fLm00Rny8RS3XTnNwNyXrK//hHjxBDz0PGL4bggrUOxetB/kYW4Grl1F+AEL1WnmZyaQKnPdciVYT62rn3Ol3eSFIfjuLV4Y+oPimfdw336MuGMHnP8MNg7C3DTc+zgM3ElmfBxjE8LyJIP3HCSOkk7YtbJtgjiDjKqIbDe/qV6aex+lWCjA1Ytw5RfYuQ/6t3bOET/bIUniFoO7n+CW4buIwrBTUKRIqyxxQjorFApL4CK8hSomCHC9mxG9mxe9NOZBZ7DtNk5pPM8jiSokbYM1MVJ7nWslpXBn0iSkkZVS0nI5ZmZnUJ6X/g21NPJFlJR4vo9Skt+nptG5NQhsmmCrvUzaVT8Vh9+eLSQZ/1y2UByKGvW4GUXKTpzkge3r6CqUOhf3bzm0lnKlxth4zNqtewVJZLwgr20cNy1mW2ftc8dbQ8rjQ60zt6cbmq2IyvSFVbuCswYvKLJ24wCYCKkzOBvX4qh54OUDpTGRtu2jR4V96o2JdYWem592Jh5FiJzn51KiVbuts0kaYie0Z5TWn7RqlWOvPrn+h/0nnPoTApGxu3uuaQMAAAAASUVORK5CYII="
 
 # ---------------------------------------------------------------------------
+# 配置目录（安全关键）：bridge_config.json 含 API Key 与风格 Prompt，
+# 绝不能放在程序目录——否则打包/压缩/复制/转移程序文件夹会带走密钥。
+# ---------------------------------------------------------------------------
+
+def config_dir() -> Path:
+    """配置文件目录：%APPDATA%\\VoxEcho（源码 / frozen 统一）。"""
+    base = os.environ.get("APPDATA") or str(Path.home())
+    d = Path(base) / "VoxEcho"
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return d
+
+
+def _migrate_legacy_config() -> None:
+    """旧版把 bridge_config.json 存在程序目录——启动时迁移到 %APPDATA%\\VoxEcho 并删除源文件。
+    迁移后打包、压缩、复制、移动整个程序文件夹都不会带走含 API Key 的配置。"""
+    try:
+        if getattr(sys, "frozen", False):
+            _src = Path(sys.executable).resolve().parent / "bridge_config.json"
+        else:
+            _src = Path(__file__).resolve().parent / "bridge_config.json"
+        _dst = config_dir() / "bridge_config.json"
+        if _src.exists():
+            if not _dst.exists():
+                import shutil
+                shutil.copy2(_src, _dst)
+            try:
+                _src.unlink()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _lock_config_file() -> None:
+    """给配置文件加“拒绝删除/移动”ACL（Everyone 拒绝 DELETE）：
+    资源管理器里拖动/删除会提示“拒绝访问”（提示语言跟随系统）。
+    复制仍允许——Windows 没有“复制时弹警告”的机制；真正防泄露靠 config 不在程序目录。"""
+    try:
+        p = config_dir() / "bridge_config.json"
+        if not p.exists():
+            return
+        import subprocess
+        subprocess.run(["icacls", str(p), "/deny", "*S-1-1-0:(DE)"],
+                       capture_output=True, timeout=10)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # i18n
 # ---------------------------------------------------------------------------
 
@@ -112,11 +164,7 @@ def detect_ui_lang() -> str:
     优先读取配置文件中的 ui_lang（用户手动选择），否则从系统语言检测。"""
     # 优先读取用户在 UI 中选择的语言（保存于 bridge_config.json 的 ui_lang 字段）
     try:
-        if getattr(sys, "frozen", False):
-            _cfg_dir = Path(sys.executable).resolve().parent
-        else:
-            _cfg_dir = Path(__file__).resolve().parent
-        _cfg_path = _cfg_dir / "bridge_config.json"
+        _cfg_path = config_dir() / "bridge_config.json"
         if _cfg_path.exists():
             _data = json.loads(_cfg_path.read_text(encoding="utf-8"))
             if _data.get("ui_lang") in ("zh-CN", "zh-TW", "en"):
@@ -142,6 +190,10 @@ def detect_ui_lang() -> str:
             return "zh-CN"
     return "en"
 
+
+# 迁移旧版程序目录里的 config（须在 _LANG 之前完成，才能读到 ui_lang）
+_migrate_legacy_config()
+_lock_config_file()
 
 _LANG = detect_ui_lang()
 
@@ -436,7 +488,8 @@ def resource_path(*parts: str) -> Path:
 
 
 APP_DIR = app_dir()
-CONFIG_PATH = APP_DIR / "bridge_config.json"
+# 配置放 %APPDATA%\VoxEcho（含 API Key，绝不能随程序目录被拖走）
+CONFIG_PATH = config_dir() / "bridge_config.json"
 log_queue: "queue.Queue[str]" = queue.Queue()
 
 
@@ -489,6 +542,27 @@ def load_config() -> dict:
             "base_url": "",
         },
         "tts_output_dir": "",
+        # 默认风格内置（发布包不带 bridge_config.json，首次运行即有）
+        "stt_styles": [
+            {
+                "name": "Karwai Wong style",
+                "prompt": (
+                    "Role: You are a scriptwriter specializing in Wong Kar-wai's signature cinematic "
+                    "monologue style.\n\nTask: Rewrite the user's input into a reflective, poetic, and "
+                    "atmospheric monologue reminiscent of classic Hong Kong cinema (e.g., Chungking Express, "
+                    "In the Mood for Love).\n\nStyle Guidelines:\n1. Temporal Anchors: Frequently frame "
+                    "thoughts around ultra-specific timestamps, precise distances, or shelf-life expiration "
+                    "dates (e.g., \"At 0.01mm apart,\" \"57 minutes past midnight,\" \"Canned pineapples "
+                    "expiring on May 1st\").\n2. Sensory & Visual Imagery: Evoke neon lights, rain-slicked "
+                    "streets, lingering smoke, retro songs, and quiet solitary moments.\n3. Tone: Melancholic, "
+                    "nostalgic, detached yet emotionally deeply yearning. Use short, rhythmic sentences with "
+                    "reflective pauses.\n4. Core Retention: Keep the essential meaning or main event from the "
+                    "original speech, but reframe it as a memory or interior monologue.\n\nOutput Constraint:\n"
+                    "Output ONLY the final polished text in the requested target language. Do NOT add meta "
+                    "commentary, markdown formatting, or cinematic scene directions (like [Camera cuts])."
+                ),
+            }
+        ],
     }
     if CONFIG_PATH.exists():
         try:

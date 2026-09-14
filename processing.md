@@ -2509,3 +2509,22 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 编辑器本体：14px 大字、undo=True 支持 Ctrl+Z、复用 _bind_text_menu 右键菜单、深色主题、底部栏 = 提示 + 恢复 + 完成 三元素
 - 挂载点：show_scene 里 text_input 与 preview_text 两个 Text
 - 版本 2.0.2 → 2.0.3，测试目录刷新被占用时重试即可（瞬时句柄/杀软扫描）
+
+
+## TK 线配置安全改造（2026-09-15，随 2.0.x 发布）
+
+### 背景
+- launcher.py 原把 bridge_config.json 放在程序目录（APP_DIR），含 API Key 与风格 Prompt；复制/压缩/转移程序文件夹即泄露
+- 用户测试目录实测出现过含 key 的 config（旧版程序自动写入）——已清理
+
+### 方案（与 Tauri 线同步）
+- config 迁到 %APPDATA%\VoxEcho\bridge_config.json（launcher.py config_dir / _migrate_legacy_config / _lock_config_file）
+- 启动自动迁移旧位置（程序目录）并删除源文件；ui_lang 读取也走新路径
+- Karwai Wong 默认风格内置到 load_config defaults（发布包不再带 config）
+- 卸载：uninstall.bat（taskkill + rd %APPDATA%\VoxEcho + 延时自删程序目录）
+- 打包脚本 protect_config.py：递归扫描，发现 config 即中止 + 系统语言警告（assemble/zip 都挂）
+
+### 坑
+- 迁移必须在 _LANG = detect_ui_lang() 之前执行，否则读不到旧 config 的 ui_lang
+- 测试目录刷新被占用：重试即可（瞬时句柄/杀软扫描）
+- ACL 对管理员无效（可绕过），对普通账户有效；复制拦不住——主防线是"源头无文件"
