@@ -163,6 +163,10 @@ class GlobalHotkeyService:
         self._active_combo: tuple = ()
         self._hotkey_source = "hotkey"  # 标记热键触发的会话，commit 时后端上屏
         self._prev_window = None        # 录音开始时的前台窗口（上屏前恢复焦点用）
+        # 粘贴防抖：同文本短时间重复时只贴一次（双次上屏防御），并记录调用序号用于日志定位
+        self._last_paste_text: str | None = None
+        self._last_paste_time: float = 0.0
+        self._paste_count = 0
 
     # ------------------------------------------------------------ 对外
     def start(self) -> None:
@@ -329,16 +333,34 @@ class GlobalHotkeyService:
         由 speech 线程调用：写剪贴板 + 模拟 Ctrl+V（钩子 _ignore_all 保险）。
         """
         logger.info("[debug] on_commit 已收到文本")
+        now = time.time()
+        self._paste_count += 1
+        # 防抖：同一文本 1.5s 内重复的 commit 直接拦截（双次上屏防御）。
+        # 正常的一次录音（几秒以上）不可能同文本短时间重复，不会误伤。
+        if (text and self._last_paste_text == text
+                and now - self._last_paste_time < 1.5):
+            logger.info(
+                f"[debug] 防抖拦截第 {self._paste_count} 次调用: "
+                f"同文本 {len(text)} 字在 {now - self._last_paste_time:.2f}s 内重复")
+            return
         cfg = load_config()
         if not cfg.get("stt_auto_commit", True):
             logger.info(L("autocommit_off"))
+        t0 = time.time()
         try:
             pyperclip.copy(text)
         except Exception as e:  # noqa: BLE001
             logger.error(L("clipboard_fail", err=e))
             return
+        clip_ms = (time.time() - t0) * 1000
+        logger.info(
+            f"[debug] 粘贴第 {self._paste_count} 次: 剪贴板写入 {clip_ms:.0f}ms, "
+            f"{len(text)} 字")
         if not cfg.get("stt_auto_commit", True):
             return
+        # 记录本次粘贴（防抖基准）：到这里才算真正要上屏
+        self._last_paste_text = text
+        self._last_paste_time = time.time()
         hook = self._hook
         if hook is not None:
             hook._ignore_all = True

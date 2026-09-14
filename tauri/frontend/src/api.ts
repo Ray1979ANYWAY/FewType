@@ -657,6 +657,7 @@ export class SpeechClient {
   private ws: WebSocket | null = null;
   private readonly opts: SpeechClientOptions;
   private manualClose = false;
+  private heartbeatTimer: number | null = null;
 
   constructor(opts: SpeechClientOptions = {}) {
     this.opts = opts;
@@ -666,11 +667,31 @@ export class SpeechClient {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
+  /** 心跳：静置时保持 WS 活跃，防止被网络空闲回收（否则状态条失联） */
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatTimer = window.setInterval(() => {
+      try {
+        this.ping();
+      } catch {
+        /* 连接未就绪忽略 */
+      }
+    }, 25000);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatTimer !== null) {
+      window.clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
   connect(): Promise<void> {
     this.manualClose = false;
+    this.stopHeartbeat();
     return new Promise((resolve) => {
       let retries = 0;
-      const maxDelay = 5000;
+      const maxDelay = 2000;
       const attempt = () => {
         if (this.manualClose) return;
         const ws = new WebSocket(`${WS_BASE}/ws/speech-input`);
@@ -678,6 +699,7 @@ export class SpeechClient {
 
         ws.onopen = () => {
           retries = 0;
+          this.startHeartbeat();
           this.opts.onOpen?.();
           resolve();
         };
@@ -691,8 +713,9 @@ export class SpeechClient {
             this.opts.onClose?.();
             return;
           }
-          // 意外断开 / 首次连接失败：指数退避自动重连
-          const delay = Math.min(500 * 2 ** retries, maxDelay);
+          // 意外断开 / 首次连接失败：立即快速重连（首重 200ms，封顶 2s）
+          this.stopHeartbeat();
+          const delay = Math.min(200 * 2 ** retries, maxDelay);
           retries += 1;
           setTimeout(attempt, delay);
         };
@@ -732,6 +755,7 @@ export class SpeechClient {
 
   close() {
     this.manualClose = true;
+    this.stopHeartbeat();
     this.ws?.close();
     this.ws = null;
   }
