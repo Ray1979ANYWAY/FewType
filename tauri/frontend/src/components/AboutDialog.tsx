@@ -8,7 +8,7 @@ import { Modal } from "./ui";
 import { inTauri } from "../lib/window";
 import { useI18n } from "../i18n";
 
-const VERSION = "3.1.6";
+const VERSION = "3.1.8";
 const GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho";
 const KO_FI_URL = "https://ko-fi.com/rayhu";
 

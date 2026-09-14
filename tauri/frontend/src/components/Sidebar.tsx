@@ -54,7 +54,7 @@ export default function Sidebar({
       {/* 底部版本 */}
       <div className="flex flex-col items-center gap-1 text-[10.35px] text-muted/60">
         <span>VoxEcho</span>
-        <span>V3.1.6</span>
+        <span>V3.1.8</span>
       </div>
     </aside>
   );
