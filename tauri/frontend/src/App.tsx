@@ -1,5 +1,5 @@
 /**
- * VoxEcho 前端根组件（Tauri 迁移阶段二）
+ * FewType 前端根组件（Tauri 迁移阶段二）
  * 布局：固定 842×668 画布 + 左侧极简 Icon 侧边栏 + 右侧内容区
  * 右侧卷帘日志抽屉（Curtain Drawer）：absolute 覆盖不挤压主界面，
  * 顶部微型绿色箭头按钮展开/收起，日志轮询后端 /api/logs
@@ -169,7 +169,7 @@ export default function App() {
         if (existing || cancelled) return;
         await new WebviewWindow("hud", {
           url: "/#hud",
-          title: "VoxEcho HUD",
+          title: "FewType HUD",
           width: 500,
           height: 64,
           transparent: true,
@@ -240,15 +240,15 @@ export default function App() {
           独立于内容区（加高 h-16），无边框窗口下整行空白可拖拽 */}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-emerald-500/10 bg-bg px-6">
         <div className="flex items-center gap-2 self-end pb-1.5">
-          {/* 自定义 Logo：Moss Black 品牌图标（VoxEcho-extension/icon） */}
+          {/* 自定义 Logo：Moss Black 品牌图标（FewType-extension/icon） */}
           <img
-            src="/voxecho-logo.svg"
-            alt="VoxEcho"
+            src="/fewtype-logo.svg"
+            alt="FewType"
             className="h-5 w-5 shrink-0 object-contain"
           />
-          {/* VoxEcho 品牌名：香槟金渐变 */}
+          {/* FewType 品牌名：香槟金渐变 */}
           <span className="bg-gradient-to-r from-amber-200 via-orange-100 to-amber-400 bg-clip-text text-[14.95px] font-bold tracking-tight text-transparent drop-shadow-[0_2px_10px_rgba(251,191,36,0.15)]">
-            VoxEcho
+            FewType
           </span>
           <span className="text-[14.95px] font-bold tracking-wide text-text">
             {t("app.title_suffix")}

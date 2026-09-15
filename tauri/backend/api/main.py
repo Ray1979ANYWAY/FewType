@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho FastAPI 后端服务（阶段一：Tauri 架构后端引擎）。
+"""FewType FastAPI 后端服务（阶段一：Tauri 架构后端引擎）。
 
 替代原 Flask server.py + launcher.py 中的服务编排：
     POST /api/tts            长文本 TTS → 返回音频文件路径
@@ -57,10 +57,10 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     stream=sys.stdout,
 )
-logger = logging.getLogger("voxecho")
+logger = logging.getLogger("fewtype")
 set_lang(str((load_config().get("ui_lang") or "zh-CN")))
 
-app = FastAPI(title="VoxEcho API", version="0.10.0", docs_url="/api/docs",
+app = FastAPI(title="FewType API", version="0.10.0", docs_url="/api/docs",
               openapi_url="/api/openapi.json")
 app.add_middleware(
     CORSMiddleware,
@@ -171,7 +171,7 @@ def _provider_from_config():
 # ---------------------------------------------------------------- 健康 & 扩展
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "voxecho-api"}
+    return {"status": "ok", "service": "fewtype-api"}
 
 
 @app.post("/extension_heartbeat")
@@ -208,7 +208,7 @@ async def voices():
 # ---------------------------------------------------------------- TTS
 @app.get("/api/tts/default-dir")
 async def tts_default_dir():
-    """TTS 默认输出目录（用户→文档→VoxEcho_tts_out），供前端默认展示。"""
+    """TTS 默认输出目录（用户→文档→FewType_tts_out），供前端默认展示。"""
     return {"dir": str(tts_service.tts_output_dir())}
 
 
@@ -541,7 +541,7 @@ def _hide_console() -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="VoxEcho FastAPI 后端服务")
+    parser = argparse.ArgumentParser(description="FewType FastAPI 后端服务")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5010)
     parser.add_argument("--silent", action="store_true",

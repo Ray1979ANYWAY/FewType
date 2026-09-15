@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho 配置存储层（FastAPI 版）。
+"""FewType 配置存储层（FastAPI 版）。
 
 从 launcher.py 剥离的 load_config / save_config 逻辑，独立成模块：
 - 配置文件：%APPDATA%\\VoxEcho-tauri\\bridge_config.json（含 API Key 与风格 Prompt，
@@ -31,10 +31,10 @@ def find_engine_dir() -> Path:
 
 
 def config_dir() -> Path:
-    """配置文件目录：%APPDATA%\\com.rayanyway.voxecho（与 Tauri identifier 一致，
+    """配置文件目录：%APPDATA%\\com.rayanyway.fewtype（与 Tauri identifier 一致，
     卸载时 NSIS deleteAppDataOnUninstall 才能一并删除，不留含 Key 的残留）。"""
     base = os.environ.get("APPDATA") or str(Path.home())
-    d = Path(base) / "com.rayanyway.voxecho"
+    d = Path(base) / "com.rayanyway.fewtype"
     try:
         d.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -52,7 +52,7 @@ def _legacy_config_path() -> Path:
 
 
 def config_path() -> Path:
-    """配置文件路径：%APPDATA%\\com.rayanyway.voxecho（含 API Key，不随程序目录被拖走）。"""
+    """配置文件路径：%APPDATA%\\com.rayanyway.fewtype（含 API Key，不随程序目录被拖走）。"""
     return config_dir() / "bridge_config.json"
 
 
@@ -62,13 +62,15 @@ CONFIG_PATH = config_path()
 def _migrate_legacy_config() -> None:
     """把旧位置的配置迁到新目录并删除源文件（含 API Key，不能留在任何程序目录）。
     迁移来源（按顺序）：
-      1) %APPDATA%\\VoxEcho-tauri（上一版 APPDATA 目录名）
-      2) 程序目录 / engine 目录（更早的旧版）
+      1) %APPDATA%\\com.rayanyway.voxecho（改名 FewType 前的 APPDATA 目录）
+      2) %APPDATA%\\VoxEcho-tauri（更早的 APPDATA 目录名）
+      3) 程序目录 / engine 目录（最早的旧版）
     迁移后打包、压缩、复制、移动整个程序文件夹都不会带走密钥。"""
     _base = os.environ.get("APPDATA") or str(Path.home())
     candidates = [
-        Path(_base) / "VoxEcho-tauri" / "bridge_config.json",  # 上一版 APPDATA 目录
-        _legacy_config_path(),                                   # 程序目录/engine 目录
+        Path(_base) / "com.rayanyway.voxecho" / "bridge_config.json",  # 改名前的 APPDATA 目录
+        Path(_base) / "VoxEcho-tauri" / "bridge_config.json",          # 更早的 APPDATA 目录
+        _legacy_config_path(),                                          # 程序目录/engine 目录
     ]
     _dst = CONFIG_PATH
     for _src in candidates:

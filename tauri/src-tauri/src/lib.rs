@@ -1,10 +1,10 @@
-//! VoxEcho Tauri 壳
+//! FewType Tauri 壳
 //!
 //! 职责：
 //! - 承载 React 前端（dist 静态资源，Tauri WebView）
 //! - 随应用启动拉起 Python FastAPI 后端（端口 5010），托盘「退出」时回收
 //!   - 开发模式（tauri dev）：spawn 系统 python 运行 ../backend/api/main.py
-//!   - 生产模式（tauri build）：externalBin sidecar（binaries/voxecho-backend-<triple>.exe）
+//!   - 生产模式（tauri build）：externalBin sidecar（binaries/fewtype-backend-<triple>.exe）
 //! - 系统托盘常驻：关窗最小化到托盘（不退出），托盘菜单「显示主窗口 / 退出」
 //! - 单实例锁：重复启动时唤起已有窗口
 //! - 前端通过 http://127.0.0.1:5010 与后端通信（见 frontend/src/api.ts）
@@ -33,12 +33,12 @@ struct TrayHandle(TrayIcon);
 
 const BACKEND_PORT: &str = "5010";
 
-/// 开发模式后端命令（依赖本机 Python 环境，可通过环境变量 VOXECHO_PYTHON 覆盖）
+/// 开发模式后端命令（依赖本机 Python 环境，可通过环境变量 FEWTYPE_PYTHON 覆盖）
 fn dev_backend_command() -> (String, Vec<String>) {
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let backend_py = manifest_dir.join("../backend/api/main.py");
-    // 本机验证过带完整依赖的解释器；VOXECHO_PYTHON 可显式指定
-    let python = std::env::var("VOXECHO_PYTHON")
+    // 本机验证过带完整依赖的解释器；FEWTYPE_PYTHON 可显式指定
+    let python = std::env::var("FEWTYPE_PYTHON")
         .unwrap_or_else(|_| "D:/Program Files/Python/Python310/python.exe".to_string());
     (
         python,
@@ -57,22 +57,22 @@ fn spawn_backend(app: &tauri::App) {
         match Command::new(&prog).args(&args).spawn() {
             Ok(c) => Some(BackendChild::Std(c)),
             Err(e) => {
-                eprintln!("[voxecho] 后端启动失败 ({prog}): {e}");
+                eprintln!("[fewtype] 后端启动失败 ({prog}): {e}");
                 None
             }
         }
     } else {
         // 生产：externalBin sidecar（PyInstaller onefile）
-        match app.shell().sidecar("voxecho-backend") {
+        match app.shell().sidecar("fewtype-backend") {
             Ok(sidecar_cmd) => match sidecar_cmd.args(["--port", BACKEND_PORT]).spawn() {
                 Ok((_rx, child)) => Some(BackendChild::Sidecar(child)),
                 Err(e) => {
-                    eprintln!("[voxecho] sidecar 启动失败: {e}");
+                    eprintln!("[fewtype] sidecar 启动失败: {e}");
                     None
                 }
             },
             Err(e) => {
-                eprintln!("[voxecho] sidecar 解析失败: {e}");
+                eprintln!("[fewtype] sidecar 解析失败: {e}");
                 None
             }
         }
@@ -126,9 +126,9 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .cloned()
         .expect("bundle icon 缺失");
 
-    let tray = TrayIconBuilder::with_id("voxecho-tray")
+    let tray = TrayIconBuilder::with_id("fewtype-tray")
         .icon(icon)
-        .tooltip("VoxEcho 语音处理平台")
+        .tooltip("FewType 语音处理平台")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -176,5 +176,5 @@ pub fn run() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("error while running VoxEcho");
+        .expect("error while running FewType");
 }

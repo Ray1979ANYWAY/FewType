@@ -1,6 +1,6 @@
-# VoxEcho 项目处理日志（processing.md）
+# FewType 项目处理日志（processing.md）
 
-> 从 2026-09-06 起记录本项目（VoxEcho 浏览器扩展）的洞察、诊断与修改过程。
+> 从 2026-09-06 起记录本项目（FewType 浏览器扩展）的洞察、诊断与修改过程。
 > 每条记录包含：背景 → 洞察/根因 → 修改 → 验证 → 残留风险。
 
 ---
@@ -42,7 +42,7 @@
 ### 验证
 
 - `node --check content-weread-main.js` 语法通过。
-- 模拟脚本 `verify-stale-fix.js`（VoxEcho 根目录）复现两条路径均通过：
+- 模拟脚本 `verify-stale-fix.js`（FewType 根目录）复现两条路径均通过：
   - 旧版观察器（只删数组不删字符）→ 污染残留；新版（按 el 清理）→ 干净；
   - 旧虚拟句号清理 → 不再以"。"开头。
 - 真实环境待用户 reload 扩展后手工验证：单页滚屏读完一章自动切章，确认正文不再插上一章第一句、开头不再读"。。。"。
@@ -503,7 +503,7 @@ ewText.length > 0 && newText.length < 30 && !/[。！？，；：、,.!?;:]/.tes
 - **split_text()**：三规则切分——换行硬分段（保留段落边界）、句号软边界（可合并）、超长单句硬切 800 字
   - 踩坑 1：初版按句号切分后合并，**换行被吃**（'第一行\n第二行' 合并成一行）→ 改为 splitlines 按段落处理
   - 踩坑 2：单句 1200 字无标点不切分 → while 循环硬切
-- 输出目录：环境变量 VOXECHO_OUTPUT_DIR 优先，否则 server.py 旁 tts_output/（打包模式需 launcher 传 env，P5 处理）
+- 输出目录：环境变量 FEWTYPE_OUTPUT_DIR 优先，否则 server.py 旁 tts_output/（打包模式需 launcher 传 env，P5 处理）
 
 ### launcher.py 改造（run_gui）
 - **Hot Spot 切换**：顶部 3 个 RadioButton（📖 电子书朗读 / 📝 长文本转语音 / 🎙 语音输入），右侧三 Frame 切换
@@ -511,7 +511,7 @@ ewText.length > 0 && newText.length < 30 && !/[。！？，；：、,.!?;:]/.tes
 - **场景 2 面板**：文本输入区 + 音色下拉（/voices 自动加载）+ 语速 + Native 翻译勾选（首次弹配置对话框）+ 目标语言 + 翻译预览（可编辑）+ 生成音频 + 打开输出文件夹 + 状态行
 - 回调全部用 lambda 包装避免 UnboundLocalError（P0 教训）；后台线程 + root.after 回主线程更新 UI
 - 翻译 prompt：专业翻译，原生风格，仅输出译文（场景 3 的 styles 风格化后续接入）
-- /tts_file 404 时提示"服务版本过旧，请退出旧版 VoxEcho-bridge"（版本冲突防护）
+- /tts_file 404 时提示"服务版本过旧，请退出旧版 FewType-bridge"（版本冲突防护）
 - run_gui 加可选 test_hook 参数（注入 UI 断言，对将来测试有用）
 
 ### 验证
@@ -521,26 +521,26 @@ ewText.length > 0 && newText.length < 30 && !/[。！？，；：、,.!?;:]/.tes
 
 ### 环境备注
 - **edge-tts NoAudioReceived 间歇性失败**：短文本成功、连续请求部分失败，与 rate 参数无关（+0% 成功、0%/+10% 失败），属微软端点不稳定 + 本地 Clash 代理干扰。重试 3 次后成功。正式版保留 synthesize_with_retry。
-- **旧版 VoxEcho-bridge.exe 占用 5005**：PID 7520 跑旧代码，/tts_file 404。用户测试新功能前需退出旧 exe。开发测试用 5055 端口避开。
+- **旧版 FewType-bridge.exe 占用 5005**：PID 7520 跑旧代码，/tts_file 404。用户测试新功能前需退出旧 exe。开发测试用 5055 端口避开。
 
 ### 待办
 - 场景 2 用真实 Groq key 验证翻译链路（用户已备 key）
 - P2：场景 3 语音输入（快捷键 + 录音 + VAD + 压缩 + transcribe + 底部横幅）
-- 打包模式 VOXECHO_OUTPUT_DIR env 传递
+- 打包模式 FEWTYPE_OUTPUT_DIR env 传递
 
 ---
 
 ## ⚡ 开发快照（2026-09-08）— 新对话接手必读
 
 ### 当前状态
-- **V1.2.0 已打包未发布**（zip 在 D:\Documents\VoxEcho-V1.2.0.zip，未签名，README 6 语言含 SmartScreen 提示）
+- **V1.2.0 已打包未发布**（zip 在 D:\Documents\FewType-V1.2.0.zip，未签名，README 6 语言含 SmartScreen 提示）
 - **V2.0 进度**：P0（provider 平台抽象 + 配置对话框）✅ / P1（场景 2 长文本 TTS + Hot Spot UI）✅ / P2（场景 3 语音输入）待做
 - 设计文档：plan.md（§1-9 完整）、stt_styles.md（开发参考，不进发布包）
 - 实施记录：processing.md（本文档）
 
 ### 运行与测试（重要！）
-- **开发运行**：cd VoxEcho-bridge && python launcher.py（系统 Python：D:\Program Files\Python\Python310\python.exe）
-- **端口冲突**：5005 被旧版 VoxEcho-bridge.exe 占用时新 server 不可用（/tts_file 404）。测试前先退出托盘旧 exe；开发测试可临时用 5055：python -c "import server; server.app.run(port=5055)"
+- **开发运行**：cd FewType-bridge && python launcher.py（系统 Python：D:\Program Files\Python\Python310\python.exe）
+- **端口冲突**：5005 被旧版 FewType-bridge.exe 占用时新 server 不可用（/tts_file 404）。测试前先退出托盘旧 exe；开发测试可临时用 5055：python -c "import server; server.app.run(port=5055)"
 - **GUI 断言测试**：run_gui 有 	est_hook 参数（
 un_gui(test_hook=fn)），fn(root, cfg) 内可注入断言
 - **截图**：双屏环境，tkinter 窗口可能落右屏 → ImageGrab.grab(all_screens=True) 用虚拟桌面坐标（3840×1080），且窗口要 topmost 防遮挡
@@ -548,11 +548,11 @@ un_gui(test_hook=fn)），fn(root, cfg) 内可注入断言
 ode --check
 
 ### 关键文件
-- VoxEcho-bridge/launcher.py：主 GUI（Hot Spot 三场景 + 配置对话框 + run_gui(test_hook)）
-- VoxEcho-bridge/server.py：/voices /speak /tts_file（分段合成）/health
-- VoxEcho-bridge/provider.py：平台抽象（Groq 推荐/硅基/自定义；chat/transcribe/list_models/stream_transcribe 预留）
-- VoxEcho-bridge/proto_ui.py：v2 UI 原型（pythonw 运行截图）
-- 输出目录：VoxEcho-bridge/tts_output/（场景 2 生成 mp3）
+- FewType-bridge/launcher.py：主 GUI（Hot Spot 三场景 + 配置对话框 + run_gui(test_hook)）
+- FewType-bridge/server.py：/voices /speak /tts_file（分段合成）/health
+- FewType-bridge/provider.py：平台抽象（Groq 推荐/硅基/自定义；chat/transcribe/list_models/stream_transcribe 预留）
+- FewType-bridge/proto_ui.py：v2 UI 原型（pythonw 运行截图）
+- 输出目录：FewType-bridge/tts_output/（场景 2 生成 mp3）
 
 ### 用户环境
 - Windows 10，双显示器，常住深圳，Clash Verge 代理（edge-tts 间歇 NoAudioReceived 与代理有关）
@@ -569,7 +569,7 @@ ode --check
 2. 场景 2 翻译链路用真实 Groq key 验证（用户操作）
 3. Groq 实时流式 API 形态核实（stream_transcribe）
 4. 硅基流动模型 id 校准（deepseek-ai/ 前缀）
-5. 打包模式 VOXECHO_OUTPUT_DIR env 传递 + V1.3 重新 build
+5. 打包模式 FEWTYPE_OUTPUT_DIR env 传递 + V1.3 重新 build
 6. 6 语言 UI 完整化（当前 _pd 中英双语）
 
 ---
@@ -1662,10 +1662,10 @@ Tcl 解释器从非主线程执行命令 → 竞态 → 随机段错误/进程�
 
 用户提供 macOS 风格 SVG（暗蓝圆角底 #0F172A→#1E1B4B + Echo 回声环三色渐变 #38BDF8→#C084FC→#FB923C + 三根声波柱 #38BDF8→#818CF8）。
 
-### 实现（gen_icon.py，保留在 VoxEcho-bridge/ 供后续改图重新生成）
+### 实现（gen_icon.py，保留在 FewType-bridge/ 供后续改图重新生成）
 - 无外部依赖：PIL + numpy 忠实渲染 SVG 语义（圆角矩形+垂直渐变、分段渐变圆弧描边、圆角渐变声波柱）。
-- 产物：`VoxEcho.ico`（7 尺寸 16~256，窗口/任务栏/exe 内嵌用）、`VoxEcho-512.png`（预览）、`icon/VoxEcho-{16,32,48}.png`（托盘用）。
-- 链路无需改代码：`apply_window_icons` 读 VoxEcho.ico 最大帧；`load_tray_image` 读 ico 或 icon/*.png；build.bat 的 --icon 指向同一文件，重新 build 即自动用新图标。
+- 产物：`FewType.ico`（7 尺寸 16~256，窗口/任务栏/exe 内嵌用）、`FewType-512.png`（预览）、`icon/FewType-{16,32,48}.png`（托盘用）。
+- 链路无需改代码：`apply_window_icons` 读 FewType.ico 最大帧；`load_tray_image` 读 ico 或 icon/*.png；build.bat 的 --icon 指向同一文件，重新 build 即自动用新图标。
 - Ko-fi 赞助图标（KO_FI_ICON_B64）保留——那是 Ko-fi 品牌 logo，不换。
 
 ### 踩坑
@@ -1689,11 +1689,11 @@ Tcl 解释器从非主线程执行命令 → 竞态 → 随机段错误/进程�
 - **配置面板的「粘贴」按钮保持删除**——用户反感的"剪贴板"是程序主动读剪贴板（窥探感），自动上屏是"写"，性质不同。
 
 ### 图标全套铺开（gen_icon.py 重构）
-用户把 SVG 拷贝到 `VoxEcho-bridge/icon/VoxEcho.svg`（与之前一致）。gen_icon.py 改为输出三处（与代码引用路径一一对应）：
-- `VoxEcho-bridge/VoxEcho.ico`（7 尺寸，窗口/任务栏/exe 内嵌）
-- `VoxEcho-bridge/icon/`：VoxEcho.ico + 16/32/48/128/256 PNG + 512 源图（托盘备用）
-- `VoxEcho-extension/icon/`：同上全套（manifest 引用 16/32/48/128）
-- 删除两处无引用的遗留大图 `VoxEcho.png`（1.1MB×2）。
+用户把 SVG 拷贝到 `FewType-bridge/icon/FewType.svg`（与之前一致）。gen_icon.py 改为输出三处（与代码引用路径一一对应）：
+- `FewType-bridge/FewType.ico`（7 尺寸，窗口/任务栏/exe 内嵌）
+- `FewType-bridge/icon/`：FewType.ico + 16/32/48/128/256 PNG + 512 源图（托盘备用）
+- `FewType-extension/icon/`：同上全套（manifest 引用 16/32/48/128）
+- 删除两处无引用的遗留大图 `FewType.png`（1.1MB×2）。
 - 图标尺寸结论：托盘只用 16/32，界面 48 以内，但 **256 必须保留**（exe 大图标 + iconphoto 取最大帧防糊），128 是 Chrome 商店/扩展标准尺寸。
 
 
@@ -2136,7 +2136,7 @@ LL 钩子时代用 `return 1` 真正吞键了，但吞键逻辑有漏洞（先�
 ### 背景
 上一轮修复后，用户发现：
 1. 主窗口还是会从托盘被唤出
-2. 任务栏出现两个 VoxEcho（说明状态条 Toplevel 也出现在任务栏了）
+2. 任务栏出现两个 FewType（说明状态条 Toplevel 也出现在任务栏了）
 3. 开始菜单有一定几率弹出
 
 ### 根因（最终定位）
@@ -2146,7 +2146,7 @@ LL 钩子时代用 `return 1` 真正吞键了，但吞键逻辑有漏洞（先�
 - root 被唤出，抢占焦点 → 模拟的 Ctrl+V 粘贴到 bridge 自己窗口
 
 ### 关键线索
-用户观察到"任务栏有两个 VoxEcho"——这直接指向状态条的 WS_EX_TOOLWINDOW 没生效。如果样式生效了，状态条不应该出现在任务栏。
+用户观察到"任务栏有两个 FewType"——这直接指向状态条的 WS_EX_TOOLWINDOW 没生效。如果样式生效了，状态条不应该出现在任务栏。
 
 ### 修复（launcher.py _stt_banner_show）
 
@@ -2174,7 +2174,7 @@ oot.state()**：不依赖 _tray_mode 标志（可能在 show/hide 切换时不�
 oot.state() == 'withdrawn'，只要当前是隐藏状态就强制保持。
 
 ### 验证（用户真机 2026-09-10）
-- ✅ 任务栏不再出现两个 VoxEcho（状态条 WS_EX_TOOLWINDOW 生效）
+- ✅ 任务栏不再出现两个 FewType（状态条 WS_EX_TOOLWINDOW 生效）
 - ✅ 主窗口不再从托盘被唤出
 - ✅ 上屏正常（焦点恢复 match=True）
 - ✅ 开始菜单不再弹出
@@ -2193,7 +2193,7 @@ oot.state() == 'withdrawn'，只要当前是隐藏状态就强制保持。
 - Grok：GetParent HWND 错误定位 + _tray_mode 强制隐藏 + 去掉 deiconify/lift 回退
 - Gemini：Toplevel(None) + -disabled + wm_transient，切断 master 绑定
 - DeepSeek：所有 stt_status.set() 改独立状态窗口 + _stt_begin/_stt_commit 主动 root.withdraw()
-- 最终根因由用户观察"任务栏两个 VoxEcho"锁定 → SWP_FRAMECHANGED 缺失
+- 最终根因由用户观察"任务栏两个 FewType"锁定 → SWP_FRAMECHANGED 缺失
 
 ---
 
@@ -2365,7 +2365,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 ## 2026-09-14 V2.0.1 发布与 GitHub release 维护经验（TK 线）
 
 ### zip 发布结构
-- 便携版 zip = PyInstaller onedir 产物整个文件夹 + 根目录放 VoxEcho-extension（扩展 load unpacked 用）
+- 便携版 zip = PyInstaller onedir 产物整个文件夹 + 根目录放 FewType-extension（扩展 load unpacked 用）
 - 包内 README.txt（英文）+ README_ZH.txt（中文）：说明扩展加载方法；不使用电子书朗读的用户可跳过
 - 未签名 exe：SmartScreen / 杀软会提示，说明文件里要写清"加入白名单即可"
 
@@ -2391,13 +2391,13 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 ## 2026-09-14 git 双线结构维护（Tauri 主线 + TK 支线）
 
 ### 当前结构
-- master = Tauri 3.1.x 主线（D:\Documents\VoxEcho）
-- tkinter-legacy = TK 2.0.1 支线（D:\Documents\VoxEcho-tk，worktree 关联 D:/Documents/VoxEcho/.git/worktrees/VoxEcho-tk）
+- master = Tauri 3.1.x 主线（D:\Documents\FewType）
+- tkinter-legacy = TK 2.0.1 支线（D:\Documents\FewType-tk，worktree 关联 D:/Documents/FewType/.git/worktrees/FewType-tk）
 - 每个分支各自维护 README 三语（README 是跟分支走的，不是全项目一份）
 
 ### 坑：worktree 指针指向 temp
-- 曾出现 .git 是指针文件（gitdir: D:/temp/voxecho-git），真 git 元数据全在 temp——temp 一清理两端全断
-- 迁移：Move-Item temp 目录到 Documents\VoxEcho\.git，重写两处指针文件；GitHub Desktop / explorer 开着会锁句柄导致失败，先退出/关闭
+- 曾出现 .git 是指针文件（gitdir: D:/temp/fewtype-git），真 git 元数据全在 temp——temp 一清理两端全断
+- 迁移：Move-Item temp 目录到 Documents\FewType\.git，重写两处指针文件；GitHub Desktop / explorer 开着会锁句柄导致失败，先退出/关闭
 - 迁移后 GitHub Desktop 报"找不到仓库"是缓存问题：Remove（别勾 Also move to Trash）→ Add Local Repository 重新挂载
 
 ### 远端分支
@@ -2413,7 +2413,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 转写内容不落盘
 - 日志可划选复制（排查时有用）
 
-### VoxEcho-extension 自适应双端口
+### FewType-extension 自适应双端口
 - 扩展自动探测本地 bridge：先试 5010（Tauri 线），失败再试 5005（TK 线）——两条线不用来回改配置
 - 扩展版本号不必与 bridge 版本一致
 
@@ -2446,7 +2446,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 ### 热键
 - 双击 Ctrl 状态机：防键盘硬件抖动（按住重复发 keydown）、中间按其他键取消（详见 2026-09-12 TK 章节）
 - 3.1.x 验证：双击第二下放开即触发（不用长按）也是可用路径
-- Ctrl+Win 与微信语音转文字快捷键冲突（微信的 Ctrl+Win 失效）——退出 VoxEcho 即恢复，确认是全局钩子抢占
+- Ctrl+Win 与微信语音转文字快捷键冲突（微信的 Ctrl+Win 失效）——退出 FewType 即恢复，确认是全局钩子抢占
 - Win 键粘滞/键盘全乱：keybd_event 异步 + _ignore_all 恢复太早是根因；最终方案=卸载钩子→模拟按键→重装钩子
 - 用户曾误以为是硬件问题（换电池、重启）——实际是应用钩子，改动后必须实测键盘
 
@@ -2475,7 +2475,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - "退出"语义：用户要求退出=全退（不是隐藏）——避免偷感 + 与别的应用快捷键冲突
 - 自定义快捷键有时要 Save 两次才生效（改后必须验证，主界面显示与实际生效不一致是常见 bug 源）
 - 打包用 tauri build；onefile 单 exe 易触发杀软/缺组件，onedir 更稳
-- 观察：任务管理器常驻两个 voxecho-backend.exe（前后端分离架构，待确认是否预期）
+- 观察：任务管理器常驻两个 fewtype-backend.exe（前后端分离架构，待确认是否预期）
 
 ## TK 线（2.0.x）补充
 
@@ -2501,8 +2501,8 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 用户实测确认：压缩/复制外层文件夹（D:\Documents）会带走 key
 
 ### 方案（与 TK 线同步）
-- config 一律迁到 %APPDATA%\com.rayanyway.voxecho\bridge_config.json（目录名 = identifier，卸载可删到）；程序目录不存任何配置
-- 启动自动迁移旧位置（程序目录 / engine 目录 / 旧 APPDATA 目录 VoxEcho-tauri）并删除源文件
+- config 一律迁到 %APPDATA%\com.rayanyway.fewtype\bridge_config.json（目录名 = identifier，卸载可删到）；程序目录不存任何配置
+- 启动自动迁移旧位置（程序目录 / engine 目录 / 旧 APPDATA 目录 FewType-tauri）并删除源文件
 - 发布包不再带 config；默认风格（Karwai Wong）内置在 DEFAULTS，首次启动自动生成
 - 打包脚本递归扫描，发现 config 即中止 + 系统语言警告
 - ACL：Everyone DENY DELETE（拦移动/删除，非管理员有效）；复制拦不住（Windows 无此机制）；管理员可绕过（SeBackupPrivilege）——主防线是"源头无文件"
@@ -2515,3 +2515,16 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 
 ### 卸载
 - tauri.conf.json: bundle.windows.nsis.deleteAppDataOnUninstall = true（卸载自动删 app data，含 key）
+
+## 2026-09-16 品牌改名 VoxEcho → FewType（Tauri 主线）
+
+- 起因：VoxEcho 与 appwill.co 的 VoxEcho AI 等精确重名，用户零容忍；经 20+ 候选名验证（Dictlips/Dictrans/Liptrans/LilType/Dictrano/Transay/Transpeech/Voilio/Sonatran/RhyTalk/Rytalk/Rytalk/Voilar 等全被否）后拍板 FewType——"少打字"语义直击语音输入卖点，Google/GitHub 三路搜索干净。
+- 范围：全库 VoxEcho/voxecho/VOXECHO → FewType/fewtype/FEWTYPE，保护 GitHub 仓库 URL Ray1979ANYWAY/VoxEcho 不变；FewType-extension 目录+8 图标+manifest 同步；sidecar fewtype-backend、spec、Cargo.lock、package-lock 同步。
+- 版本：3.1.13 → 3.1.14（tauri.conf.json / Cargo.toml / package.json / AboutDialog / Sidebar 五处一致）。
+- 配置迁移：%APPDATA%\com.rayanyway.voxecho（及更早 VoxEcho-tauri）→ %APPDATA%\com.rayanyway.fewtype；迁移后删源；nsis-uninstall.nsh 卸载时同时清理新旧目录。
+- 前端 localStorage 旧 key 自动继承：ui_lang / tts.outputDir / provider_keys（读 fallback，写新 key）。
+- 坑记录：
+  1) 主目录改名失败排查：进程退出 + GitHub Desktop 退出后仍锁——最终定位是根目录被"目录句柄"锁（explorer 窗口、进程 cwd 都会锁根目录条目，Restart Manager 查不到目录锁）。同盘 Move-Item 逐项移动子项可绕过根目录锁（纯重命名 O(1)），根空壳等锁释放后删。
+  2) 移动后 .git/config 的 core.worktree 仍指向旧路径 D:/Documents/VoxEcho，git status 全部显示 deleted——git config core.worktree 改新路径即恢复。
+  3) worktree 指针：D:\Documents\VoxEcho-tk\.git 的 gitdir 指向主 .git/worktrees/...，主仓库路径变更后必须同步改，否则 TK worktree 断链。
+  4) PowerShell -creplace 对含 > 的字符串会当正则报错；批量写回必须显式 UTF8Encoding(False) 防 BOM（历史坑：BOM 曾破坏 vite ESM 检测）。

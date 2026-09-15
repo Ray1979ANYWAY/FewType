@@ -120,15 +120,17 @@ function needsTranslation(text: string, outputLang: string): boolean {
 }
 
 /** 输出目录记忆（localStorage） */
-const OUTPUT_DIR_KEY = "voxecho.tts.outputDir";
-// 空字符串 = 未指定，使用后端默认（用户→文档→VoxEcho_tts_out）
+const OUTPUT_DIR_KEY = "fewtype.tts.outputDir";
+// 改名 VoxEcho→FewType 前的旧 key：升级后自动继承用户自选输出目录
+const OUTPUT_DIR_KEY_LEGACY = "voxecho.tts.outputDir";
+// 空字符串 = 未指定，使用后端默认（用户→文档→FewType_tts_out）
 const DEFAULT_DIR = "";
 // 旧版本硬编码的默认目录：升级后视为"未指定"并清理
 const LEGACY_DIR = "D:/Output";
 
 function loadSavedDir(): string {
   try {
-    const v = localStorage.getItem(OUTPUT_DIR_KEY);
+    const v = localStorage.getItem(OUTPUT_DIR_KEY) ?? localStorage.getItem(OUTPUT_DIR_KEY_LEGACY);
     return v && v !== LEGACY_DIR ? v : DEFAULT_DIR;
   } catch {
     return DEFAULT_DIR;
@@ -259,7 +261,7 @@ export default function LongTextTTS({
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false); // 翻译/试听/合成中：禁用按钮防重复
   const [outputDir, setOutputDir] = useState(loadSavedDir);
-  const [defaultDir, setDefaultDir] = useState(""); // 后端默认目录（用户→文档→VoxEcho_tts_out）
+  const [defaultDir, setDefaultDir] = useState(""); // 后端默认目录（用户→文档→FewType_tts_out）
   const [lastPath, setLastPath] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const outputLangTouched = useRef(false); // 用户手动改过输出语言后不再自动跟随界面语言

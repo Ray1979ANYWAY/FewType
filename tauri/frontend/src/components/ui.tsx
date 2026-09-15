@@ -1,5 +1,5 @@
 /**
- * VoxEcho 通用 UI 组件（Moss Black 主题）
+ * FewType 通用 UI 组件（Moss Black 主题）
  * 现代暗黑质感：圆角卡片、Switch 开关、精致下拉框、分段控件
  */
 import React, { useEffect, useRef, useState } from "react";

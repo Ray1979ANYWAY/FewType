@@ -1,7 +1,7 @@
 [
   {
     "identifier": "default",
-    "description": "VoxEcho 主窗口权限：核心能力 + 窗口控制 + 拉起后端 sidecar + 创建 HUD/配置子窗口",
+    "description": "FewType 主窗口权限：核心能力 + 窗口控制 + 拉起后端 sidecar + 创建 HUD/配置子窗口",
     "windows": ["main", "provider"],
     "permissions": [
       "core:default",
@@ -19,13 +19,13 @@
       "shell:allow-open",
       {
         "identifier": "shell:allow-execute",
-        "allow": [{ "name": "binaries/voxecho-backend", "sidecar": true }]
+        "allow": [{ "name": "binaries/fewtype-backend", "sidecar": true }]
       }
     ]
   },
   {
     "identifier": "hud",
-    "description": "VoxEcho 悬浮录音状态条窗口：置顶透明、点击穿透、自控显隐与定位",
+    "description": "FewType 悬浮录音状态条窗口：置顶透明、点击穿透、自控显隐与定位",
     "windows": ["hud"],
     "permissions": [
       "core:default",

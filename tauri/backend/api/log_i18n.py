@@ -148,9 +148,9 @@ _MSGS: dict[str, tuple[str, str, str]] = {
         "Failed to get work area: {err}",
     ),
     "api_start": (
-        "VoxEcho API 启动: http://{host}:{port} (文档 /api/docs)",
-        "VoxEcho API 啟動: http://{host}:{port} (文件 /api/docs)",
-        "VoxEcho API started: http://{host}:{port} (docs /api/docs)",
+        "FewType API 启动: http://{host}:{port} (文档 /api/docs)",
+        "FewType API 啟動: http://{host}:{port} (文件 /api/docs)",
+        "FewType API started: http://{host}:{port} (docs /api/docs)",
     ),
     # speech_service
     "stt_fail": (

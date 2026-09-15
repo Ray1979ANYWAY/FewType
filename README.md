@@ -2,7 +2,7 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 ---
 
-# 🎙️ VoxEcho — Voice Typing, Long-text TTS & Translation Desktop Assistant
+# 🎙️ FewType — Voice Typing, Long-text TTS & Translation Desktop Assistant
 
 Voice typing (STT), ebook reading, long-text TTS and translation in one free Windows desktop assistant — rebuilt with Tauri. A companion browser extension adds high-quality TTS playback to web e-book readers (Google Play Books & Koodo Reader).
 
@@ -17,14 +17,14 @@ Voice typing (STT), ebook reading, long-text TTS and translation in one free Win
 
 ### 🖥️ Screenshot
 
-![VoxEcho main UI](docs/screenshots/main_en.png)
+![FewType main UI](docs/screenshots/main_en.png)
 
 ### 🚀 Quick Start
 
 1. Download the latest installer or portable zip from [Releases](https://github.com/Ray1979ANYWAY/VoxEcho/releases).
-2. Run VoxEcho, open **Settings**, and fill in your provider API key.
+2. Run FewType, open **Settings**, and fill in your provider API key.
 3. Press your hotkey (set in Settings — Ctrl+Win or double-tap Ctrl) and speak; the text is typed where your cursor is.
-4. For e-book reading, load the `VoxEcho-extension` folder as an unpacked extension in Chrome/Edge — skip this if you don't read e-books.
+4. For e-book reading, load the `FewType-extension` folder as an unpacked extension in Chrome/Edge — skip this if you don't read e-books.
 
 ### 📦 Tech Stack
 
@@ -45,13 +45,13 @@ English · 简体中文 · 繁體中文 — follows the system language on first
 
 ### 🔒 Security & Privacy
 
-- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\com.rayanyway.voxecho\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
+- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\com.rayanyway.fewtype\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
 - The release package ships **without any config file**; safe defaults are built in and generated on first launch.
 - Packaging scripts abort with a system-language warning if a config file is detected, so secrets can never sneak into a release build.
 - **The uninstaller deletes your app data (API key included)** automatically.
 
 ### ☕ Support the Project
 
-If you find VoxEcho useful, consider buying me a coffee!
+If you find FewType useful, consider buying me a coffee!
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rayhu)

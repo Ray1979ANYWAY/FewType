@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho 全局热键服务（FastAPI 版）。
+"""FewType 全局热键服务（FastAPI 版）。
 
-复用 VoxEcho-bridge/hotkey_hook.py 的低层键盘钩子（WH_KEYBOARD_LL，纯 ctypes 无依赖）：
+复用 FewType-bridge/hotkey_hook.py 的低层键盘钩子（WH_KEYBOARD_LL，纯 ctypes 无依赖）：
 
 - 组合键模式（alt+win / ctrl+win / alt+x…）：全部按下 → 开始录音；任一成员松开 → 停止
 - 双击 Ctrl 模式（double_ctrl）：第二下长按讲话，松开发送
@@ -28,7 +28,7 @@ import pyperclip
 import hotkey_hook
 from config_store import load_config
 
-logger = logging.getLogger("voxecho.hotkey")
+logger = logging.getLogger("fewtype.hotkey")
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -79,16 +79,16 @@ kernel32.CloseHandle.restype = wintypes.BOOL
 
 
 def _find_app_window() -> int | None:
-    """按进程名定位 VoxEcho 主窗口句柄。
+    """按进程名定位 FewType 主窗口句柄。
 
-    主窗口标题随系统语言变化（VoxEcho 语音处理平台 / 語音處理平台 / Voice Platform），
-    精确标题匹配不可靠，改为：枚举顶层窗口 → 取属于 voxecho.exe 进程的可见窗口。
+    主窗口标题随系统语言变化（FewType 语音处理平台 / 語音處理平台 / Voice Platform），
+    精确标题匹配不可靠，改为：枚举顶层窗口 → 取属于 fewtype.exe 进程的可见窗口。
     """
     import subprocess  # noqa: PLC0415
 
     try:
         out = subprocess.run(
-            ["tasklist", "/FI", "IMAGENAME eq voxecho.exe", "/FO", "CSV", "/NH"],
+            ["tasklist", "/FI", "IMAGENAME eq fewtype.exe", "/FO", "CSV", "/NH"],
             capture_output=True, text=True, timeout=5,
         ).stdout
     except Exception:  # noqa: BLE001
@@ -121,7 +121,7 @@ def _find_app_window() -> int | None:
 
 
 def _bring_app_to_front() -> None:
-    """把 VoxEcho 主窗口带到前台。
+    """把 FewType 主窗口带到前台。
 
     模拟一次 Alt 按下/抬起绕过 Windows 前台锁定（与上屏前恢复焦点同一技巧，
     该路径用户已实测有效），再 SetForegroundWindow 主窗口。
@@ -223,7 +223,7 @@ class GlobalHotkeyService:
         if self._thread and self._thread.is_alive():
             return
         self._stop_event.clear()
-        self._thread = threading.Thread(target=self._run, name="voxecho-hotkey",
+        self._thread = threading.Thread(target=self._run, name="fewtype-hotkey",
                                         daemon=True)
         self._thread.start()
 

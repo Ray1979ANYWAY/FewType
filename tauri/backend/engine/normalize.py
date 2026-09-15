@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho Text Normalization（轻量规则层，无网络、无 LLM）。
+"""FewType Text Normalization（轻量规则层，无网络、无 LLM）。
 
 在 Whisper 直出 / LLM 输出后统一执行，只做格式规范化，不改变语义：
 

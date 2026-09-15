@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-VoxEcho provider abstraction layer (provider.py)
+FewType provider abstraction layer (provider.py)
 
 统一封装 LLM / ASR 平台调用（OpenAI 兼容接口）：
 - chat():              翻译/风格化后处理（LLM 通道，llm_model）
@@ -22,7 +22,7 @@ import requests
 
 import logging
 
-logger = logging.getLogger("voxecho.provider")
+logger = logging.getLogger("fewtype.provider")
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,4 @@
-﻿// ---- 微信读书 main world 脚本 ----
+// ---- 微信读书 main world 脚本 ----
 // MAIN world 注册，document_start 运行，不受页面 CSP 限制，直接 hook CanvasRenderingContext2D.prototype
 // 通过 window.postMessage 与 isolated world 的 content-weread.js 通信
 
@@ -125,7 +125,7 @@
       return origFillText.apply(this, arguments);
     };
 
-    console.log("[VoxEcho] fillText hook installed (debounce 300ms + clearRect/width new-page detection)");
+    console.log("[FewType] fillText hook installed (debounce 300ms + clearRect/width new-page detection)");
 
     // hook clearRect：区分模式
     // - 滚动模式：任何 clearRect 都清空全部字符（虚拟滚动重绘，旧内容已失效）
@@ -293,11 +293,11 @@
       return true;
     });
     if (charIndex.length === 0) {
-      console.log("[VoxEcho] 重建前过滤后为空，等待下一轮 fillText");
+      console.log("[FewType] 重建前过滤后为空，等待下一轮 fillText");
       return;
     }
     if (charIndex.length < beforeFilterLen) {
-      console.log("[VoxEcho] 重建前过滤过期字符: " + beforeFilterLen + " -> " + charIndex.length);
+      console.log("[FewType] 重建前过滤过期字符: " + beforeFilterLen + " -> " + charIndex.length);
     }
 
     // 排序：
@@ -335,7 +335,7 @@
       }
     }
     if (deduped.length < charIndex.length) {
-      console.log("[VoxEcho] charIndex 去重: " + charIndex.length + " → " + deduped.length);
+      console.log("[FewType] charIndex 去重: " + charIndex.length + " → " + deduped.length);
     }
     charIndex = deduped;
 
@@ -401,7 +401,7 @@
     if (isScroll) {
       const domSpans = document.querySelectorAll("span.wr_absolute");
       const domText = extractDomText();
-      console.log("[VoxEcho] 滚动模式DOM探测: spanCount=" + domSpans.length + " domTextLen=" + (domText ? domText.length : 0) + " retry=" + domRetryCount);
+      console.log("[FewType] 滚动模式DOM探测: spanCount=" + domSpans.length + " domTextLen=" + (domText ? domText.length : 0) + " retry=" + domRetryCount);
       if (domText && domText.length > 10) {
         domRetryCount = 0; // 重置重试计数
         // 找 DOM 文本前 10 个字在 canvas 文本里的位置（处理重叠）
@@ -415,31 +415,31 @@
           // 有重叠：canvas 文本截断到重叠位置，再拼接 DOM 文本
           fullText = canvasText.slice(0, overlapPos) + domText;
           domTextStart = overlapPos;
-          console.log("[VoxEcho] 合并DOM文本: canvasLen=" + canvasText.length +
+          console.log("[FewType] 合并DOM文本: canvasLen=" + canvasText.length +
             " domLen=" + domText.length + " overlapPos=" + overlapPos +
             " mergedLen=" + fullText.length);
         } else {
           // 无重叠：直接拼接（可能有少量重复或遗漏）
           fullText = canvasText + domText;
           domTextStart = canvasText.length;
-          console.log("[VoxEcho] 拼接DOM文本(无重叠): canvasLen=" + canvasText.length +
+          console.log("[FewType] 拼接DOM文本(无重叠): canvasLen=" + canvasText.length +
             " domLen=" + domText.length + " mergedLen=" + fullText.length);
         }
       } else if (domRetryCount < 3) {
         // DOM 还没渲染，延迟 500ms 重试（翻页后 canvas 重绘快，DOM 渲染有延迟）
         domRetryCount++;
-        console.log("[VoxEcho] DOM未渲染，500ms后重试 (第" + domRetryCount + "次)");
+        console.log("[FewType] DOM未渲染，500ms后重试 (第" + domRetryCount + "次)");
         setTimeout(rebuildTextAndNotify, 500);
         return;
       } else {
         domRetryCount = 0; // 重试耗尽，重置
-        console.log("[VoxEcho] DOM重试耗尽，使用纯canvas文本");
+        console.log("[FewType] DOM重试耗尽，使用纯canvas文本");
       }
     }
 
     if (fullText.length > 0) {
       const firstChar = charIndex.length > 0 ? charIndex[0] : null;
-      console.log("[VoxEcho] 重建正文 len=" + fullText.length +
+      console.log("[FewType] 重建正文 len=" + fullText.length +
         " 前20字=" + fullText.slice(0, 20) +
         " canvas数=" + canvasElements.length +
         (domTextStart >= 0 ? " domTextStart=" + domTextStart : "") +
@@ -462,13 +462,13 @@
         monitorCount++;
         const spans = document.querySelectorAll("span.wr_absolute");
         if (spans.length > 0) {
-          console.log("[VoxEcho] DOM渲染监听: 检测到" + spans.length + "个span，重新合并文本");
+          console.log("[FewType] DOM渲染监听: 检测到" + spans.length + "个span，重新合并文本");
           clearInterval(domRenderMonitor);
           domRenderMonitor = null;
           rebuildTextAndNotify();
         } else if (monitorCount >= 10) {
           // 最多检查10次（约10秒），超时停止
-          console.log("[VoxEcho] DOM渲染监听: 超时未检测到DOM，停止监听");
+          console.log("[FewType] DOM渲染监听: 超时未检测到DOM，停止监听");
           clearInterval(domRenderMonitor);
           domRenderMonitor = null;
         }
@@ -637,7 +637,7 @@
           const cr = canvas.getBoundingClientRect();
           const or = ov.el.getBoundingClientRect();
           const rectR = rect.getBoundingClientRect();
-          console.log("[VoxEcho][高亮诊断锚] char=" + JSON.stringify(c.ch) +
+          console.log("[FewType][高亮诊断锚] char=" + JSON.stringify(c.ch) +
             " fillText{x:" + Math.round(c.x) + ",y:" + Math.round(c.y) + ",size:" + c.size +
             "} scale{sx:" + sx + ",sy:" + sy + "} translate{tx:" + (c.tx||0) + ",ty:" + (c.ty||0) +
             "} logical{x:" + Math.round(logicalX) + ",y:" + Math.round(logicalY) +
@@ -648,7 +648,7 @@
             " rectActual{top:" + Math.round(rectR.top) + ",left:" + Math.round(rectR.left) + ",w:" + Math.round(rectR.width) + ",h:" + Math.round(rectR.height) + "}" +
             " scrollY:" + Math.round(window.scrollY || 0));
         } catch (e) {
-          console.log("[VoxEcho][高亮诊断锚] 异常:", e);
+          console.log("[FewType][高亮诊断锚] 异常:", e);
         }
       }
     });
@@ -858,7 +858,7 @@
       const charBottom = charTop + c.size * ratio;
       if (clientX >= charLeft - 2 && clientX <= charRight + 2 &&
           clientY >= charTop - 2 && clientY <= charBottom + 2) {
-        console.log("[VoxEcho] findCharAtPosition canvas命中: mouse=(" + clientX + "," + clientY +
+        console.log("[FewType] findCharAtPosition canvas命中: mouse=(" + clientX + "," + clientY +
           ") idx=" + i + " char=" + c.ch);
         return i;
       }
@@ -914,11 +914,11 @@
           charCount += spanLen;
         }
       }
-      console.log("[VoxEcho] 划选起点: " + JSON.stringify(debugInfo));
+      console.log("[FewType] 划选起点: " + JSON.stringify(debugInfo));
       window.postMessage({ source: SOURCE, type: "debug-info", result: debugInfo }, "*");
     } else {
       selectionStartCharIdx = null;
-      console.log("[VoxEcho] 划选起点未找到: mouse=(" + mouseDownPos.x + "," + mouseDownPos.y + ") charIndexLen=" + charIndex.length);
+      console.log("[FewType] 划选起点未找到: mouse=(" + mouseDownPos.x + "," + mouseDownPos.y + ") charIndexLen=" + charIndex.length);
       window.postMessage({
         source: SOURCE, type: "debug-info",
         result: { type: "selection-start", mouseX: mouseDownPos.x, mouseY: mouseDownPos.y, charIdx: -1, reason: "not-found", charIndexLen: charIndex.length, domTextStart: domTextStart },
@@ -970,7 +970,7 @@
       // force=true 或合并后更长时更新
       if (force || merged.length > fullText.length) {
         fullText = merged;
-        console.log("[VoxEcho] 合并DOM文本: canvasLen=" + canvasText.length +
+        console.log("[FewType] 合并DOM文本: canvasLen=" + canvasText.length +
           " domLen=" + domText.length + " mergedLen=" + fullText.length +
           " overlapPos=" + overlapPos + " force=" + !!force);
         window.postMessage({
@@ -984,7 +984,7 @@
       }
       return false;
     } catch (e) {
-      console.log("[VoxEcho] 合并DOM文本异常: " + e);
+      console.log("[FewType] 合并DOM文本异常: " + e);
       return false;
     }
   }
@@ -1434,7 +1434,7 @@
         wrAbsoluteStats: wrAbsoluteStats,
         renderTargetContent: renderTargetInfo,
       };
-      console.log("[VoxEcho] 视口定位未找到可见字符", JSON.stringify(debugInfo));
+      console.log("[FewType] 视口定位未找到可见字符", JSON.stringify(debugInfo));
       window.postMessage({ source: SOURCE, type: "debug-info", result: debugInfo }, "*");
       return 0;
     }
@@ -1448,7 +1448,7 @@
         charOffset: firstVisible,
         heading: true,
       };
-      console.log("[VoxEcho] 视口定位成功(章节标题，从标题开始读)", JSON.stringify(okInfo));
+      console.log("[FewType] 视口定位成功(章节标题，从标题开始读)", JSON.stringify(okInfo));
       window.postMessage({ source: SOURCE, type: "debug-info", result: okInfo }, "*");
       return firstVisible;
     }
@@ -1461,7 +1461,7 @@
         firstChar: charIndex[firstVisible].ch,
         charOffset: firstVisible,
       };
-      console.log("[VoxEcho] 视口定位成功(翻页跳过标点)", JSON.stringify(okInfo));
+      console.log("[FewType] 视口定位成功(翻页跳过标点)", JSON.stringify(okInfo));
       window.postMessage({ source: SOURCE, type: "debug-info", result: okInfo }, "*");
       return firstVisible;
     }
@@ -1475,7 +1475,7 @@
           punctAt: i,
           charOffset: i + 1,
         };
-        console.log("[VoxEcho] 视口定位成功", JSON.stringify(okInfo));
+        console.log("[FewType] 视口定位成功", JSON.stringify(okInfo));
         window.postMessage({ source: SOURCE, type: "debug-info", result: okInfo }, "*");
         return i + 1;
       }
@@ -1487,7 +1487,7 @@
       firstChar: charIndex[firstVisible].ch,
       charOffset: firstVisible,
     };
-    console.log("[VoxEcho] 视口定位成功(无标点)", JSON.stringify(okInfo));
+    console.log("[FewType] 视口定位成功(无标点)", JSON.stringify(okInfo));
     window.postMessage({ source: SOURCE, type: "debug-info", result: okInfo }, "*");
     return firstVisible;
   }

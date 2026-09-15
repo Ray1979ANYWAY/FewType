@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 
-logger = logging.getLogger("voxecho.dialog")
+logger = logging.getLogger("fewtype.dialog")
 
 
 def pick_directory(initial: str = "") -> str:

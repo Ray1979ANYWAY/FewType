@@ -1,5 +1,5 @@
-# VoxEcho FastAPI 后端（阶段一）额外依赖
-# 基础依赖见 VoxEcho-bridge/requirements.txt（edge-tts / requests / sounddevice / numpy / lameenc / websocket-client）
+# FewType FastAPI 后端（阶段一）额外依赖
+# 基础依赖见 FewType-bridge/requirements.txt（edge-tts / requests / sounddevice / numpy / lameenc / websocket-client）
 fastapi>=0.110.0
 uvicorn>=0.29.0
 pydantic>=2.6.0

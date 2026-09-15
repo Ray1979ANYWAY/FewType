@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  console.log("[VoxEcho] content-weread.js (isolated) injected at", document.readyState);
+  console.log("[FewType] content-weread.js (isolated) injected at", document.readyState);
 
   const MAIN_SOURCE = "vox-weread-main";
   const CONTENT_SOURCE = "vox-weread-content";

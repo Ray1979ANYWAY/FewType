@@ -2,7 +2,7 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 ---
 
-# 🎙️ VoxEcho — 語音打字、長文轉語音與翻譯桌面助手
+# 🎙️ FewType — 語音打字、長文轉語音與翻譯桌面助手
 
 一個免費的 Windows 桌面助手，集語音打字（STT）、長文本轉語音（TTS）、翻譯與電子書朗讀於一體——基於 Tauri 重構。配套瀏覽器擴充功能為網頁電子書閱讀器（Google Play Books 與 Koodo Reader）提供高品質 TTS 朗讀。
 
@@ -17,14 +17,14 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 ### 🖥️ 介面截圖
 
-![VoxEcho 主介面](docs/screenshots/main_en.png)
+![FewType 主介面](docs/screenshots/main_en.png)
 
 ### 🚀 快速開始
 
 1. 從 [Releases](https://github.com/Ray1979ANYWAY/VoxEcho/releases) 下載最新安裝版或便攜版。
-2. 執行 VoxEcho，開啟**設定**，填入服務商的 API Key。
+2. 執行 FewType，開啟**設定**，填入服務商的 API Key。
 3. 按下快捷鍵（可在設定中自訂——Ctrl+Win 或雙擊 Ctrl）說話，文字將輸入到游標所在處。
-4. 需要電子書朗讀時，將 `VoxEcho-extension` 資料夾作為「已解壓的擴充功能」載入到 Chrome/Edge——不讀電子書可略過此步。
+4. 需要電子書朗讀時，將 `FewType-extension` 資料夾作為「已解壓的擴充功能」載入到 Chrome/Edge——不讀電子書可略過此步。
 
 ### 📦 技術棧
 
@@ -45,13 +45,13 @@ English · 简体中文 · 繁體中文——首次啟動跟隨系統語言，�
 
 ### 🔒 安全與隱私
 
-- **你的 API Key 與風格 Prompt 永不存放在程式目錄**——統一保存在 `%APPDATA%\com.rayanyway.voxecho\bridge_config.json`。複製、壓縮、移動程式資料夾（或本倉庫）都不會帶走任何密鑰。
+- **你的 API Key 與風格 Prompt 永不存放在程式目錄**——統一保存在 `%APPDATA%\com.rayanyway.fewtype\bridge_config.json`。複製、壓縮、移動程式資料夾（或本倉庫）都不會帶走任何密鑰。
 - 發佈包**不含任何設定檔**；內建安全預設值，首次啟動自動生成。
 - 打包腳本若偵測到設定檔會以系統語言彈出警告並中止，密鑰不可能混入發佈包。
 - **卸載時自動刪除應用資料（含 API Key）**。
 
 ### ☕ 支持專案
 
-如果 VoxEcho 對你有用，請考慮請我喝杯咖啡！
+如果 FewType 對你有用，請考慮請我喝杯咖啡！
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rayhu)

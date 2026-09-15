@@ -39,9 +39,9 @@ const I18N = {
     logEmpty: "日志是空的，还没有可导出的内容",
     exported: (n) => `已导出 ${n} 条日志`,
     logCleared: "日志已清空",
-    sponsor: "如果你觉得 VoxEcho 对你有帮助，欢迎请我喝杯咖啡！",
+    sponsor: "如果你觉得 FewType 对你有帮助，欢迎请我喝杯咖啡！",
     bridgeDown:
-      "无法连接本地 VoxEcho bridge，音色列表可能不是最新。请先开启 VoxEcho bridge 程序。",
+      "无法连接本地 FewType bridge，音色列表可能不是最新。请先开启 FewType bridge 程序。",
     genderFemale: "女",
     genderMale: "男",
     // 音色分组 / 音色选项
@@ -100,9 +100,9 @@ const I18N = {
     logEmpty: "日誌是空的，還沒有可匯出的內容",
     exported: (n) => `已匯出 ${n} 條日誌`,
     logCleared: "日誌已清空",
-    sponsor: "如果你覺得 VoxEcho 對你有幫助，歡迎請我喝杯咖啡！",
+    sponsor: "如果你覺得 FewType 對你有幫助，歡迎請我喝杯咖啡！",
     bridgeDown:
-      "無法連線本機 VoxEcho bridge，音色清單可能不是最新。請先開啟 VoxEcho bridge 程式。",
+      "無法連線本機 FewType bridge，音色清單可能不是最新。請先開啟 FewType bridge 程式。",
     genderFemale: "女",
     genderMale: "男",
     // 音色分組 / 音色選項
@@ -161,9 +161,9 @@ const I18N = {
     logEmpty: "Log is empty, nothing to export",
     exported: (n) => `Exported ${n} log entries`,
     logCleared: "Log cleared",
-    sponsor: "If you find VoxEcho helpful, consider buying me a coffee!",
+    sponsor: "If you find FewType helpful, consider buying me a coffee!",
     bridgeDown:
-      "Can't reach the local VoxEcho bridge; the voice list may be stale. Please start the VoxEcho bridge app first.",
+      "Can't reach the local FewType bridge; the voice list may be stale. Please start the FewType bridge app first.",
     genderFemale: "Female",
     genderMale: "Male",
     // Voice groups / voice options
@@ -222,9 +222,9 @@ const I18N = {
     logEmpty: "El registro está vacío, no hay nada que exportar",
     exported: (n) => `Se exportaron ${n} entradas de registro`,
     logCleared: "Registro borrado",
-    sponsor: "Si VoxEcho te resulta útil, ¡invítame un café!",
+    sponsor: "Si FewType te resulta útil, ¡invítame un café!",
     bridgeDown:
-      "No se puede conectar con el puente local de VoxEcho; la lista de voces puede estar desactualizada. Inicia primero la aplicación VoxEcho bridge.",
+      "No se puede conectar con el puente local de FewType; la lista de voces puede estar desactualizada. Inicia primero la aplicación FewType bridge.",
     genderFemale: "Femenina",
     genderMale: "Masculino",
     // Voz: grupos / opciones
@@ -283,9 +283,9 @@ const I18N = {
     logEmpty: "ログは空です。エクスポートする内容がありません",
     exported: (n) => `${n} 件のログをエクスポートしました`,
     logCleared: "ログをクリアしました",
-    sponsor: "VoxEcho が役に立ったら、コーヒーをごちそうしてください！",
+    sponsor: "FewType が役に立ったら、コーヒーをごちそうしてください！",
     bridgeDown:
-      "ローカルの VoxEcho ブリッジに接続できません。音声リストが最新でない可能性があります。VoxEcho ブリッジを起動してください。",
+      "ローカルの FewType ブリッジに接続できません。音声リストが最新でない可能性があります。FewType ブリッジを起動してください。",
     genderFemale: "女性",
     genderMale: "男性",
     // 音声：グループ / オプション
@@ -344,9 +344,9 @@ const I18N = {
     logEmpty: "로그가 비어 있어 내보낼 내용이 없습니다",
     exported: (n) => `로그 ${n}개를 내보냈습니다`,
     logCleared: "로그를 지웠습니다",
-    sponsor: "VoxEcho가 도움이 되셨다면 커피 한 잔 사주시면 감사하겠습니다!",
+    sponsor: "FewType가 도움이 되셨다면 커피 한 잔 사주시면 감사하겠습니다!",
     bridgeDown:
-      "로컬 VoxEcho 브리지에 연결할 수 없어 음성 목록이 최신이 아닐 수 있습니다. VoxEcho 브리지를 먼저 실행해 주세요.",
+      "로컬 FewType 브리지에 연결할 수 없어 음성 목록이 최신이 아닐 수 있습니다. FewType 브리지를 먼저 실행해 주세요.",
     genderFemale: "여성",
     genderMale: "남성",
     // 음성: 그룹 / 옵션
@@ -455,7 +455,7 @@ const VOICE_GROUPS = [
 // ---- 音色清单：实时从本地 bridge 拉取 Edge TTS 最新音色，失败时回退缓存 / 内置兜底 ----
 // 端口自动探测：bridge-url.js（ES module）提供 voxResolveBridgeUrl()（主线 5010 / 旧版 5005）。
 // 本文件是普通 <script>，无法静态 import，这里用动态 import() 确保拿到函数再调用。
-const VOICES_CACHE_KEY = "voxechoVoicesCache";
+const VOICES_CACHE_KEY = "fewtypeVoicesCache";
 
 let _bridgeModulePromise = null;
 function ensureBridgeModule() {

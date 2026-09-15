@@ -1,5 +1,5 @@
 /**
- * VoxEcho 前端通讯层（阶段二）
+ * FewType 前端通讯层（阶段二）
  *
  * 与后端 FastAPI（tauri/backend/api/main.py，端口 5010）的全部交互：
  * - HTTP：配置 / 音色 / TTS / 翻译
@@ -155,7 +155,7 @@ export async function getVoices(): Promise<VoicesResponse> {
   return request<VoicesResponse>("/api/voices");
 }
 
-/** 拉取 TTS 默认输出目录（用户→文档→VoxEcho_tts_out） */
+/** 拉取 TTS 默认输出目录（用户→文档→FewType_tts_out） */
 export async function getTtsDefaultDir(): Promise<string> {
   const res = await request<{ dir: string }>("/api/tts/default-dir");
   return res.dir ?? "";

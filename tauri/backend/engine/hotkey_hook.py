@@ -15,7 +15,7 @@ import logging
 import time
 from ctypes import wintypes
 
-logger = logging.getLogger("voxecho.hotkey")
+logger = logging.getLogger("fewtype.hotkey")
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho TTS 引擎（FastAPI 版，从 Flask server.py 迁移）。
+"""FewType TTS 引擎（FastAPI 版，从 Flask server.py 迁移）。
 
 edge-tts 合成能力原样保留，改造点：
 - Flask 同步 → FastAPI async（edge_tts.Communicate 本身就是 async，无需 asyncio.run 桥接）
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import edge_tts
 
-logger = logging.getLogger("voxecho.tts")
+logger = logging.getLogger("fewtype.tts")
 
 DEFAULT_VOICE = "zh-CN-XiaoxiaoNeural"
 MAX_ATTEMPTS = 3
@@ -65,11 +65,11 @@ def _user_documents_dir() -> Path:
 
 
 def tts_output_dir() -> Path:
-    """输出目录：环境变量 VOXECHO_OUTPUT_DIR 优先，否则默认"用户→文档→VoxEcho_tts_out"。"""
-    d = os.environ.get("VOXECHO_OUTPUT_DIR")
+    """输出目录：环境变量 FEWTYPE_OUTPUT_DIR 优先，否则默认"用户→文档→FewType_tts_out"。"""
+    d = os.environ.get("FEWTYPE_OUTPUT_DIR")
     if d:
         return Path(d)
-    return _user_documents_dir() / "VoxEcho_tts_out"
+    return _user_documents_dir() / "FewType_tts_out"
 
 
 # ---------------------------------------------------------------- 音色清单
@@ -196,7 +196,7 @@ async def tts_file(text: str, voice: str, rate: str | None = None,
     blob = b"".join(audios)
     out_dir = Path(output_dir) if output_dir else tts_output_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
-    fname = "voxecho_%s.mp3" % time.strftime("%Y%m%d_%H%M%S")
+    fname = "fewtype_%s.mp3" % time.strftime("%Y%m%d_%H%M%S")
     path = out_dir / fname
     path.write_bytes(blob)
     logger.info(L("tts_file", fname=fname, segments=len(audios), bytes=len(blob)))

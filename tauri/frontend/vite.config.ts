@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// VoxEcho 前端（Tauri 迁移阶段二）
+// FewType 前端（Tauri 迁移阶段二）
 // 开发时后端 FastAPI 跑在 5010，代理让 /api 与 /ws 直通，避免 CORS 干扰
 export default defineConfig({
   plugins: [react(), tailwindcss()],

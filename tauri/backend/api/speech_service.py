@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""VoxEcho 语音输入引擎（FastAPI / WS /ws/speech-input 核心）。
+"""FewType 语音输入引擎（FastAPI / WS /ws/speech-input 核心）。
 
 从 launcher.py 的 STT 编排（4334-4970 行区域）剥离为独立服务：
 - 按住说话：start() 开始录音 → stop() 结束并转写 → 润色/翻译 → 上屏事件
@@ -25,7 +25,7 @@ from typing import Callable
 import stt_engine
 from config_store import load_config
 
-logger = logging.getLogger("voxecho.speech")
+logger = logging.getLogger("fewtype.speech")
 
 EventCallback = Callable[[dict], None]
 
@@ -352,7 +352,7 @@ class SpeechInputManager:
 
         import tempfile
         from pathlib import Path
-        tmp = Path(tempfile.gettempdir()) / f"voxecho_stt_{int(time.time()*1000)}{suffix}"
+        tmp = Path(tempfile.gettempdir()) / f"fewtype_stt_{int(time.time()*1000)}{suffix}"
         tmp.write_bytes(audio_data)
         try:
             raw_asr = provider.transcribe(

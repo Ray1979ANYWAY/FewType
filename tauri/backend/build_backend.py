@@ -1,6 +1,6 @@
-# VoxEcho 后端 sidecar 打包（PyInstaller）
-# 产出：dist/voxecho-backend/voxecho-backend.exe
-#     → 复制为 src-tauri/binaries/voxecho-backend-x86_64-pc-windows-msvc.exe
+# FewType 后端 sidecar 打包（PyInstaller）
+# 产出：dist/fewtype-backend/fewtype-backend.exe
+#     → 复制为 src-tauri/binaries/fewtype-backend-x86_64-pc-windows-msvc.exe
 #       （Tauri externalBin 约定：二进制名 + 目标 triple 后缀）
 #
 # 用法：
@@ -8,7 +8,7 @@
 #   python build_backend.py
 #
 # 注意：引擎模块（provider / stt_engine / volcengine_asr / normalize）位于
-# VoxEcho-bridge/，通过 sys.path 动态定位（见 main.py 的 find_bridge_dir）。
+# FewType-bridge/，通过 sys.path 动态定位（见 main.py 的 find_bridge_dir）。
 # PyInstaller 需要把这些模块的源码目录加入 pathex，否则打包后找不到。
 
 import shutil
@@ -23,7 +23,7 @@ import PyInstaller.__main__  # noqa: E402
 
 args = [
     str(API_DIR / "main.py"),
-    "--name", "voxecho-backend",
+    "--name", "fewtype-backend",
     "--onefile",
     "--console",
     "--clean",
@@ -51,8 +51,8 @@ for a in args:
 PyInstaller.__main__.run(args)
 
 # 复制产物到 src-tauri/binaries/（带 Tauri externalBin 的 triple 后缀）
-dist_exe = ROOT / "dist" / "voxecho-backend.exe"
-target = ROOT.parent / "src-tauri" / "binaries" / "voxecho-backend-x86_64-pc-windows-msvc.exe"
+dist_exe = ROOT / "dist" / "fewtype-backend.exe"
+target = ROOT.parent / "src-tauri" / "binaries" / "fewtype-backend-x86_64-pc-windows-msvc.exe"
 if dist_exe.exists():
     shutil.copy2(dist_exe, target)
     print(f"\n✅ sidecar 已复制到: {target} ({dist_exe.stat().st_size/1024/1024:.1f} MB)")

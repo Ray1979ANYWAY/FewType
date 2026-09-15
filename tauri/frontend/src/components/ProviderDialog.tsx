@@ -112,11 +112,13 @@ interface Fields {
 }
 
 /** 各平台 Key 的本地记忆（localStorage）：切换/重开弹窗都保留已输入 Key */
-const KEYS_STORAGE = "voxecho_provider_keys";
+const KEYS_STORAGE = "fewtype_provider_keys";
+// 改名 VoxEcho→FewType 前的旧 key：升级后自动继承已填 Key（写入时仍写新 key，自动迁移）
+const KEYS_STORAGE_LEGACY = "voxecho_provider_keys";
 
 function loadSavedKeys(): Record<string, { api_key?: string; llm_key?: string }> {
   try {
-    return JSON.parse(localStorage.getItem(KEYS_STORAGE) ?? "{}");
+    return JSON.parse(localStorage.getItem(KEYS_STORAGE) ?? localStorage.getItem(KEYS_STORAGE_LEGACY) ?? "{}");
   } catch {
     return {};
   }

@@ -151,7 +151,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 //   定时器，即使 service worker 被挂起也能按时触发并唤醒 worker。
 // 注意：chrome.alarms 的最小间隔是 1 分钟（periodInMinutes 最小为 1），
 //       所以本地服务的心跳超时也相应设为 90 秒（大于 1 分钟，避免状态抖动）。
-const HEARTBEAT_ALARM_NAME = "voxecho_heartbeat";
+const HEARTBEAT_ALARM_NAME = "fewtype_heartbeat";
 
 async function sendHeartbeat() {
   try {

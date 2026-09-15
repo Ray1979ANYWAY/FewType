@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """开机自启（迁移自 Tk 版 set_autostart：写入启动文件夹快捷方式）。
 纯标准库 + PowerShell COM，无第三方依赖。
-注意：自启目标是主壳 voxecho.exe（与 sidecar 同目录）；dev 模式下不写。
+注意：自启目标是主壳 fewtype.exe（与 sidecar 同目录）；dev 模式下不写。
 """
 from __future__ import annotations
 from log_i18n import L
@@ -12,9 +12,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-logger = logging.getLogger("voxecho.autostart")
+logger = logging.getLogger("fewtype.autostart")
 
-LINK_NAME = "VoxEcho.lnk"
+LINK_NAME = "FewType.lnk"
 
 
 def startup_folder() -> Path:
@@ -54,8 +54,8 @@ def shell_exe() -> Path | None:
     """定位主壳 exe（自启目标）。sidecar 与主壳同目录；dev 返回 None。"""
     me = Path(sys.executable)
     name = me.name.lower()
-    if name.startswith("voxecho-backend"):
-        cand = me.parent / "voxecho.exe"
+    if name.startswith("fewtype-backend"):
+        cand = me.parent / "fewtype.exe"
         if cand.exists():
             return cand
         return None

@@ -1,9 +1,9 @@
 // ---- 本地桥接服务端口自动探测 ----
-// VoxEcho 主线（Tauri）后端默认 5010；旧版（TK）后端默认 5005。
+// FewType 主线（Tauri）后端默认 5010；旧版（TK）后端默认 5005。
 // 本模块被 popup / background / offscreen 共用：首次探测结果缓存到
 // chrome.storage.local，其余脚本直接复用缓存；缓存端口不可达时自动重新探测。
 export const BRIDGE_PORTS = [5010, 5005];
-export const BRIDGE_PORT_KEY = "voxechoBridgePort";
+export const BRIDGE_PORT_KEY = "fewtypeBridgePort";
 
 async function voxProbePort(base) {
   try {

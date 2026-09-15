@@ -1,5 +1,5 @@
 /**
- * VoxEcho 三语界面（简体中文 / 繁體中文 / English）
+ * FewType 三语界面（简体中文 / 繁體中文 / English）
  * - I18nProvider 启动时读后端 ui_lang（localStorage 缓存），setLang 即时切换并写回后端
  * - useI18n() 返回 t(key, vars?)：{n} 占位替换
  * - 专有名词（平台名/热键名/语言选项）不翻译，语言下拉选项恒显示原语言
@@ -16,13 +16,15 @@ import { getConfig, updateConfig } from "./api";
 
 export type Lang = "zh-CN" | "zh-TW" | "en-US";
 
-const UI_LANG_KEY = "voxecho.ui_lang";
+const UI_LANG_KEY = "fewtype.ui_lang";
+// 改名 VoxEcho→FewType 前的旧 key：升级后首次启动自动继承，避免用户语言设置丢失
+const UI_LANG_KEY_LEGACY = "voxecho.ui_lang";
 
 const dicts: Record<Lang, Record<string, string>> = {
   /* ================================================================ 简体中文 */
   "zh-CN": {
     // App / TopBar
-    "app.title": "VoxEcho 语音处理平台",
+    "app.title": "FewType 语音处理平台",
     "app.title_suffix": "语音处理平台",
     "app.view_voice": "语音输入",
     "app.view_ebook": "电子书朗读",
@@ -69,7 +71,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.platform_google": "Google Play 图书",
     "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
-      "未检测到扩展心跳。请打开 chrome://extensions → 开启「开发者模式」→「加载已解压的扩展程序」→ 选择 VoxEcho-extension 文件夹",
+      "未检测到扩展心跳。请打开 chrome://extensions → 开启「开发者模式」→「加载已解压的扩展程序」→ 选择 FewType-extension 文件夹",
     "ebook.guide_title": "快速使用指南",
     "ebook.guide_1": "本程序保持运行（托盘后台驻留）",
     "ebook.guide_2": "在网页端阅读器中 鼠标划选文本，即可自动朗读",
@@ -193,7 +195,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hotkey.save": "保存",
 
     // 关于
-    "about.title": "关于 VoxEcho",
+    "about.title": "关于 FewType",
     "about.subtitle": "语音输入 · 电子书朗读 · 长文本转语音",
     "about.made_by": "Made by Ray",
     "about.github": "GitHub 仓库",
@@ -235,7 +237,7 @@ const dicts: Record<Lang, Record<string, string>> = {
 
   /* ================================================================ 繁體中文 */
   "zh-TW": {
-    "app.title": "VoxEcho 語音處理平台",
+    "app.title": "FewType 語音處理平台",
     "app.title_suffix": "語音處理平台",
     "app.view_voice": "語音輸入",
     "app.view_ebook": "電子書朗讀",
@@ -280,7 +282,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.platform_google": "Google Play 圖書",
     "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
-      "未偵測到擴充功能心跳。請開啟 chrome://extensions → 開啟「開發者模式」→「載入已解壓縮的擴充功能」→ 選擇 VoxEcho-extension 資料夾",
+      "未偵測到擴充功能心跳。請開啟 chrome://extensions → 開啟「開發者模式」→「載入已解壓縮的擴充功能」→ 選擇 FewType-extension 資料夾",
     "ebook.guide_title": "快速使用指南",
     "ebook.guide_1": "本程式保持運行（托盤後台駐留）",
     "ebook.guide_2": "在網頁端閱讀器中 滑鼠劃選文字，即可自動朗讀",
@@ -399,7 +401,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hotkey.load_failed": "載入失敗: {msg}",
     "hotkey.save": "儲存",
 
-    "about.title": "關於 VoxEcho",
+    "about.title": "關於 FewType",
     "about.subtitle": "語音輸入 · 電子書朗讀 · 長文本轉語音",
     "about.made_by": "Made by Ray",
     "about.github": "GitHub 倉庫",
@@ -439,7 +441,7 @@ const dicts: Record<Lang, Record<string, string>> = {
 
   /* ================================================================ English */
   "en-US": {
-    "app.title": "VoxEcho Voice Platform",
+    "app.title": "FewType Voice Platform",
     "app.title_suffix": "Voice Platform",
     "app.view_voice": "Voice Input",
     "app.view_ebook": "E-book Reader",
@@ -484,7 +486,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "ebook.platform_google": "Google Play Books",
     "ebook.platform_koodo": "Koodo Reader",
     "ebook.missing":
-      "No extension heartbeat detected. Open chrome://extensions → enable \"Developer mode\" → \"Load unpacked\" → select the VoxEcho-extension folder",
+      "No extension heartbeat detected. Open chrome://extensions → enable \"Developer mode\" → \"Load unpacked\" → select the FewType-extension folder",
     "ebook.guide_title": "Quick Start Guide",
     "ebook.guide_1": "Keep this program running (tray resident)",
     "ebook.guide_2": "In the web reader, select text with the mouse to read it aloud",
@@ -603,7 +605,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hotkey.load_failed": "Load failed: {msg}",
     "hotkey.save": "Save",
 
-    "about.title": "About VoxEcho",
+    "about.title": "About FewType",
     "about.subtitle": "Voice Input · E-book Reading · Long-text TTS",
     "about.made_by": "Made by Ray",
     "about.github": "GitHub Repository",
@@ -673,7 +675,7 @@ function detectSystemLang(): Lang {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     try {
-      const saved = localStorage.getItem(UI_LANG_KEY);
+      const saved = localStorage.getItem(UI_LANG_KEY) ?? localStorage.getItem(UI_LANG_KEY_LEGACY);
       if (saved === "zh-CN" || saved === "zh-TW" || saved === "en-US") {
         return saved;
       }
