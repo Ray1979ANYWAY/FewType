@@ -38,7 +38,7 @@ FewType is a local relay — it doesn't depend on any cloud server of ours. Howe
 - **STT voice typing**: uses the Groq API by default, which requires your own API key. Pricing, rate limits, and model changes from the provider can affect usage
 - **Translation / polishing / styling**: uses the LLM you configure in Settings (e.g. Groq, Volcengine), also subject to provider API changes
 
-This is a personal project maintained in my spare time — I'll do my best, but support is best-effort. If you run into issues or have suggestions, please open an [issue](https://github.com/Ray1979ANYWAY/VoxEcho/issues).
+This is a personal project maintained in my spare time — I'll do my best, but support is best-effort. If you run into issues or have suggestions, please open an [issue](https://github.com/Ray1979ANYWAY/FewType/issues).
 
 ### 🛡️ Unsigned Build Notice
 

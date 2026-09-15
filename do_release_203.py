@@ -2,7 +2,7 @@
 """创建 VoxEcho 2.0.3 (tkinter) Release，curl 上传 zip，删除 v2.0.2 release（保留 tag）"""
 import json, subprocess, sys, os, time, urllib.request, urllib.error
 
-REPO = "repos/Ray1979ANYWAY/VoxEcho"
+REPO = "repos/Ray1979ANYWAY/FewType"
 TAG = "v2.0.3"
 API = "https://api.github.com"
 UPLOADS = "https://uploads.github.com"
@@ -10,8 +10,8 @@ ZIP = r"D:\Documents\VoxEcho-2.0.3-tk-win64.zip"
 
 BODY = """# VoxEcho 2.0.3 (tkinter edition)
 
-![Main UI](https://raw.githubusercontent.com/Ray1979ANYWAY/VoxEcho/v2.0.3/docs/screenshots/main_1.png)
-![TTS Panel](https://raw.githubusercontent.com/Ray1979ANYWAY/VoxEcho/v2.0.3/docs/screenshots/main_tts.png)
+![Main UI](https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/v2.0.3/docs/screenshots/main_1.png)
+![TTS Panel](https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/v2.0.3/docs/screenshots/main_tts.png)
 
 Lightweight tkinter edition — one free program for voice typing (STT), e-book read-aloud, and long-form text-to-speech (TTS). Maintained alongside the Tauri edition (3.1.12).
 
@@ -135,5 +135,5 @@ st, body = api("GET", "%s/%s/releases" % (API, REPO))
 print("--- remaining releases ---")
 for r in json.loads(body):
     print(r.get("tag_name"), r.get("html_url"))
-print("RELEASE_URL", "https://github.com/Ray1979ANYWAY/VoxEcho/releases/tag/" + TAG)
+print("RELEASE_URL", "https://github.com/Ray1979ANYWAY/FewType/releases/tag/" + TAG)
 sys.exit(0 if ok else 1)

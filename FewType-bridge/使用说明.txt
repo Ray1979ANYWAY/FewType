@@ -32,7 +32,7 @@
 
 【反馈与支持】
 遇到问题或建议，欢迎在 GitHub 提交 issue：
-  https://github.com/Ray1979ANYWAY/VoxEcho/issues
+  https://github.com/Ray1979ANYWAY/FewType/issues
 
 如果你觉得 FewType 有用，欢迎请我喝杯咖啡：
   https://ko-fi.com/rayhu

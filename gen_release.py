@@ -3,8 +3,8 @@ import json
 
 body = """# VoxEcho 2.0.1 (tkinter edition)
 
-![Main UI](https://raw.githubusercontent.com/Ray1979ANYWAY/VoxEcho/v2.0.1/docs/screenshots/main_1.png)
-![TTS Panel](https://raw.githubusercontent.com/Ray1979ANYWAY/VoxEcho/v2.0.1/docs/screenshots/main_tts.png)
+![Main UI](https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/v2.0.1/docs/screenshots/main_1.png)
+![TTS Panel](https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/v2.0.1/docs/screenshots/main_tts.png)
 
 Lightweight tkinter edition — one free program for voice typing (STT), e-book read-aloud, and long-form text-to-speech (TTS). Maintained alongside the Tauri edition (3.1.6).
 

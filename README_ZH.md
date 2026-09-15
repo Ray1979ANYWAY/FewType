@@ -38,7 +38,7 @@ FewType 是本地中转程序，本身不依赖云服务器，但以下能力依
 - **STT 语音转文字**：默认使用 Groq API，需要你提供 API key；供应方的定价、限流和模型调整都可能影响使用
 - **翻译 / 润色 / 风格化**：使用你在设置中配置的 LLM（如 Groq、火山引擎等），同样受供应方 API 影响
 
-本项目由个人维护，能力有限，但会尽力维护。遇到问题或想提建议，欢迎在 [issue](https://github.com/Ray1979ANYWAY/VoxEcho/issues) 中提交。
+本项目由个人维护，能力有限，但会尽力维护。遇到问题或想提建议，欢迎在 [issue](https://github.com/Ray1979ANYWAY/FewType/issues) 中提交。
 
 ### 🛡️ 未签名说明
 

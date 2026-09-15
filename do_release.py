@@ -2,7 +2,7 @@
 """用 urllib 更新 Release body + 上传 asset（绕开 curl 环境问题）"""
 import json, subprocess, sys, os, urllib.request, urllib.error
 
-REPO = "repos/Ray1979ANYWAY/VoxEcho"
+REPO = "repos/Ray1979ANYWAY/FewType"
 ZIP = r"D:\Documents\VoxEcho-2.0.1-tk-win64.zip"
 PAYLOAD = r"D:\Documents\FewType-tk\release_payload.json"
 TAG = "v2.0.1"
