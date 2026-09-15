@@ -2537,3 +2537,4 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 配置迁移：%APPDATA%\VoxEcho → %APPDATA%\FewType；_migrate_legacy_config 增加旧 APPDATA 目录源并删源；uninstall.bat 同时 rd 新旧两目录。
 - 坑记录：主目录改名时同盘 Move-Item 逐项移动可绕过根目录目录句柄锁；移动后必须修 .git/config core.worktree 与主 worktree 指针（见 Tauri 主线记录）。
 - 历史发布产物（do_release*.py / gen_release.py / release_payload.json）不追溯改名，仍含 VoxEcho 字样，下次发版前更新文案。
+- 2026-09-16 追加：TK worktree 目录同步更名 VoxEcho-tk -> FewType-tk（含主 .git/worktrees 元数据、两端指针文件）；do_release.py / gen_release.py 的 release_payload 路径同步更新。

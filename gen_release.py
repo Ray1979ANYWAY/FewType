@@ -53,6 +53,6 @@ payload = {
     "prerelease": False,
 }
 
-with open(r"D:\Documents\VoxEcho-tk\release_payload.json", "w", encoding="utf-8") as f:
+with open(r"D:\Documents\FewType-tk\release_payload.json", "w", encoding="utf-8") as f:
     json.dump(payload, f, ensure_ascii=False)
 print("payload written, body chars:", len(body))

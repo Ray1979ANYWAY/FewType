@@ -4,7 +4,7 @@ import json, subprocess, sys, os, urllib.request, urllib.error
 
 REPO = "repos/Ray1979ANYWAY/VoxEcho"
 ZIP = r"D:\Documents\VoxEcho-2.0.1-tk-win64.zip"
-PAYLOAD = r"D:\Documents\VoxEcho-tk\release_payload.json"
+PAYLOAD = r"D:\Documents\FewType-tk\release_payload.json"
 TAG = "v2.0.1"
 API = "https://api.github.com"
 
