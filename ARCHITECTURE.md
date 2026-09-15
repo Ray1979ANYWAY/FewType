@@ -1,12 +1,12 @@
-# VoxEcho 项目架构说明
+# FewType 项目架构说明
 
-> 本文档基于对项目源码的完整阅读整理，覆盖 `VoxEcho-extension`（Chrome 扩展）与 `VoxEcho-bridge`（本地桥接）两部分的文件职责、数据流与运行机制。
+> 本文档基于对项目源码的完整阅读整理，覆盖 `FewType-extension`（Chrome 扩展）与 `FewType-bridge`（本地桥接）两部分的文件职责、数据流与运行机制。
 
 ---
 
 ## 1. 项目概览
 
-VoxEcho 是一款**本地语音工具集**，包含三大场景：
+FewType 是一款**本地语音工具集**，包含三大场景：
 
 1. **电子书朗读**（Chrome 扩展）：支持 Google Play Books、Koodo Reader（网页版）、微信读书（weread.qq.com）三个平台，中/英/西/日/韩五语言语音朗读。
 2. **长文本转语音**（本地桥接 GUI）：粘贴长文本 → 可选 Native 翻译润色（LLM）→ 微软 TTS 合成音频文件。
@@ -16,7 +16,7 @@ VoxEcho 是一款**本地语音工具集**，包含三大场景：
 
 ```
 ┌─────────────────────────────┐        HTTP POST /speak        ┌─────────────────────────────┐
-│   VoxEcho-extension         │  ────────────────────────────►  │   VoxEcho-bridge            │
+│   FewType-extension         │  ────────────────────────────►  │   FewType-bridge            │
 │   (Chrome 扩展, 浏览器内)   │        文本 → MP3 音频          │   (本地 127.0.0.1:5005)     │
 │   提取正文 / 切块 / 播放     │  ◄────────────────────────────  │   edge_tts 合成音频         │
 └─────────────────────────────┘        GET /health 心跳         └─────────────────────────────┘
@@ -35,11 +35,11 @@ VoxEcho 是一款**本地语音工具集**，包含三大场景：
 ## 2. 目录结构总览
 
 ```
-D:\Documents\VoxEcho\
+D:\Documents\FewType\
 ├── README.md                       # 项目简介（对外）
 ├── ARCHITECTURE.md                 # 本文档
 │
-├── VoxEcho-bridge\                 # 【本地桥接】Python 工程（三大场景 GUI + TTS 服务）
+├── FewType-bridge\                 # 【本地桥接】Python 工程（三大场景 GUI + TTS 服务）
 │   ├── launcher.py                 # 主程序：Tk GUI（三场景卡片式切换）+ pystray 托盘 + 服务管理
 │   ├── server.py                   # Flask TTS 服务（edge_tts 合成，127.0.0.1:5005）
 │   ├── hotkey_hook.py              # Windows WH_KEYBOARD_LL 低层键盘钩子（热键触发 + 吞键防开始菜单）
@@ -49,14 +49,14 @@ D:\Documents\VoxEcho\
 │   ├── gen_icon.py                 # SVG→ICO/PNG 多尺寸图标生成
 │   ├── build.bat / build.ps1       # onefile 打包脚本
 │   ├── build_onedir.bat            # onedir 打包脚本（备用）
-│   ├── VoxEcho-bridge.spec         # PyInstaller 配置
+│   ├── FewType-bridge.spec         # PyInstaller 配置
 │   ├── requirements.txt            # Python 依赖
-│   ├── VoxEcho.ico + icon\         # 多尺寸图标（16~256）
+│   ├── FewType.ico + icon\         # 多尺寸图标（16~256）
 │   ├── tools\                      # 图标修复工具
 │   ├── ICON.md                     # 图标问题专项文档
 │   └── DEVELOPER.md                # 发布清单备忘
 │
-└── VoxEcho-extension\              # 【Chrome 扩展】浏览器侧
+└── FewType-extension\              # 【Chrome 扩展】浏览器侧
     ├── manifest.json               # MV3 清单
     ├── background.js               # 唯一 service worker 入口（路由）
     ├── background-playbooks.js     # Play Books 朗读逻辑
@@ -78,7 +78,7 @@ D:\Documents\VoxEcho\
 
 ---
 
-## 3. 浏览器侧（VoxEcho-extension）文件职责
+## 3. 浏览器侧（FewType-extension）文件职责
 
 ### 3.1 入口与路由
 
@@ -118,7 +118,7 @@ D:\Documents\VoxEcho\
 
 ---
 
-## 4. 本地侧（VoxEcho-bridge）文件职责
+## 4. 本地侧（FewType-bridge）文件职责
 
 | 文件 | 职责 |
 |------|------|
@@ -129,12 +129,12 @@ D:\Documents\VoxEcho\
 | `provider.py` | 模型平台抽象。平台配置：Groq（推荐，needs_proxy=True）、火山引擎（仅 zh-CN 界面展示，needs_proxy=False，推荐国内使用）、硅基流动（needs_proxy=False）、自定义（ASR/LLM 分离 base_url+key）。双 Key 架构（语音 Key + 方舟 LLM Key）。`sanitize_api_key`（剔除非 ASCII/隐藏字符）。`test_connection`（内联绿 badge 显示延迟）。模型下拉可粘贴自定义 model 名 |
 | `volcengine_asr.py` | 火山引擎流式 ASR 2.0。WebSocket 协议封装：首帧 8 字节头（appid/token/cluster）、结果帧 12 字节头。实时音频帧发送 + 中间结果/最终结果解析。已知坑：首帧与结果帧头结构不同，需分别处理 |
 | `gen_icon.py` | SVG→ICO/PNG 多尺寸图标生成。渲染用户设计的 SVG（毛玻璃风格+声波+回声环）→ 输出 7 尺寸 ICO（16/24/32/48/64/128/256）+ 全套 PNG，三处输出（bridge 根、bridge/icon/、extension/icon/） |
-| `build.bat` | onefile 打包：装依赖 → PyInstaller `--onefile --windowed --icon VoxEcho.ico --add-data VoxEcho.ico;.` → copy ico 到 dist。**不要**对 onefile 跑 rcedit（会毁 PKG） |
+| `build.bat` | onefile 打包：装依赖 → PyInstaller `--onefile --windowed --icon FewType.ico --add-data FewType.ico;.` → copy ico 到 dist。**不要**对 onefile 跑 rcedit（会毁 PKG） |
 | `build.ps1` | build.bat 的 PowerShell 版 |
 | `build_onedir.bat` | onedir 打包（文件夹分发），可安全对文件夹内 exe 跑 rcedit 换图标 |
-| `VoxEcho-bridge.spec` | PyInstaller 配置 |
+| `FewType-bridge.spec` | PyInstaller 配置 |
 | `requirements.txt` | `edge-tts` / `flask` / `flask-cors` / `pystray` / `Pillow` / `pyinstaller` |
-| `VoxEcho.ico` + `icon/` | 多尺寸图标（16/24/32/48/64/128/256） |
+| `FewType.ico` + `icon/` | 多尺寸图标（16/24/32/48/64/128/256） |
 | `tools/` | `fix_exe_icon.py`（rcedit 版，仅 onedir 使用）；`fix_exe_icon_safe.py`（onefile 安全换图标：注入后原样拼回 PKG）；`rcedit-x64.exe` |
 | `ICON.md` | 图标问题专项说明（含"onefile 不可用 rcedit"警告） |
 | `DEVELOPER.md` | 发布清单备忘 |
@@ -145,8 +145,8 @@ D:\Documents\VoxEcho\
 
 ### 5.1 启动阶段
 
-1. 用户运行 `VoxEcho-bridge.exe` → launcher 启动 GUI + 托盘 → 自动拉起 server.py → 本地 `127.0.0.1:5005` 就绪。
-2. 用户在 Chrome 加载扩展（开发者模式 → Load unpacked → 选 `VoxEcho-extension` 文件夹）。
+1. 用户运行 `FewType-bridge.exe` → launcher 启动 GUI + 托盘 → 自动拉起 server.py → 本地 `127.0.0.1:5005` 就绪。
+2. 用户在 Chrome 加载扩展（开发者模式 → Load unpacked → 选 `FewType-extension` 文件夹）。
 
 ### 5.2 朗读阶段（以 Play Books 为例）
 
@@ -363,7 +363,7 @@ LLM 返回风格化/翻译后的文本
 
 ```bat
 :: 打包 onefile（本地桥接）
-cd D:\Documents\VoxEcho\VoxEcho-bridge
+cd D:\Documents\FewType\FewType-bridge
 build.bat
 
 :: 打包 onedir（备用，可 rcedit 改图标）
@@ -376,7 +376,7 @@ python launcher.py --run-server
 curl http://127.0.0.1:5005/health
 ```
 
-扩展加载：Chrome → chrome://extensions → 开发者模式 → Load unpacked → 选 `D:\Documents\VoxEcho\VoxEcho-extension`。
+扩展加载：Chrome → chrome://extensions → 开发者模式 → Load unpacked → 选 `D:\Documents\FewType\FewType-extension`。
 
 ---
 

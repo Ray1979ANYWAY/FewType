@@ -1,8 +1,0 @@
-{
-  "pluginName": {
-    "message": "VoxEcho"
-  },
-  "pluginDesc": {
-    "message": "E-books朗读服务。支持网页版的Google Play Books、Koodo Reader与微信读书。"
-  }
-}

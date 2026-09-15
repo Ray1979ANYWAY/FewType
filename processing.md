@@ -2528,3 +2528,12 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 迁移必须在 _LANG = detect_ui_lang() 之前执行，否则读不到旧 config 的 ui_lang
 - 测试目录刷新被占用：重试即可（瞬时句柄/杀软扫描）
 - ACL 对管理员无效（可绕过），对普通账户有效；复制拦不住——主防线是"源头无文件"
+
+## 2026-09-16 品牌改名 VoxEcho → FewType（TK 支线）
+
+- 起因：同 Tauri 主线（VoxEcho 精确重名零容忍），用户拍板 FewType。
+- 范围：30 个文件批量替换（保护 GitHub URL 与 D:\Documents\VoxEcho-tk worktree 路径）；VoxEcho-bridge → FewType-bridge、VoxEcho-extension → FewType-extension；VoxEcho-bridge.spec → FewType-bridge.spec；VoxEcho.ico → FewType.ico；icon/ 8 个图标；build.bat/build_onedir.bat/build.ps1 的 --name FewType-bridge 与图标引用同步。
+- 版本：2.0.4 → 2.0.5（launcher.py APP_VERSION + version_info.txt 四处）。
+- 配置迁移：%APPDATA%\VoxEcho → %APPDATA%\FewType；_migrate_legacy_config 增加旧 APPDATA 目录源并删源；uninstall.bat 同时 rd 新旧两目录。
+- 坑记录：主目录改名时同盘 Move-Item 逐项移动可绕过根目录目录句柄锁；移动后必须修 .git/config core.worktree 与主 worktree 指针（见 Tauri 主线记录）。
+- 历史发布产物（do_release*.py / gen_release.py / release_payload.json）不追溯改名，仍含 VoxEcho 字样，下次发版前更新文案。

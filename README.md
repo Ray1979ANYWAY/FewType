@@ -2,11 +2,11 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 ---
 
-# 📖 VoxEcho
+# 📖 FewType
 
 One program, free of charge, for voice typing, e-book read-aloud, and long-form text-to-speech.
 
-### 💡 Why VoxEcho
+### 💡 Why FewType
 
 This project grew out of my own reading habit. I found that taking in text and voice at the same time kept me far more focused and let me read for longer — and small interruptions, like getting up for a glass of water, no longer broke my concentration.
 
@@ -20,7 +20,7 @@ Later, my conversations with AI and my writing both called for heavy voice-to-te
 
 E-book reading and TTS use Microsoft's free voices; STT uses the Groq API by default. You can also bring your own API key, URL, and model for any of them. At personal-usage levels, these services are effectively free.
 
-There are two versions of VoxEcho:
+There are two versions of FewType:
 - **2.0**: built with tkinter — light and minimal
 - **3.0**: built with Tauri — a more modern experience
 
@@ -32,7 +32,7 @@ There are two versions of VoxEcho:
 
 ### ⚠️ Limitations & Dependencies
 
-VoxEcho is a local relay — it doesn't depend on any cloud server of ours. However, some features rely on external services and may be affected by their availability and policies:
+FewType is a local relay — it doesn't depend on any cloud server of ours. However, some features rely on external services and may be affected by their availability and policies:
 
 - **E-book read-aloud / TTS**: uses Microsoft's free voice service. Microsoft may change its API, rate limits, or policies, which could affect these features
 - **STT voice typing**: uses the Groq API by default, which requires your own API key. Pricing, rate limits, and model changes from the provider can affect usage
@@ -42,7 +42,7 @@ This is a personal project maintained in my spare time — I'll do my best, but 
 
 ### 🛡️ Unsigned Build Notice
 
-VoxEcho is not code-signed yet, so you may run into the following when installing or running it:
+FewType is not code-signed yet, so you may run into the following when installing or running it:
 
 - **Windows SmartScreen**: on first launch you may see "Windows protected your PC" (unknown publisher). Click "More info" → "Run anyway"
 - **Antivirus false positives**: unsigned executables can be flagged by Windows Defender or other AV software. Add the program to your whitelist if this happens
@@ -52,13 +52,13 @@ The source code is open (MIT licensed), so you're welcome to review it before ru
 
 ### 🔒 Security & Privacy
 
-- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\VoxEcho\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
+- **Your API key and style prompts never live in the program folder** — they are stored in `%APPDATA%\FewType\bridge_config.json`. Copying, zipping or moving the program folder (or this repository) carries no secrets.
 - The release package ships **without any config file**; safe defaults are built in and generated on first launch.
 - Packaging scripts abort with a system-language warning if a config file is detected, so secrets can never sneak into a release build.
-- **Uninstall**: run `uninstall.bat` in the program folder (removes local config, API key included), or manually delete the program folder and `%APPDATA%\VoxEcho`.
+- **Uninstall**: run `uninstall.bat` in the program folder (removes local config, API key included), or manually delete the program folder and `%APPDATA%\FewType`.
 
 ### ☕ Support the Project
 
-If you find VoxEcho helpful, consider buying me a coffee!
+If you find FewType helpful, consider buying me a coffee!
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rayhu)
