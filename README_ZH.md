@@ -21,7 +21,7 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 ### 🚀 快速开始
 
-1. 从 [Releases](https://github.com/Ray1979ANYWAY/VoxEcho/releases) 下载最新安装版或便携版。
+1. 从 [Releases](https://github.com/Ray1979ANYWAY/FewType/releases) 下载最新安装版或便携版。
 2. 运行 FewType，打开**设置**，填入服务商的 API Key。
 3. 按下快捷键（可在设置中自定义——Ctrl+Win 或双击 Ctrl）说话，文字将输入到光标所在处。
 4. 需要电子书朗读时，将 `FewType-extension` 文件夹作为"已解压的扩展程序"加载到 Chrome/Edge——不读电子书可跳过此步。
@@ -41,7 +41,7 @@ English · 简体中文 · 繁體中文——首次启动跟随系统语言，�
 - 程序**未签名**——首次安装时 Windows SmartScreen 可能弹出警告，选择"更多信息 → 仍要运行"即可。
 - 需要 **WebView2 运行时**（大多数 Windows 10/11 系统已预装）。
 - 需要自备 **API Key**（STT / LLM 服务商）。
-- 这是一个活跃维护的个人项目——能力可能随版本变化。Bug 与建议欢迎提交到 [Issues](https://github.com/Ray1979ANYWAY/VoxEcho/issues)。
+- 这是一个活跃维护的个人项目——能力可能随版本变化。Bug 与建议欢迎提交到 [Issues](https://github.com/Ray1979ANYWAY/FewType/issues)。
 
 ### 🔒 安全与隐私
 

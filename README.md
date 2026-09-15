@@ -21,7 +21,7 @@ Voice typing (STT), ebook reading, long-text TTS and translation in one free Win
 
 ### 🚀 Quick Start
 
-1. Download the latest installer or portable zip from [Releases](https://github.com/Ray1979ANYWAY/VoxEcho/releases).
+1. Download the latest installer or portable zip from [Releases](https://github.com/Ray1979ANYWAY/FewType/releases).
 2. Run FewType, open **Settings**, and fill in your provider API key.
 3. Press your hotkey (set in Settings — Ctrl+Win or double-tap Ctrl) and speak; the text is typed where your cursor is.
 4. For e-book reading, load the `FewType-extension` folder as an unpacked extension in Chrome/Edge — skip this if you don't read e-books.
@@ -41,7 +41,7 @@ English · 简体中文 · 繁體中文 — follows the system language on first
 - The program is **unsigned** — Windows SmartScreen may warn on first install; choose "More info → Run anyway".
 - Requires **WebView2 Runtime** (preinstalled on most Windows 10/11 systems).
 - You bring your own **API key** for the STT / LLM providers.
-- This is an actively maintained hobby project — capabilities may change. Bugs and suggestions are welcome in the [Issues](https://github.com/Ray1979ANYWAY/VoxEcho/issues) tab.
+- This is an actively maintained hobby project — capabilities may change. Bugs and suggestions are welcome in the [Issues](https://github.com/Ray1979ANYWAY/FewType/issues) tab.
 
 ### 🔒 Security & Privacy
 

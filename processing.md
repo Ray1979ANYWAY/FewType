@@ -2519,7 +2519,7 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 ## 2026-09-16 品牌改名 VoxEcho → FewType（Tauri 主线）
 
 - 起因：VoxEcho 与 appwill.co 的 VoxEcho AI 等精确重名，用户零容忍；经 20+ 候选名验证（Dictlips/Dictrans/Liptrans/LilType/Dictrano/Transay/Transpeech/Voilio/Sonatran/RhyTalk/Rytalk/Rytalk/Voilar 等全被否）后拍板 FewType——"少打字"语义直击语音输入卖点，Google/GitHub 三路搜索干净。
-- 范围：全库 VoxEcho/voxecho/VOXECHO → FewType/fewtype/FEWTYPE，保护 GitHub 仓库 URL Ray1979ANYWAY/VoxEcho 不变；FewType-extension 目录+8 图标+manifest 同步；sidecar fewtype-backend、spec、Cargo.lock、package-lock 同步。
+- 范围：全库 VoxEcho/voxecho/VOXECHO → FewType/fewtype/FEWTYPE，保护 GitHub 仓库 URL Ray1979ANYWAY/FewType 不变；FewType-extension 目录+8 图标+manifest 同步；sidecar fewtype-backend、spec、Cargo.lock、package-lock 同步。
 - 版本：3.1.13 → 3.1.14（tauri.conf.json / Cargo.toml / package.json / AboutDialog / Sidebar 五处一致）。
 - 配置迁移：%APPDATA%\com.rayanyway.voxecho（及更早 VoxEcho-tauri）→ %APPDATA%\com.rayanyway.fewtype；迁移后删源；nsis-uninstall.nsh 卸载时同时清理新旧目录。
 - 前端 localStorage 旧 key 自动继承：ui_lang / tts.outputDir / provider_keys（读 fallback，写新 key）。

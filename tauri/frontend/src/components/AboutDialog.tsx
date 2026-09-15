@@ -9,7 +9,7 @@ import { inTauri } from "../lib/window";
 import { useI18n } from "../i18n";
 
 const VERSION = "3.1.14";
-const GITHUB_URL = "https://github.com/Ray1979ANYWAY/VoxEcho";
+const GITHUB_URL = "https://github.com/Ray1979ANYWAY/FewType";
 const KO_FI_URL = "https://ko-fi.com/rayhu";
 
 /** 在系统浏览器中打开外链（Tauri 内走 shell 插件，浏览器环境走 window.open） */
