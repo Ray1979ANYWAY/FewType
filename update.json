@@ -1,11 +1,11 @@
 {
-  "version": "3.1.16",
-  "notes": "Manual check-for-updates button in Settings > General.",
-  "pub_date": "2026-09-16T10:30:00+08:00",
+  "version": "3.1.17",
+  "notes": "3.1.17 test build for updater verification.",
+  "pub_date": "2026-09-16T18:25:40+08:00",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakliUWpaczIzZU1JRWh2WnZ2R0d6ZFdkUHdQSGJNRm81SGVoT01iZHJPL05BZkUvZEtLMU9wTE9VZjZxMnJQTy8zOXNHeHdtK1JqUGg4cDZza3FFeWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTUzNzIwCWZpbGU6RmV3VHlwZV8zLjEuMTZfeDY0LXNldHVwLmV4ZQpaV3ZMK20zQ04yTEQ4dmdrajNoKy92dWU0WFdIUDhpMnEvVnpucFlHbytrS00wUkk4bWdhaXJBQkxvUlQ3VE90ZFhwR0l4M2c5Tnh6dEc1VW11UHlEQT09Cg==",
-      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.16/FewType_3.1.16_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvak8zU0lLUWtULzhMenZtWXNEVWp1K2c1TmQ4c3Z4Ym5pbDhYejZ5bktKWU1RL3FjL3p0dkNBeEhYYTh0b040R0RCZno3d0I0cGd2ZVBDS05Yb25Bd0FnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTU0MzQwCWZpbGU6RmV3VHlwZV8zLjEuMTdfeDY0LXNldHVwLmV4ZQoyR2F0QTVsK0ZGeHBxVDA2bHhmeFg0UTNwdGwvQzJFUWVRSEF5RFZuNEpVTys1U1EyNGw2aTlTVXNxM3huS1REODJxM1hBdkV4dlN2MFdUckVWblRDZz09Cg==",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.17/FewType_3.1.17_x64-setup.exe"
     }
   }
 }

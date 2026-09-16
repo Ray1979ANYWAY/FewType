@@ -54,7 +54,7 @@ export default function Sidebar({
       {/* 底部版本 */}
       <div className="flex flex-col items-center gap-1 text-[10.35px] text-muted/60">
         <span>FewType</span>
-        <span>V3.1.16</span>
+        <span>V3.1.17</span>
       </div>
     </aside>
   );

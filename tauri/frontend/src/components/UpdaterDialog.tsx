@@ -34,7 +34,7 @@ export default function UpdaterDialog({
   onClose,
 }: {
   open: boolean;
-  /** 检测到的新版本号（如 3.1.16）；null 表示尚未检测 */
+  /** 检测到的新版本号（如 3.1.17）；null 表示尚未检测 */
   version: string | null;
   onClose: () => void;
 }) {
