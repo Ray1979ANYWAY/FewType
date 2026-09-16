@@ -75,9 +75,16 @@ export default function App() {
   /** 日志卷帘：窗口向右扩展 320px（842→1162），高度锁死 668。
    *  main 固定 778px（842-64 侧边栏），与面板宽度完全解耦 → 动画期间内容零跳动 */
   // 启动 4 秒后静默检查更新：命中新版本弹窗提醒；任何异常（离线/未配置）静默跳过
+  // 首次检查失败（网络波动）→ 20 秒后补查一次，提高命中率
   useEffect(() => {
     if (!inTauri()) return;
-    const timer = window.setTimeout(() => void checkForUpdate(), 4000);
+    const timer = window.setTimeout(() => {
+      void checkForUpdate().then((ok) => {
+        if (!ok) {
+          window.setTimeout(() => void checkForUpdate(), 20000);
+        }
+      });
+    }, 4000);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

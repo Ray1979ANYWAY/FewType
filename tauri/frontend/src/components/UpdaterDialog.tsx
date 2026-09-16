@@ -2,6 +2,7 @@
  * 更新弹窗（tauri-plugin-updater 一键更新）
  * - 启动时 App 检查到新版本后打开本弹窗
  * - 「立即更新」：下载安装包 → 显示进度 → 静默安装 → relaunch 重启
+ * - 下载失败自动重试（最多 MAX_ATTEMPTS 次）；最终失败给出「重试」与「手动下载」兜底
  * - 非 Tauri 环境（浏览器 vite dev）不会触发（由调用方 inTauri 把关）
  */
 import { useState } from "react";
@@ -10,51 +11,94 @@ import { useI18n } from "../i18n";
 
 type Phase = "idle" | "downloading" | "installing" | "error";
 
+/** 下载失败自动重试次数 */
+const MAX_ATTEMPTS = 3;
+/** 两次尝试之间的间隔（毫秒） */
+const RETRY_DELAY_MS = 2000;
+
+/** 手动下载兜底地址（GitHub Releases 最新版） */
+const MANUAL_URL = "https://github.com/Ray1979ANYWAY/FewType/releases/latest";
+
+function fmtMB(n: number): string {
+  return (n / (1024 * 1024)).toFixed(1);
+}
+
 export default function UpdaterDialog({
   open,
   version,
   onClose,
 }: {
   open: boolean;
-  /** 检测到的新版本号（如 3.1.15）；null 表示尚未检测 */
+  /** 检测到的新版本号（如 3.1.16）；null 表示尚未检测 */
   version: string | null;
   onClose: () => void;
 }) {
   const { t } = useI18n();
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
+  const [downloaded, setDownloaded] = useState(0);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  /** 用系统浏览器打开手动下载页 */
+  const openManual = async () => {
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(MANUAL_URL);
+    } catch {
+      // 打开失败静默——用户仍可复制链接
+    }
+  };
 
   const start = async () => {
-    try {
+    // 下载失败自动重试：网络波动（深圳直连 GitHub 下载不稳定）时显著提高成功率
+    for (let i = 1; i <= MAX_ATTEMPTS; i++) {
+      setAttempt(i);
       setPhase("downloading");
       setProgress(0);
-      const { check } = await import("@tauri-apps/plugin-updater");
-      const update = await check();
-      if (!update) {
-        // 检查期间版本已变（例如刚手动装好）——直接关闭
-        setPhase("idle");
-        onClose();
-        return;
-      }
-      let total = 0;
-      await update.downloadAndInstall((event) => {
-        if (event.event === "Started") {
-          total = event.data.contentLength ?? 0;
-        } else if (event.event === "Progress") {
-          if (total > 0) {
-            setProgress(
-              Math.min(Math.round(((event.data.chunkLength ?? 0) / total) * 100), 99)
-            );
-          }
+      setDownloaded(0);
+      setTotal(0);
+      setError("");
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (!update) {
+          // 检查期间版本已变（例如刚手动装好）——直接关闭
+          setPhase("idle");
+          onClose();
+          return;
         }
-      });
-      setPhase("installing");
-      const { relaunch } = await import("@tauri-apps/plugin-process");
-      await relaunch();
-    } catch (e) {
-      setPhase("error");
-      setError(String(e instanceof Error ? e.message : e));
+        let ttl = 0;
+        await update.downloadAndInstall((event) => {
+          if (event.event === "Started") {
+            ttl = event.data.contentLength ?? 0;
+            setTotal(ttl);
+          } else if (event.event === "Progress") {
+            // chunkLength 是本次分块大小 → 用累计值算真实进度
+            setDownloaded((prev) => prev + (event.data.chunkLength ?? 0));
+            if (ttl > 0) {
+              setProgress(
+                Math.min(Math.round(((event.data.chunkLength ?? 0) / ttl) * 100), 99)
+              );
+            }
+          }
+        });
+        setPhase("installing");
+        const { relaunch } = await import("@tauri-apps/plugin-process");
+        await relaunch();
+        return; // relaunch 通常不会返回；保险起见直接结束
+      } catch (e) {
+        if (i < MAX_ATTEMPTS) {
+          // 短暂等待后进入下一次尝试
+          await sleep(RETRY_DELAY_MS);
+        } else {
+          setPhase("error");
+          setError(String(e instanceof Error ? e.message : e));
+        }
+      }
     }
   };
 
@@ -82,6 +126,16 @@ export default function UpdaterDialog({
             <span className="text-right text-[11.5px] text-muted">
               {t("updater.downloading", { p: progress })}
             </span>
+            <span className="text-right text-[11px] text-muted">
+              {total > 0
+                ? t("updater.download_mb", {
+                    done: fmtMB(downloaded),
+                    total: fmtMB(total),
+                  })
+                : `${fmtMB(downloaded)} MB`}
+              {attempt > 1 &&
+                ` · ${t("updater.attempt", { n: attempt, max: MAX_ATTEMPTS })}`}
+            </span>
           </div>
         )}
 
@@ -90,11 +144,27 @@ export default function UpdaterDialog({
         )}
 
         {phase === "error" && (
-          <p className="text-[12.5px] leading-relaxed text-rose-400">
-            {t("updater.error", { msg: error })}
-            <br />
-            <span className="text-muted">{t("updater.manual")}</span>
-          </p>
+          <div className="flex flex-col gap-2.5">
+            <p className="text-[12.5px] leading-relaxed text-rose-400">
+              {t("updater.error", { msg: error })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => void start()}
+                className="rounded-lg border border-border bg-input px-3.5 py-1.5 text-[12.5px] text-text hover:border-accent"
+              >
+                {t("updater.retry")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void openManual()}
+                className="rounded-lg border border-accent/50 bg-accent/15 px-3.5 py-1.5 text-[12.5px] font-semibold text-accent2 hover:bg-accent/25"
+              >
+                {t("updater.manual_download")}
+              </button>
+            </div>
+          </div>
         )}
 
         {phase === "idle" && (
