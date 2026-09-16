@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.5"
+APP_VERSION = "2.0.6"
 APP_NAME = "FewType"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/FewType"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
@@ -2409,6 +2409,9 @@ def run_gui(test_hook=None):
     root.title(t("title"))
     root.geometry("530x400")
     root.minsize(500, 400)   # 最小尺寸：宽 500 防三卡片文字截断，高 450
+
+    # 后台检查更新（不阻塞启动；有新版弹窗引导下载）
+    _check_update_async(root)
 
     # ============ Moss Black 主题（常量见模块级定义） ============
     root.configure(bg=BG)
@@ -5738,6 +5741,68 @@ def acquire_single_instance_mutex() -> bool:
         return True
     except Exception:
         return True  # 检测失败不阻塞启动
+
+
+# ================================================================ 更新检查（方案 A：提醒 + 引导下载）
+def _version_key(v):
+    """'2.0.6' → (2,0,6)；非数字段按 0，用于版本比较。"""
+    parts = []
+    for p in str(v).split("."):
+        try:
+            parts.append(int(p))
+        except ValueError:
+            parts.append(0)
+    return tuple(parts)
+
+
+def _check_update_async(root):
+    """启动后台线程查询 GitHub 最新 TK 版本（v2.x），有新版则回主线程弹窗引导下载。
+    任何异常（离线 / 未发布 / 请求失败）静默跳过，绝不影响正常启动。"""
+    def _work():
+        try:
+            r = requests.get(
+                "https://api.github.com/repos/Ray1979ANYWAY/FewType/releases?per_page=10",
+                timeout=8,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": "FewType-TK-Updater",
+                },
+            )
+            if r.status_code != 200:
+                return
+            latest_tk = None
+            for rel in r.json():
+                tag = (rel.get("tag_name") or "").strip()
+                if tag.lower().startswith("v2."):
+                    latest_tk = rel
+                    break
+            if not latest_tk:
+                return
+            new_ver = latest_tk["tag_name"].lstrip("vV")
+            if _version_key(new_ver) <= _version_key(APP_VERSION):
+                return
+            html_url = latest_tk.get("html_url") or GITHUB_URL
+            root.after(0, lambda: _prompt_update(root, new_ver, html_url))
+        except Exception:
+            pass  # 静默失败
+
+    threading.Thread(target=_work, daemon=True).start()
+
+
+def _prompt_update(root, new_ver, url):
+    try:
+        from tkinter import messagebox
+    except Exception:
+        return
+    if messagebox.askyesno(
+        _pd("发现新版本", "Update available"),
+        _pd(
+            "发现新版本 v{0}（当前 v{1}）\n是否前往 GitHub 下载？".format(new_ver, APP_VERSION),
+            "A new version v{0} is available (current v{1}).\nOpen the download page?".format(new_ver, APP_VERSION),
+        ),
+        parent=root,
+    ):
+        webbrowser.open(url)
 
 
 def main():
