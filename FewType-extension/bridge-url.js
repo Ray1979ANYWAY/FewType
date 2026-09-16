@@ -20,25 +20,34 @@ async function voxProbePort(base) {
 }
 
 export async function voxResolveBridgeUrl() {
+  const tryPort = async (p) => {
+    const base = "http://127.0.0.1:" + p;
+    if (await voxProbePort(base)) {
+      await chrome.storage.local.set({ [BRIDGE_PORT_KEY]: p });
+      return base;
+    }
+    return null;
+  };
   try {
     const cached = await chrome.storage.local.get(BRIDGE_PORT_KEY);
-    const cachedPort = cached[BRIDGE_PORT_KEY];
-    if (cachedPort) {
-      const base = "http://127.0.0.1:" + cachedPort;
-      if (await voxProbePort(base)) return base;
+    const cachedPort = Number(cached[BRIDGE_PORT_KEY]);
+    // 主线（5010）优先：缓存端口只有在命中主线时才做快速路径。
+    // 若缓存是旧版端口（5005），直接按 [5010, 5005] 顺序重探——
+    // 避免两条线同时运行时扩展粘在旧版 bridge 上，导致主线收不到心跳。
+    if (cachedPort === BRIDGE_PORTS[0]) {
+      const hit = await tryPort(cachedPort);
+      if (hit) return hit;
     }
     for (const port of BRIDGE_PORTS) {
-      const base = "http://127.0.0.1:" + port;
-      if (await voxProbePort(base)) {
-        await chrome.storage.local.set({ [BRIDGE_PORT_KEY]: port });
-        return base;
-      }
+      if (port === cachedPort) continue; // 主线缓存已试过，避免重复探测
+      const hit = await tryPort(port);
+      if (hit) return hit;
     }
   } catch (e) {
     // storage 不可用等极端情况：直接按默认顺序探测
     for (const port of BRIDGE_PORTS) {
-      const base = "http://127.0.0.1:" + port;
-      if (await voxProbePort(base)) return base;
+      const hit = await tryPort(port);
+      if (hit) return hit;
     }
   }
   return null;
