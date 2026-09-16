@@ -83,7 +83,11 @@ fn spawn_backend(app: &tauri::App) {
     }
 }
 
-fn kill_backend(app: &AppHandle) {
+/// 更新安装前结束后端 sidecar（前端在 download() 完成后、install() 之前调用）。
+/// NSIS 要覆盖 fewtype-backend.exe，进程仍存活会弹「无法打开要写入的文件」中止更新；
+/// 主进程 process::exit(0) 不会自动回收 sidecar，必须显式调用本命令。
+#[tauri::command]
+fn kill_backend(app: AppHandle) {
     if let Some(state) = app.try_state::<BackendProcess>() {
         if let Ok(mut guard) = state.0.lock() {
             if let Some(child) = guard.take() {
@@ -134,7 +138,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
             "quit" => {
-                kill_backend(app);
+                kill_backend(app.clone());
                 app.exit(0);
             }
             _ => {}
@@ -164,9 +168,11 @@ pub fn run() {
             show_main_window(app);
         }))
         // 自动更新：检查 GitHub Releases manifest（见 tauri.conf.json plugins.updater）
+        // 注意：安装前杀后端由前端流程完成——download() 完成后 invoke("kill_backend")，再 install()
         .plugin(tauri_plugin_updater::Builder::new().build())
         // 更新安装完成后重启应用（@tauri-apps/plugin-process 的 relaunch）
         .plugin(tauri_plugin_process::init())
+        .invoke_handler(tauri::generate_handler![kill_backend])
         .setup(|app| {
             spawn_backend(app);
             setup_tray(app)?;

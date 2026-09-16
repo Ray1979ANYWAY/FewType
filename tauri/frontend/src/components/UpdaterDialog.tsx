@@ -6,6 +6,7 @@
  * - 非 Tauri 环境（浏览器 vite dev）不会触发（由调用方 inTauri 把关）
  */
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Modal } from "./ui";
 import { useI18n } from "../i18n";
 
@@ -77,7 +78,7 @@ export default function UpdaterDialog({
           return;
         }
         let ttl = 0;
-        await update.downloadAndInstall((event) => {
+        await update.download((event) => {
           if (event.event === "Started") {
             ttl = event.data.contentLength ?? 0;
             setTotal(ttl);
@@ -91,10 +92,12 @@ export default function UpdaterDialog({
             }
           }
         });
+        // 下载完成 → 先结束后端 sidecar（否则 NSIS 无法覆盖 fewtype-backend.exe，
+        // 会弹「无法打开要写入的文件」中止更新）→ 再启动安装器
         setPhase("installing");
-        const { relaunch } = await import("@tauri-apps/plugin-process");
-        await relaunch();
-        return; // relaunch 通常不会返回；保险起见直接结束
+        await invoke("kill_backend");
+        await update.install();
+        return; // install() 在 Windows 上会启动安装器后退出进程，通常不会返回
       } catch (e) {
         if (i < MAX_ATTEMPTS) {
           // 短暂等待后进入下一次尝试
