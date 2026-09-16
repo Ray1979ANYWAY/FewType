@@ -83,13 +83,14 @@ export default function UpdaterDialog({
             ttl = event.data.contentLength ?? 0;
             setTotal(ttl);
           } else if (event.event === "Progress") {
-            // chunkLength 是本次分块大小 → 用累计值算真实进度
-            setDownloaded((prev) => prev + (event.data.chunkLength ?? 0));
-            if (ttl > 0) {
-              setProgress(
-                Math.min(Math.round(((event.data.chunkLength ?? 0) / ttl) * 100), 99)
-              );
-            }
+            // chunkLength 是本次分块大小 → 用累计值算真实进度（直接除总量会永远≈0%）
+            setDownloaded((prev) => {
+              const next = prev + (event.data.chunkLength ?? 0);
+              if (ttl > 0) {
+                setProgress(Math.min(Math.round((next / ttl) * 100), 99));
+              }
+              return next;
+            });
           }
         });
         // 下载完成 → 先结束后端 sidecar（否则 NSIS 无法覆盖 fewtype-backend.exe，
