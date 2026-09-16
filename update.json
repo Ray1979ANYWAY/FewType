@@ -1,11 +1,11 @@
 {
-  "version": "3.1.18",
-  "notes": "3.1.18 simulated test build (from 3.1.17) for updater verification.",
-  "pub_date": "2026-09-16T20:20:38+08:00",
+  "version": "3.1.19",
+  "notes": "SIMULATED FAILURE TEST — installer URL intentionally 404. This manifest is only for testing the updater error dialog; will be rolled back.",
+  "pub_date": "2026-09-16T20:28:43+08:00",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakFua0IrVjBRNUFiekVMZUVHOGZyRkZMOHpxQWVKb3pQR1ZNNGtYR3NQSkxFNXpKRDhSQjB2Y0pRY1k1UW54RnN0RmUrTCtXTTAxL1M0Ym5IdlM4RFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTYxMjM4CWZpbGU6RmV3VHlwZV8zLjEuMThfeDY0LXNldHVwLmV4ZQpFamF3eklPV0I0MGppSXJ2Z3loQzJCNEZLQ1grUXpSd2RyL1d0UzBXSkRkb1YraUtCWVZjZmVodjRhVGEwV0c3Y1dSZVZiNGxod0tVUmdTbS9VMTdEdz09Cg==",
-      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.18/FewType_3.1.18_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhDQTg2RTU1ODcwN0ZFMjMKVlJRSi9nZUhWVzZvakd2eUQxVExvNkIrdDdNTkRjcnpBVjVpQlFRYVlrVkRPcXlkUW02c3dRPT0K",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.19/FewType_3.1.19_x64-setup.exe"
     }
   }
 }
