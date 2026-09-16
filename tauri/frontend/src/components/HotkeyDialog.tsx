@@ -9,8 +9,8 @@ import { getConfig, updateConfig } from "../api";
 import { Modal, Btn } from "./ui";
 import { useI18n } from "../i18n";
 
-function hotkeyDisplay(combo: string): string {
-  if ((combo || "").trim().toLowerCase() === "double_ctrl") return "Double Ctrl (Hold)";
+function hotkeyDisplay(combo: string, doubleLabel: string): string {
+  if ((combo || "").trim().toLowerCase() === "double_ctrl") return doubleLabel;
   const names: Record<string, string> = {
     ctrl: "CTRL",
     alt: "ALT",
@@ -147,13 +147,13 @@ export default function HotkeyDialog({
           </label>
           <div className="mt-2 flex justify-end">
             <input
-              value={hotkeyDisplay(combo)}
+              value={hotkeyDisplay(combo, t("voice.double_ctrl"))}
               readOnly
               disabled={mode !== "combo"}
               onKeyDown={onKeyDown}
               onKeyUp={onKeyUp}
               placeholder={t("hotkey.mode_combo_placeholder")}
-              className={`w-[180px] rounded-xl border bg-[#121A15] px-3 py-2 text-center text-[16.1px] font-bold text-accent2 outline-none ${
+              className={`w-[180px] rounded-xl border bg-card px-3 py-2 text-center text-[16.1px] font-bold text-accent2 outline-none ${
                 mode === "combo"
                   ? "border-accent focus:border-accent2"
                   : "border-border/40 text-muted"

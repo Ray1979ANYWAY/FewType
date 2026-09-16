@@ -407,7 +407,7 @@ export default function ProviderDialog({
   const inputCls =
     "w-full rounded-lg border border-border bg-input px-3 py-0.5 text-[13.8px] leading-none text-text outline-none placeholder:text-muted focus:border-accent";
   const readonlyCls =
-    "w-full rounded-lg border border-border/60 bg-bg px-3 py-0.5 text-[12.65px] leading-none text-[#5A6560] outline-none";
+    "w-full rounded-lg border border-border/60 bg-bg px-3 py-0.5 text-[12.65px] leading-none text-muted outline-none";
   const lblCls = "mb-1 block text-[12.65px] text-mid";
 
   const body = (
@@ -542,7 +542,7 @@ export default function ProviderDialog({
         {testMsg ? (
           <p
             className={`text-[12.65px] ${
-              testOk === null ? "text-muted" : testOk ? "text-accent2" : "text-[#ff6b6b]"
+              testOk === null ? "text-muted" : testOk ? "text-accent2" : "text-destructive"
             }`}
           >
             {testMsg}
@@ -556,8 +556,8 @@ export default function ProviderDialog({
   return (
     <Modal open={open} onClose={onClose} title={t("provider.title")} width={560}>
       {showNotice && notice ? (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[12.65px] leading-snug text-amber-200">
-          <span className="shrink-0 text-amber-300">ℹ️</span>
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-[12.65px] leading-snug text-brand2">
+          <span className="shrink-0 text-brand3">ℹ️</span>
           <span>{notice}</span>
         </div>
       ) : null}

@@ -345,7 +345,7 @@ export default function HudOverlay() {
       <div className="flex h-screen w-screen items-start justify-center bg-transparent">
         <div
           ref={panelRef}
-          className="w-full rounded-2xl border border-emerald-500/20 bg-[#0D1410]/85 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+          className="w-full rounded-2xl border border-accent/20 bg-[#0D1410]/85 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
         >
           {/* 顶部固定行：标题 + 目标 + 操作按钮 */}
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -354,7 +354,7 @@ export default function HudOverlay() {
                 {t("hud.confirm_title")}
               </span>
               {confirmTarget && (
-                <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11.5px] text-[#34D399]">
+                <span className="shrink-0 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11.5px] text-[#34D399]">
                   → {confirmTarget}
                 </span>
               )}
@@ -399,7 +399,7 @@ export default function HudOverlay() {
             className="min-h-[40px] max-h-[240px] w-full resize-none overflow-y-auto rounded-lg border border-[#27372D] bg-[#1A261F] px-3 py-2 text-[13px] leading-relaxed text-[#ECFDF5] outline-none transition-colors focus:border-[#10B981]"
           />
           {/* 底部固定行：快捷键提示 */}
-          <div className="mt-1.5 text-center text-[10.5px] text-emerald-500/50">
+          <div className="mt-1.5 text-center text-[10.5px] text-accent/50">
             Enter 上屏 · Esc 取消
           </div>
         </div>
@@ -411,7 +411,7 @@ export default function HudOverlay() {
     <div className="flex h-screen w-screen items-start justify-center bg-transparent">
       {/* 玻璃拟态胶囊容器 */}
       <div
-        className={`mt-1 flex max-w-[400px] items-center gap-3 rounded-full border border-emerald-500/20 bg-[#0D1410]/75 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-opacity duration-500 ${
+        className={`mt-1 flex max-w-[400px] items-center gap-3 rounded-full border border-accent/20 bg-[#0D1410]/75 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-opacity duration-500 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >

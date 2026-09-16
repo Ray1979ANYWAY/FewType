@@ -1,39 +1,185 @@
 @import "tailwindcss";
 
 /* ============================================================
-   透明窗口强制规则：html/body/#root 必须全透明，
+   透明窗口强制规则：html/#root 必须全透明，
    否则 WebView2 默认白底会在圆角裁切处露出白角。
-   置于最顶部（!important 防任何工具类/预置样式覆盖）
+   body 铺满整个窗口（含圆角外），底色跟随主题 --color-bg：
+   Frost 等浅色主题下，圆角外 4 角与面板同色自然融合，
+   不再露出窗口原生深底 #040705（HUD 的 .hud-window body
+   透明规则带 !important 且在其后，优先级更高，不受影响）。
    ============================================================ */
 html,
-body,
 #root {
   background: transparent !important;
   background-color: transparent !important;
+}
+html,
+body,
+#root {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
   width: 100%;
   height: 100%;
 }
+body {
+  background-color: var(--color-bg);
+}
 
 /* ============================================================
-   FewType Moss Black 主题（Tailwind v4 @theme）
+   主题变量层（Tailwind v4 CSS-first）
+   规则：默认 Moss；其余主题通过 [data-theme] 覆盖 --t-* 原始 token，
+   @theme 的 --color-* 全部引用 var(--t-*)，组件继续用 bg-bg/text-accent
+   等工具类，切主题只换变量值，DOM/布局零改动。
+   ============================================================ */
+:root,
+[data-theme="moss"] {
+  /* 苔绿暗夜（默认·现状） */
+  --t-bg: #090d0a;
+  --t-card: #121a15;
+  --t-card2: #0b1e14;
+  --t-input: #1a261f;
+  --t-border: #27372d;
+  --t-border-hover: #10b981;
+  --t-accent: #10b981;
+  --t-accent2: #34d399;
+  --t-text: #ecfdf5;
+  --t-muted: #6b7280;
+  --t-mid: #9ca3af;
+  --t-warn: #f59e0b;
+  /* 品牌金：绿系主题的跳色点睛 */
+  --t-brand: #fbbf24;
+  --t-brand2: #fcd34d;
+  --t-brand3: #f59e0b;
+  --t-destructive: #f43f5e;
+  --t-destructive2: #fb7185;
+  --t-shadow-brand: rgba(251, 191, 36, 0.15);
+  --t-glow: rgba(16, 185, 129, 0.25);
+  --t-glow-strong: rgba(52, 211, 153, 0.9);
+  --t-glow-btn: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="frost"] {
+  /* 霜白（明亮·浅色）：accent 加深保 4.5:1；品牌深琥珀金跳色 */
+  --t-bg: #f3f6f4;
+  --t-card: #ffffff;
+  --t-card2: #e8efe9;
+  --t-input: #ffffff;
+  --t-border: #d5dfd8;
+  --t-border-hover: #059669;
+  --t-accent: #059669;
+  --t-accent2: #10b981;
+  --t-text: #16261e;
+  --t-muted: #6b7f72;
+  --t-mid: #7d9386;
+  --t-warn: #d97706;
+  --t-brand: #b45309;
+  --t-brand2: #d97706;
+  --t-brand3: #92400e;
+  --t-destructive: #dc2626;
+  --t-destructive2: #ef4444;
+  --t-shadow-brand: rgba(180, 83, 9, 0.18);
+  --t-glow: rgba(5, 150, 105, 0.25);
+  --t-glow-strong: rgba(16, 185, 129, 0.85);
+  --t-glow-btn: rgba(5, 150, 105, 0.3);
+}
+
+[data-theme="midnight"] {
+  /* 暮蓝（冷情绪·都市孤独）：深蓝黑 + 雾蓝，旧金跳色 */
+  --t-bg: #031728;
+  --t-card: #0a2138;
+  --t-card2: #061b2f;
+  --t-input: #0e2a45;
+  --t-border: #1c3a57;
+  --t-border-hover: #5482aa;
+  --t-accent: #5d93be;
+  --t-accent2: #7ea8cc;
+  --t-text: #eaf1f6;
+  --t-muted: #6485a8;
+  --t-mid: #7e96ae;
+  --t-warn: #e0a03c;
+  --t-brand: #b08d3e;
+  --t-brand2: #c9a45c;
+  --t-brand3: #8f6f2c;
+  --t-destructive: #e05b5b;
+  --t-destructive2: #ef7b7b;
+  --t-shadow-brand: rgba(176, 141, 62, 0.2);
+  --t-glow: rgba(93, 147, 190, 0.25);
+  --t-glow-strong: rgba(126, 168, 204, 0.85);
+  --t-glow-btn: rgba(93, 147, 190, 0.35);
+}
+
+[data-theme="ember"] {
+  /* 余烬（暖情绪·炽热孤独）：暖黑 + 陶土橙；主色已暖，logo 跳成冷青 */
+  --t-bg: #151311;
+  --t-card: #1e1b18;
+  --t-card2: #1a1713;
+  --t-input: #26221d;
+  --t-border: #3a342c;
+  --t-border-hover: #c06a35;
+  --t-accent: #c06a35;
+  --t-accent2: #c97b45;
+  --t-text: #f2ece4;
+  --t-muted: #8a7f72;
+  --t-mid: #968c7f;
+  --t-warn: #e5d154; /* 冷柠檬黄：跳出暖橙主色系，保住"警告=黄"语义 */
+  --t-brand: #5ccfba;
+  --t-brand2: #86e3d0;
+  --t-brand3: #3bae98;
+  --t-destructive: #e2574c;
+  --t-destructive2: #ef6f63;
+  --t-shadow-brand: rgba(92, 207, 186, 0.2);
+  --t-glow: rgba(192, 106, 53, 0.25);
+  --t-glow-strong: rgba(201, 123, 69, 0.85);
+  --t-glow-btn: rgba(192, 106, 53, 0.35);
+}
+
+/* HUD 悬浮胶囊：固定 Moss 视觉（悬浮在任意应用之上，不随主窗口主题变） */
+.hud-window[data-theme="moss"],
+.hud-window {
+  --t-bg: #090d0a;
+  --t-card: #121a15;
+  --t-card2: #0b1e14;
+  --t-input: #1a261f;
+  --t-border: #27372d;
+  --t-border-hover: #10b981;
+  --t-accent: #10b981;
+  --t-accent2: #34d399;
+  --t-text: #ecfdf5;
+  --t-muted: #6b7280;
+  --t-mid: #9ca3af;
+  --t-warn: #f59e0b;
+  --t-brand: #fbbf24;
+  --t-brand2: #fcd34d;
+  --t-brand3: #f59e0b;
+  --t-destructive: #f43f5e;
+  --t-destructive2: #fb7185;
+  --t-glow: rgba(16, 185, 129, 0.25);
+  --t-glow-strong: rgba(52, 211, 153, 0.9);
+  --t-glow-btn: rgba(16, 185, 129, 0.35);
+}
+
+/* ============================================================
+   FewType 主题映射（Tailwind v4 @theme）
    ============================================================ */
 @theme {
-  --color-bg: #090d0a;            /* 主背景：深极客墨黑 */
-  --color-card: #121a15;          /* 卡片/容器：暗苔绿黑 */
-  --color-card2: #0b1e14;         /* 悬浮/状态条：深苔绿 */
-  --color-input: #1a261f;         /* 输入框/按钮背景 */
-  --color-border: #27372d;        /* 1px 暗绿边框 */
-  --color-border-hover: #10b981;  /* 悬停边框高亮 */
-
-  --color-accent: #10b981;        /* 翡翠绿（主高亮） */
-  --color-accent2: #34d399;       /* 薄荷荧光绿（次高亮） */
-  --color-text: #ecfdf5;          /* 主文字：高亮微绿白 */
-  --color-muted: #6b7280;         /* 冷灰（次要文字） */
-  --color-mid: #9ca3af;           /* 中灰（辅助文字） */
-  --color-warn: #f59e0b;          /* 警告/离线 */
+  --color-bg: var(--t-bg);
+  --color-card: var(--t-card);
+  --color-card2: var(--t-card2);
+  --color-input: var(--t-input);
+  --color-border: var(--t-border);
+  --color-border-hover: var(--t-border-hover);
+  --color-accent: var(--t-accent);
+  --color-accent2: var(--t-accent2);
+  --color-text: var(--t-text);
+  --color-muted: var(--t-muted);
+  --color-mid: var(--t-mid);
+  --color-warn: var(--t-warn);
+  --color-brand: var(--t-brand);
+  --color-brand2: var(--t-brand2);
+  --color-brand3: var(--t-brand3);
+  --color-destructive: var(--t-destructive);
+  --color-destructive2: var(--t-destructive2);
 
   --font-sans: "Microsoft YaHei UI", "Segoe UI", "PingFang SC",
     system-ui, -apple-system, sans-serif;
@@ -102,15 +248,15 @@ body {
   }
 }
 
-/* HUD 状态文字呼吸灯：透明度 + 翡翠光晕脉动 */
+/* HUD 状态文字呼吸灯：透明度 + 强调色光晕脉动（跟随主题变量） */
 @keyframes hud-breathe {
   0%,
   100% {
     opacity: 0.72;
-    text-shadow: 0 0 4px rgba(16, 185, 129, 0.25);
+    text-shadow: 0 0 4px var(--t-glow);
   }
   50% {
     opacity: 1;
-    text-shadow: 0 0 12px rgba(52, 211, 153, 0.9);
+    text-shadow: 0 0 12px var(--t-glow-strong);
   }
 }

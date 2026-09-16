@@ -16,7 +16,7 @@ import HotkeyDialog from "./components/HotkeyDialog";
 import AboutDialog from "./components/AboutDialog";
 import UpdaterDialog from "./components/UpdaterDialog";
 import { resizeForTab, inTauri } from "./lib/window";
-import { getLogs, SpeechClient } from "./api";
+import { getConfig, getLogs, SpeechClient, updateConfig } from "./api";
 import { useI18n } from "./i18n";
 
 const VIEW_TITLES: Record<ViewKey, string> = {
@@ -39,6 +39,43 @@ export default function App() {
   /** 快捷键保存后 +1：通知 VoiceInput / Settings 重新加载快捷键显示 */
   const [hotkeyRev, setHotkeyRev] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
+
+  /** 界面主题（moss/frost/midnight/ember）：localStorage 持久化 + 后端 config 同步，
+   *  挂到 <html data-theme> 切换整套 CSS 变量（index.css 四套 --t-*），DOM/布局零改动。
+   *  后端为权威值：浏览器扩展打开时读取同一 config 的 theme 跟随换肤 */
+  const [theme, setTheme] = useState<string>(
+    () => localStorage.getItem("fewtype.theme") || "moss"
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("fewtype.theme", theme);
+  }, [theme]);
+
+  /** 切换主题：本地即时生效 + 写后端 config（扩展跟随的权威值） */
+  const applyTheme = (t: string) => {
+    setTheme(t);
+    void updateConfig({ theme: t }).catch(() => {});
+  };
+
+  // 主题权威 = 主程序本地选择（localStorage）：
+  // - 本地已有选择 → 写回后端 config，保证扩展读到一致主题（扩展只读不写）
+  // - 本地从未选过（首次安装）→ 从后端 config 读默认值
+  // 不做 focus 同步：避免 config 默认 moss 反向覆盖用户已选主题（握手方向反 bug）
+  useEffect(() => {
+    if (!inTauri()) return;
+    const saved = localStorage.getItem("fewtype.theme");
+    if (saved) {
+      void updateConfig({ theme: saved }).catch(() => {});
+      return;
+    }
+    getConfig()
+      .then((cfg) => {
+        if (cfg.theme && cfg.theme !== "moss") {
+          setTheme(cfg.theme);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // 自动更新：启动延迟检查 GitHub Releases，发现新版本弹窗
   const [updateOpen, setUpdateOpen] = useState(false);
@@ -271,12 +308,12 @@ export default function App() {
        窗口无边框，拖拽由 onMouseDownCapture 统一处理（控件自动排除，
        不依赖 data-tauri-drag-region 属性，避免内层所有子元素被拖拽捕获）。 */
     <div
-      className="relative m-0 flex h-full w-full select-none flex-col overflow-hidden rounded-xl border border-emerald-500/20 bg-bg text-text shadow-2xl"
+      className="relative m-0 flex h-full w-full select-none flex-col overflow-hidden border border-accent/20 bg-bg text-text shadow-2xl"
       onMouseDownCapture={onPanelMouseDown}
     >
       {/* 顶部 Topbar：品牌区 + 右侧两行（上行 = 最小化/关闭，下行 = 日志箭头贴右）。
           独立于内容区（加高 h-16），无边框窗口下整行空白可拖拽 */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-emerald-500/10 bg-bg px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-accent/10 bg-bg px-6">
         <div className="flex items-center gap-2 self-end pb-1.5">
           {/* 自定义 Logo：Moss Black 品牌图标（FewType-extension/icon） */}
           <img
@@ -285,7 +322,7 @@ export default function App() {
             className="h-5 w-5 shrink-0 object-contain"
           />
           {/* FewType 品牌名：香槟金渐变 */}
-          <span className="bg-gradient-to-r from-amber-200 via-orange-100 to-amber-400 bg-clip-text text-[14.95px] font-bold tracking-tight text-transparent drop-shadow-[0_2px_10px_rgba(251,191,36,0.15)]">
+          <span className="bg-gradient-to-r from-brand2 via-brand3 to-brand bg-clip-text text-[14.95px] font-bold tracking-tight text-transparent drop-shadow-[0_2px_10px_var(--t-shadow-brand)]">
             FewType
           </span>
           <span className="text-[14.95px] font-bold tracking-wide text-text">
@@ -297,7 +334,7 @@ export default function App() {
           {/* 本地服务状态：低调小字 */}
           <div className="ml-3 flex items-center gap-2 text-[11px] text-muted">
             <span>{t("app.local_service")} 127.0.0.1:5010</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_5px_#10B981]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_5px_var(--color-accent)]" />
           </div>
         </div>
 
@@ -307,7 +344,7 @@ export default function App() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => void windowMinimize()}
-              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-emerald-400/80 transition-all hover:bg-emerald-500/20 hover:text-emerald-300"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-accent2/80 transition-all hover:bg-accent/20 hover:text-accent2"
               title={t("app.window_minimize")}
             >
               <svg
@@ -322,7 +359,7 @@ export default function App() {
             </button>
             <button
               onClick={() => void windowClose()}
-              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-rose-400/80 transition-all hover:bg-rose-500/20 hover:text-rose-300"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-destructive/80 transition-all hover:bg-destructive/20 hover:text-destructive2"
               title={t("app.window_close")}
             >
               <svg
@@ -340,7 +377,7 @@ export default function App() {
           <div className="group relative">
             <button
               onClick={() => void toggleLog()}
-              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 transition-all hover:bg-emerald-500/20"
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-accent/30 bg-accent/10 text-accent2 transition-all hover:bg-accent/20"
             >
               <span
                 className={`text-[10px] leading-none transition-transform duration-300 ${
@@ -350,7 +387,7 @@ export default function App() {
                 ‹
               </span>
             </button>
-            <div className="pointer-events-none absolute right-0 top-7 z-50 whitespace-nowrap rounded bg-[#0C120E] px-2 py-1 text-[10px] text-emerald-300 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            <div className="pointer-events-none absolute right-0 top-7 z-50 whitespace-nowrap rounded bg-card2 px-2 py-1 text-[10px] text-accent2 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               {showLog ? t("app.log_close") : t("app.log_open")}
             </div>
           </div>
@@ -390,6 +427,8 @@ export default function App() {
                 onOpenAbout={() => setAboutOpen(true)}
                 onCheckUpdate={() => checkForUpdate()}
                 refreshKey={hotkeyRev}
+                theme={theme}
+                onThemeChange={applyTheme}
               />
             ) : null}
           </div>
@@ -397,26 +436,26 @@ export default function App() {
 
       {/* 右侧日志抽屉：窗口向右扩展 320px，抽屉占新增区域（面板零跳动） */}
       <div
-        className={`flex h-full w-[320px] shrink-0 flex-col overflow-hidden border-l border-emerald-500/20 bg-[#0C120E]/95 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 ease-out will-change-transform ${
+        className={`flex h-full w-[320px] shrink-0 flex-col overflow-hidden border-l border-accent/20 bg-card2/95 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 ease-out will-change-transform ${
           showLog ? "opacity-100" : "w-0 opacity-0"
         }`}
       >
         {/* 抽屉头部 */}
-        <div className="flex shrink-0 items-center justify-between border-b border-emerald-500/10 px-4 py-3">
-          <span className="font-mono text-xs font-bold tracking-wider text-emerald-400">
+        <div className="flex shrink-0 items-center justify-between border-b border-accent/10 px-4 py-3">
+          <span className="font-mono text-xs font-bold tracking-wider text-accent2">
             › {t("app.log_title")}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => void copyLogs()}
-              className="rounded px-1.5 py-0.5 text-xs text-emerald-500/60 transition-colors hover:text-emerald-400"
+              className="rounded px-1.5 py-0.5 text-xs text-accent/60 transition-colors hover:text-accent2"
               title="复制全部日志"
             >
               复制
             </button>
             <button
               onClick={() => void toggleLog()}
-              className="rounded px-1.5 py-0.5 text-xs text-emerald-500/60 transition-colors hover:text-emerald-400"
+              className="rounded px-1.5 py-0.5 text-xs text-accent/60 transition-colors hover:text-accent2"
             >
               ✕
             </button>
@@ -424,9 +463,9 @@ export default function App() {
         </div>
 
         {/* 日志内容流：可划选复制（滚动容器，不参与窗口拖拽） */}
-        <div className="select-text flex-1 space-y-1.5 overflow-y-auto p-4 font-mono text-[11px] leading-relaxed text-emerald-400/90 scrollbar-thin" data-no-drag>
+        <div className="select-text flex-1 space-y-1.5 overflow-y-auto p-4 font-mono text-[11px] leading-relaxed text-accent2/90 scrollbar-thin" data-no-drag>
           {logs.length === 0 ? (
-            <p className="text-emerald-500/40">{t("app.log_empty")}</p>
+            <p className="text-accent/40">{t("app.log_empty")}</p>
           ) : (
             logs.map((line, i) => <p key={i}>{line}</p>)
           )}

@@ -13,18 +13,30 @@ import { useI18n } from "../i18n";
 
 const UI_LANGS = ["简体中文", "繁體中文", "English"];
 
+/** 四套界面主题：key 对应 index.css [data-theme]，swatch 为选择器色卡代表色 */
+const THEMES: { key: string; swatch: string }[] = [
+  { key: "moss", swatch: "#10b981" },
+  { key: "frost", swatch: "#cfe3d8" },
+  { key: "midnight", swatch: "#5d93be" },
+  { key: "ember", swatch: "#c06a35" },
+];
+
 export default function Settings({
   onOpenProvider,
   onOpenHotkey,
   onOpenAbout,
   onCheckUpdate,
   refreshKey = 0,
+  theme,
+  onThemeChange,
 }: {
   onOpenProvider: () => void;
   onOpenHotkey: () => void;
   onOpenAbout: () => void;
   onCheckUpdate: () => Promise<boolean>;
   refreshKey?: number;
+  theme: string;
+  onThemeChange: (t: string) => void;
 }) {
   const { t, setLang: setI18nLang } = useI18n();
   const [lang, setLang] = useState("简体中文");
@@ -45,7 +57,9 @@ export default function Settings({
         setProviderSummary(
           p ? `${p.platform} · ASR ${p.asr_model} · LLM ${p.llm_model}` : t("settings.not_configured")
         );
-        setHotkey((cfg.stt_hotkey || "ctrl+win").trim().toLowerCase() === "double_ctrl" ? t("voice.double_ctrl") : cfg.stt_hotkey || "ctrl+win");
+        // 存原始值：double_ctrl 的本地化文案在渲染时按当前语言计算，
+        // 避免用闭包 t 预翻译导致语言切换后不更新（英文界面显示中文 bug）
+        setHotkey(cfg.stt_hotkey || "ctrl+win");
         setLoaded(true);
       })
       .catch((e) => setStatus(t("settings.load_failed", { msg: (e as Error).message })));
@@ -113,6 +127,35 @@ export default function Settings({
               label={t("settings.autostart")}
             />
           </div>
+          {/* 界面主题：四套色卡点击切换（检查更新上方） */}
+          <div className="flex items-center justify-between">
+            <span className="text-[13.8px] text-mid">{t("settings.theme")}</span>
+            <div className="flex items-center gap-1.5">
+              {THEMES.map((th) => {
+                const active = theme === th.key;
+                return (
+                  <button
+                    key={th.key}
+                    onClick={() => onThemeChange(th.key)}
+                    title={t(`settings.theme_${th.key}`)}
+                    className={`flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border px-2 transition-all ${
+                      active
+                        ? "border-accent bg-accent/10"
+                        : "border-border bg-input hover:border-accent/50"
+                    }`}
+                  >
+                    <span
+                      className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10"
+                      style={{ background: th.swatch }}
+                    />
+                    <span className={`text-[11.5px] ${active ? "text-text" : "text-mid"}`}>
+                      {t(`settings.theme_${th.key}`)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="flex items-center justify-between">
             <span className="text-[13.8px] text-mid">{t("settings.check_update")}</span>
             <Btn
@@ -148,7 +191,11 @@ export default function Settings({
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[13.8px] text-text">{t("settings.hotkey")}</p>
-              <p className="text-[12.65px] text-muted">{hotkey}</p>
+              <p className="text-[12.65px] text-muted">
+                {(hotkey || "").trim().toLowerCase() === "double_ctrl"
+                  ? t("voice.double_ctrl")
+                  : hotkey}
+              </p>
             </div>
             <Btn variant="ghost" onClick={onOpenHotkey} className="shrink-0">
               {t("settings.customize")}

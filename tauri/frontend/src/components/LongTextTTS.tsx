@@ -176,7 +176,7 @@ function ExpandableTextarea({
         type="button"
         onClick={() => setExpanded(true)}
         title={t("tts.expand_edit")}
-        className="absolute right-3 bottom-3 z-10 rounded-md border border-emerald-500/20 bg-[#090D0A]/80 p-1.5 text-emerald-500/60 backdrop-blur-sm transition-all cursor-pointer hover:bg-emerald-500/20 hover:text-emerald-400"
+        className="absolute right-3 bottom-3 z-10 rounded-md border border-accent/20 bg-bg/80 p-1.5 text-accent/60 backdrop-blur-sm transition-all cursor-pointer hover:bg-accent/20 hover:text-accent2"
       >
         <Maximize2 size={14} />
       </button>
@@ -192,7 +192,7 @@ function ExpandableTextarea({
                 type="button"
                 onClick={() => setExpanded(false)}
                 title={t("tts.collapse")}
-                className="rounded-md border border-emerald-500/20 p-1.5 text-emerald-500/70 transition-colors cursor-pointer hover:bg-emerald-500/20 hover:text-emerald-400"
+                className="rounded-md border border-accent/20 p-1.5 text-accent/70 transition-colors cursor-pointer hover:bg-accent/20 hover:text-accent2"
               >
                 <Minimize2 size={15} />
               </button>

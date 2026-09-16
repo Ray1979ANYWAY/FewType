@@ -220,7 +220,7 @@ export default function StyleManager({
                     type="button"
                     title={t("style.delete")}
                     onClick={() => delStyle(i)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-input text-mid hover:text-[#ff6b6b]"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-input text-mid hover:text-destructive"
                   >
                     <Trash2 size={12} />
                   </button>

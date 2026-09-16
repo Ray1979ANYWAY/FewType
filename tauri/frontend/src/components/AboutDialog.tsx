@@ -7,8 +7,7 @@ import { Github, Coffee } from "lucide-react";
 import { Modal } from "./ui";
 import { inTauri } from "../lib/window";
 import { useI18n } from "../i18n";
-
-const VERSION = "3.1.18";
+import { VERSION } from "../lib/version";
 const GITHUB_URL = "https://github.com/Ray1979ANYWAY/FewType";
 const KO_FI_URL = "https://ko-fi.com/rayhu";
 

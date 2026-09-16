@@ -288,7 +288,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(it.value)}
             className={`rounded-lg px-3.5 py-1.5 text-[13.8px] transition-all duration-150 ${
               active
-                ? "bg-accent font-bold text-bg shadow-[0_0_12px_rgba(16,185,129,0.35)]"
+                ? "bg-accent font-bold text-bg shadow-[0_0_12px_var(--t-glow-btn)]"
                 : "text-mid hover:text-text"
             }`}
           >
@@ -318,7 +318,7 @@ export function Btn({
 }) {
   const styles: Record<string, string> = {
     primary:
-      "bg-accent text-bg font-bold hover:bg-accent2 shadow-[0_0_14px_rgba(16,185,129,0.25)]",
+      "bg-accent text-bg font-bold hover:bg-accent2 shadow-[0_0_14px_var(--t-glow-btn)]",
     ghost: "bg-input text-mid border border-border hover:border-accent hover:text-text",
     danger: "bg-input text-warn border border-border hover:border-warn",
   };
@@ -388,7 +388,7 @@ export function StatusDot({ ok }: { ok: boolean }) {
       ) : null}
       <span
         className={`relative inline-flex h-2 w-2 rounded-full ${
-          ok ? "bg-accent shadow-[0_0_6px_#10B981]" : "bg-warn"
+          ok ? "bg-accent shadow-[0_0_6px_var(--color-accent)]" : "bg-warn"
         }`}
       />
     </span>

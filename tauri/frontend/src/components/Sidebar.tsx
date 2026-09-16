@@ -5,6 +5,7 @@
 import React from "react";
 import { Mic, BookOpen, AudioLines, Settings } from "lucide-react";
 import { useI18n } from "../i18n";
+import { VERSION } from "../lib/version";
 
 export type ViewKey = "voice" | "ebook" | "tts" | "settings";
 
@@ -44,7 +45,7 @@ export default function Sidebar({
             >
               {item.icon}
               {isActive ? (
-                <span className="absolute -left-[13px] h-5 w-[3px] rounded-full bg-accent shadow-[0_0_8px_#10B981]" />
+                <span className="absolute -left-[13px] h-5 w-[3px] rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
               ) : null}
             </button>
           );
@@ -54,7 +55,7 @@ export default function Sidebar({
       {/* 底部版本 */}
       <div className="flex flex-col items-center gap-1 text-[10.35px] text-muted/60">
         <span>FewType</span>
-        <span>V3.1.18</span>
+        <span>V{VERSION}</span>
       </div>
     </aside>
   );

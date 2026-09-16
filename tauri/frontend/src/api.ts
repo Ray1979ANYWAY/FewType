@@ -44,6 +44,7 @@ export interface AppConfig {
   autostart: boolean;
   first_run_done: boolean;
   ui_lang: string;
+  theme: string;
   stt_hotkey: string;
   stt_auto_commit: boolean;
   stt_mode: string;

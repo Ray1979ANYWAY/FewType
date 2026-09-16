@@ -647,6 +647,31 @@ function updateBridgeNotice(ok) {
   }
 }
 
+// 主题跟随主程序：读本地 bridge 的 /api/config 的 theme（moss/frost/midnight/ember），
+// 设置 <html data-theme>，popup.html 的 :root 覆盖变量随之换肤。
+// 主程序为唯一切换入口（设置 → 通用偏好），扩展只跟随不改写。
+function applyBridgeTheme() {
+  ensureBridgeModule()
+    .then(({ voxResolveBridgeUrl }) => voxResolveBridgeUrl())
+    .then((base) => {
+      if (!base) throw new Error("bridge unavailable");
+      return fetch(base + "/api/config", { cache: "no-store" });
+    })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((cfg) => {
+      if (
+        cfg &&
+        typeof cfg.theme === "string" &&
+        ["moss", "frost", "midnight", "ember"].includes(cfg.theme)
+      ) {
+        document.documentElement.dataset.theme = cfg.theme;
+      }
+    })
+    .catch(() => {
+      // bridge 未启动/离线时保持默认 Moss
+    });
+}
+
 // 内置兜底：bridge 离线且没有缓存时，退回原来的 20 个音色
 function fallbackVoices() {
   const out = [];
@@ -916,6 +941,7 @@ document.getElementById("clearLog").addEventListener("click", () => {
 // 启动：先按浏览器系统语言铺好界面，再拉取音色清单并恢复上次偏好、拉取内容、轮询朗读状态
 UI_LOCALE = detectUiLanguage();
 applyUiLanguage();
+applyBridgeTheme();
 loadVoices().then(() => restoreLastSelection());
 restoreLastRate();
 fetchLatest();

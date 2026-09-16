@@ -154,7 +154,7 @@ export default function UpdaterDialog({
 
         {phase === "error" && (
           <div className="flex flex-col gap-2.5">
-            <p className="text-[12.5px] leading-relaxed text-rose-400">
+            <p className="text-[12.5px] leading-relaxed text-destructive">
               {t("updater.error", { msg: error })}
             </p>
             {version && (

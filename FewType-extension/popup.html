@@ -19,6 +19,29 @@
         --error: #F87171;     /* 错误红 */
         --warn: #F59E0B;      /* 警示黄 */
       }
+      /* 主题跟随主程序（FewType 设置 → 通用偏好）：moss 为默认 :root，
+         其余三套由 <html data-theme> 覆盖（popup.js 启动时读取 bridge /api/config） */
+      [data-theme="frost"] {
+        --bg: #F3F6F4; --card: #FFFFFF; --card2: #E8EFE9;
+        --accent: #059669; --accent2: #10B981;
+        --text: #16261E; --muted: #6B7F72; --muted2: #7D9386;
+        --input: #FFFFFF; --border: #D5DFD8;
+        --error: #DC2626; --warn: #D97706;
+      }
+      [data-theme="midnight"] {
+        --bg: #031728; --card: #0A2138; --card2: #061B2F;
+        --accent: #5D93BE; --accent2: #7EA8CC;
+        --text: #EAF1F6; --muted: #6485A8; --muted2: #7E96AE;
+        --input: #0E2A45; --border: #1C3A57;
+        --error: #E05B5B; --warn: #E0A03C;
+      }
+      [data-theme="ember"] {
+        --bg: #151311; --card: #1E1B18; --card2: #1A1713;
+        --accent: #C06A35; --accent2: #C97B45;
+        --text: #F2ECE4; --muted: #8A7F72; --muted2: #968C7F;
+        --input: #26221D; --border: #3A342C;
+        --error: #E2574C; --warn: #E5D154;
+      }
       body {
         width: 380px;
         max-height: 560px;

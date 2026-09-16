@@ -111,6 +111,7 @@ DEFAULTS: dict = {
     "autostart": False,
     "first_run_done": False,
     "ui_lang": "",
+    "theme": "moss",
     "stt_hotkey": "ctrl+win",
     # 迁移标记默认置真：新安装/新保存的配置自带标记，load_config 的一次性迁移
     # （老配置残留 double_ctrl → 改回 ctrl+win）不会误伤用户手动保存的 double_ctrl。
@@ -141,7 +142,7 @@ DEFAULTS: dict = {
 
 # 顶层字段白名单：POST /api/config 只允许更新这些键
 TOP_LEVEL_KEYS = {
-    "autostart", "first_run_done", "ui_lang", "stt_hotkey",
+    "autostart", "first_run_done", "ui_lang", "theme", "stt_hotkey",
     "stt_auto_commit", "stt_mode", "stt_custom_style",
     "stt_translate", "stt_target_lang",
     "tts_output_dir", "provider", "stt_styles",

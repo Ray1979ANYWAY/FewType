@@ -201,12 +201,12 @@ export default function VoiceInput({
             size={15}
             aria-label={micAvailable === false ? t("voice.no_mic_title") : undefined}
             className={
-              micAvailable === false ? "text-amber-400" : "text-accent2"
+              micAvailable === false ? "text-warn" : "text-accent2"
             }
           />
           {t("voice.hint")}
           {micAvailable === false ? (
-            <span className="ml-1.5 rounded bg-amber-400/10 px-1.5 py-0.5 text-[11px] font-normal text-amber-400">
+            <span className="ml-1.5 rounded bg-warn/10 px-1.5 py-0.5 text-[11px] font-normal text-warn">
               {t("voice.no_mic")}
             </span>
           ) : null}
@@ -224,7 +224,7 @@ export default function VoiceInput({
             <span className="flex items-center gap-1.5 text-[11.5px]">
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
-                  connected ? "bg-accent shadow-[0_0_5px_#10B981]" : "bg-warn"
+                  connected ? "bg-accent shadow-[0_0_5px_var(--color-accent)]" : "bg-warn"
                 }`}
               />
               <span className={connected ? "text-accent2" : "text-warn"}>
