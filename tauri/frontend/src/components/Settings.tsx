@@ -17,11 +17,13 @@ export default function Settings({
   onOpenProvider,
   onOpenHotkey,
   onOpenAbout,
+  onCheckUpdate,
   refreshKey = 0,
 }: {
   onOpenProvider: () => void;
   onOpenHotkey: () => void;
   onOpenAbout: () => void;
+  onCheckUpdate: () => Promise<boolean>;
   refreshKey?: number;
 }) {
   const { t, setLang: setI18nLang } = useI18n();
@@ -30,6 +32,8 @@ export default function Settings({
   const [providerSummary, setProviderSummary] = useState("");
   const [hotkey, setHotkey] = useState("ctrl+win");
   const [status, setStatus] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [updateHint, setUpdateHint] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   const refresh = () => {
@@ -75,6 +79,21 @@ export default function Settings({
     void setPref({ ui_lang: code });
   };
 
+  /** 手动检查更新：有新版由 App 弹出更新弹窗；无新版就地提示「已是最新版本」 */
+  const onCheck = async () => {
+    if (checking) return;
+    setChecking(true);
+    setUpdateHint("");
+    try {
+      const found = await onCheckUpdate();
+      if (!found) setUpdateHint("✅ " + t("settings.up_to_date"));
+    } catch {
+      setUpdateHint("❌ " + t("settings.check_failed"));
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {/* 偏好卡片 */}
@@ -94,6 +113,20 @@ export default function Settings({
               label={t("settings.autostart")}
             />
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[13.8px] text-mid">{t("settings.check_update")}</span>
+            <Btn
+              variant="ghost"
+              onClick={() => void onCheck()}
+              disabled={checking}
+              className="shrink-0"
+            >
+              {checking ? t("settings.checking") : t("settings.check_update")}
+            </Btn>
+          </div>
+          {updateHint ? (
+            <p className="text-[12.65px] text-mid">{updateHint}</p>
+          ) : null}
         </div>
       </Card>
 

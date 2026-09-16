@@ -44,6 +44,24 @@ export default function App() {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
 
+  /** 检查更新（手动/自动共用）：命中新版本 → 打开更新弹窗并返回 true；无更新/失败 → false。
+   *  手动按钮据此显示「已是最新版本」，自动检查据此静默。 */
+  const checkForUpdate = async (): Promise<boolean> => {
+    if (!inTauri()) return false;
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (update) {
+        setUpdateVersion(update.version);
+        setUpdateOpen(true);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   // 日志抽屉
   const [showLog, setShowLog] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -59,21 +77,9 @@ export default function App() {
   // 启动 4 秒后静默检查更新：命中新版本弹窗提醒；任何异常（离线/未配置）静默跳过
   useEffect(() => {
     if (!inTauri()) return;
-    const timer = window.setTimeout(() => {
-      (async () => {
-        try {
-          const { check } = await import("@tauri-apps/plugin-updater");
-          const update = await check();
-          if (update) {
-            setUpdateVersion(update.version);
-            setUpdateOpen(true);
-          }
-        } catch {
-          /* 离线或插件不可用：静默，不影响使用 */
-        }
-      })();
-    }, 4000);
+    const timer = window.setTimeout(() => void checkForUpdate(), 4000);
     return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 全局监听后端事件：热键触发但 Provider 未配置时，后端广播 open_settings → 弹出 Provider 设置
@@ -375,6 +381,7 @@ export default function App() {
                 }}
                 onOpenHotkey={() => setHotkeyOpen(true)}
                 onOpenAbout={() => setAboutOpen(true)}
+                onCheckUpdate={() => checkForUpdate()}
                 refreshKey={hotkeyRev}
               />
             ) : null}
