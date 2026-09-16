@@ -1,11 +1,11 @@
 {
-  "version": "3.1.17",
-  "notes": "3.1.17 test build for updater verification (backend-kill before install).",
-  "pub_date": "2026-09-16T20:16:34+08:00",
+  "version": "3.1.18",
+  "notes": "3.1.18 simulated test build (from 3.1.17) for updater verification.",
+  "pub_date": "2026-09-16T20:20:38+08:00",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvako0QlU0RW9NUDVpUE1FYnBCQ09CY21Ea3NWQ0NXNGk0SHlHRHhqZnNkb0RtdXkvZkM5NS81SVVVOEpZQU45NmlQMjJmdC9qYzZ0TTYraUV4RGNpS3dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTYwOTkzCWZpbGU6RmV3VHlwZV8zLjEuMTdfeDY0LXNldHVwLmV4ZQpBMDg4bTJwQy9WTW9wUUtMd052anFYMExKR0F1bmRKcmhxM2VrTjhVVHhXMGpCWFd0WEtTbVdLLzRRUFliRFRuaVM2UnBjVGg2OFk0T0xWV0x0aGxEQT09Cg==",
-      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.17/FewType_3.1.17_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakFua0IrVjBRNUFiekVMZUVHOGZyRkZMOHpxQWVKb3pQR1ZNNGtYR3NQSkxFNXpKRDhSQjB2Y0pRY1k1UW54RnN0RmUrTCtXTTAxL1M0Ym5IdlM4RFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTYxMjM4CWZpbGU6RmV3VHlwZV8zLjEuMThfeDY0LXNldHVwLmV4ZQpFamF3eklPV0I0MGppSXJ2Z3loQzJCNEZLQ1grUXpSd2RyL1d0UzBXSkRkb1YraUtCWVZjZmVodjRhVGEwV0c3Y1dSZVZiNGxod0tVUmdTbS9VMTdEdz09Cg==",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.18/FewType_3.1.18_x64-setup.exe"
     }
   }
 }
