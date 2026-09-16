@@ -42,6 +42,7 @@ const I18N = {
     sponsor: "如果你觉得 FewType 对你有帮助，欢迎请我喝杯咖啡！",
     bridgeDown:
       "无法连接本地 FewType bridge，音色列表可能不是最新。请先开启 FewType bridge 程序。",
+    noVoice: "请先在“音色”下拉框中选择一个音色",
     genderFemale: "女",
     genderMale: "男",
     // 音色分组 / 音色选项
@@ -103,6 +104,7 @@ const I18N = {
     sponsor: "如果你覺得 FewType 對你有幫助，歡迎請我喝杯咖啡！",
     bridgeDown:
       "無法連線本機 FewType bridge，音色清單可能不是最新。請先開啟 FewType bridge 程式。",
+    noVoice: "請先在「音色」下拉框中選擇一個音色",
     genderFemale: "女",
     genderMale: "男",
     // 音色分組 / 音色選項
@@ -164,6 +166,7 @@ const I18N = {
     sponsor: "If you find FewType helpful, consider buying me a coffee!",
     bridgeDown:
       "Can't reach the local FewType bridge; the voice list may be stale. Please start the FewType bridge app first.",
+    noVoice: "Please select a voice from the voice list first",
     genderFemale: "Female",
     genderMale: "Male",
     // Voice groups / voice options
@@ -225,6 +228,7 @@ const I18N = {
     sponsor: "Si FewType te resulta útil, ¡invítame un café!",
     bridgeDown:
       "No se puede conectar con el puente local de FewType; la lista de voces puede estar desactualizada. Inicia primero la aplicación FewType bridge.",
+    noVoice: "Selecciona primero una voz de la lista de voces",
     genderFemale: "Femenina",
     genderMale: "Masculino",
     // Voz: grupos / opciones
@@ -286,6 +290,7 @@ const I18N = {
     sponsor: "FewType が役に立ったら、コーヒーをごちそうしてください！",
     bridgeDown:
       "ローカルの FewType ブリッジに接続できません。音声リストが最新でない可能性があります。FewType ブリッジを起動してください。",
+    noVoice: "先に音声リストから音声を選択してください",
     genderFemale: "女性",
     genderMale: "男性",
     // 音声：グループ / オプション
@@ -347,6 +352,7 @@ const I18N = {
     sponsor: "FewType가 도움이 되셨다면 커피 한 잔 사주시면 감사하겠습니다!",
     bridgeDown:
       "로컬 FewType 브리지에 연결할 수 없어 음성 목록이 최신이 아닐 수 있습니다. FewType 브리지를 먼저 실행해 주세요.",
+    noVoice: "먼저 음성 목록에서 음성을 선택해 주세요",
     genderFemale: "여성",
     genderMale: "남성",
     // 음성: 그룹 / 옵션
@@ -756,6 +762,57 @@ function applyUiLanguage() {
   }
 }
 
+// 根据正文文本检测主要语言（决定"音色"下拉的默认值）。
+// 背景：音色记忆（restoreLastSelection）会把上次的英语音色带回中文页面，
+// 而英语音色读不了非拉丁语系文字（微软返回 NoAudioReceived，表现为"没声音"）。
+function detectTextLang(text) {
+  if (!text) return null;
+  const sample = text.slice(0, 3000);
+  let han = 0, kana = 0, hangul = 0, latin = 0;
+  for (const ch of sample) {
+    if (/[\u4e00-\u9fff]/.test(ch)) han++;
+    else if (/[\u3040-\u30ff]/.test(ch)) kana++;
+    else if (/[\uac00-\ud7af]/.test(ch)) hangul++;
+    else if (/[a-zA-Z\u00c0-\u024f]/.test(ch)) latin++;
+  }
+  const total = han + kana + hangul + latin;
+  if (total === 0) return null;
+  if (han / total > 0.5) return "zh";
+  if (kana / total > 0.3) return "ja";
+  if (hangul / total > 0.3) return "ko";
+  if (latin / total > 0.5) {
+    // ñ/¿/¡ 是西语独有字符（强信号）；重音元音出现很多次也判西语
+    const esStrong = (sample.match(/[ñÑ¿¡]/g) || []).length;
+    if (esStrong > 0) return "es";
+    const esWeak = (sample.match(/[áéíóúÁÉÍÓÚ]/g) || []).length;
+    return esWeak > 5 ? "es" : "en";
+  }
+  return null;
+}
+
+// 页面正文语言 → 自动匹配语言/音色下拉（覆盖上次记忆里不匹配的音色）。
+// 只把下拉切到能"读得动"当前文本的音色；用户如果手动选过同语言组的音色则不动。
+function autoMatchVoiceToPageLang(text) {
+  const langKey = detectTextLang(text);
+  if (!langKey) return;
+  const group = langGroups.find((g) => g.key === langKey);
+  if (!group) return;
+  const langSel = document.getElementById("lang");
+  const voiceSel = document.getElementById("voice");
+  const voiceChanged = langSel.value !== langKey;
+  if (voiceChanged) {
+    langSel.value = langKey;
+    fillVoiceSelect();
+    chrome.storage.local.set({ [LAST_LANG_KEY]: langKey });
+  }
+  const groupVoices = new Set(group.voices.map((v) => v.shortName));
+  if (!groupVoices.has(voiceSel.value)) {
+    const sorted = sortVoicesForGroup(langKey, group.voices);
+    voiceSel.value = sorted[0] ? sorted[0].shortName : group.voices[0].shortName;
+    chrome.storage.local.set({ [LAST_VOICE_KEY]: voiceSel.value });
+  }
+}
+
 function render(result) {
   const meta = document.getElementById("meta");
   const list = document.getElementById("list");
@@ -769,6 +826,9 @@ function render(result) {
   meta.textContent = `${t("metaCount")(result.data.length)} · ${new Date(
     result.updatedAt
   ).toLocaleTimeString()} · ${result.url}`;
+
+  // 按正文语言自动匹配音色（覆盖英语音色读中文这种失败组合）
+  autoMatchVoiceToPageLang(result.data.map((d) => d.text || "").join("\n"));
 
   result.data.forEach((item) => {
     const div = document.createElement("div");
@@ -831,6 +891,12 @@ function startPolling() {
 function startReading() {
   const voice = document.getElementById("voice").value;
   const rate = parseFloat(document.getElementById("rate").value);
+  if (!voice) {
+    // 音色下拉为空（音色列表加载失败/未选择）：直接提示，不发请求。
+    // 否则后端会收到空 voice 参数，微软 TTS 返回 NoAudioReceived，表现为"没声音"。
+    setStatus(t("noVoice"), "error");
+    return;
+  }
   setStatus(t("synthesizing"));
   chrome.runtime.sendMessage({ type: "START_READING", voice, rate }, (result) => {
     if (!result || !result.ok) {

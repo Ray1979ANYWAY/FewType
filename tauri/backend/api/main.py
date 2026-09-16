@@ -551,6 +551,10 @@ def main(argv: list[str] | None = None) -> None:
     if args.silent:
         _hide_console()
 
+    # 跟随系统代理（梯子"系统代理"开关）→ 注入 TTS 与 provider 请求，
+    # 避免后端 Python 直连微软/火山等海外服务时网络不稳。
+    tts_service.init_system_proxy()
+
     _hotkey.start()
     logger.info(L("api_start", host=args.host, port=args.port))
     import uvicorn

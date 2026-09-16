@@ -72,10 +72,79 @@ def tts_output_dir() -> Path:
     return _user_documents_dir() / "FewType_tts_out"
 
 
+# ---------------------------------------------------------------- 系统代理跟随
+# Windows 系统代理（梯子"系统代理"开关，WinINET 层）默认只对浏览器/WinHTTP 生效，
+# Python 后端进程不读。这里在启动时读取注册表代理并注入两处：
+#   1) 环境变量 HTTP_PROXY/HTTPS_PROXY —— requests/httpx（provider 请求）自动读取
+#   2) edge-tts 的 proxy 参数 —— aiohttp 不读环境变量，必须显式传
+def _read_system_proxy() -> str | None:
+    """读取 Windows 系统代理（HKCU\\...\\Internet Settings），返回 http://host:port。"""
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+        )
+        try:
+            enable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+        except OSError:
+            enable = 0
+        server = ""
+        try:
+            server, _ = winreg.QueryValueEx(key, "ProxyServer")
+        except OSError:
+            pass
+        if not enable or not server:
+            return None
+        # ProxyServer 可能是 "host:port"（统一代理）或
+        # "http=host:port;https=host:port;..."（分协议）。socks= 忽略（edge-tts 仅 http(s)）。
+        parts: dict[str, str] = {}
+        for seg in server.split(";"):
+            seg = seg.strip()
+            if not seg:
+                continue
+            if "=" in seg:
+                scheme, addr = seg.split("=", 1)
+                parts[scheme.strip().lower()] = addr.strip()
+            else:
+                parts["http"] = seg
+                parts["https"] = seg
+        for scheme in ("https", "http"):
+            addr = parts.get(scheme)
+            if addr:
+                if not addr.startswith(("http://", "https://")):
+                    addr = "http://" + addr
+                return addr
+    except Exception:
+        pass
+    return None
+
+
+_SYSTEM_PROXY: str | None = None
+
+
+def init_system_proxy() -> str | None:
+    """启动时调用：读取系统代理并注入。幂等（只注入一次，之后返回缓存值）。"""
+    global _SYSTEM_PROXY
+    if _SYSTEM_PROXY is not None:
+        return _SYSTEM_PROXY
+    _SYSTEM_PROXY = _read_system_proxy()
+    if _SYSTEM_PROXY:
+        # 用户手动设置了环境变量代理时优先用户的（setdefault 不覆盖）
+        os.environ.setdefault("HTTP_PROXY", _SYSTEM_PROXY)
+        os.environ.setdefault("HTTPS_PROXY", _SYSTEM_PROXY)
+        logger.info("已跟随系统代理: %s", _SYSTEM_PROXY)
+    else:
+        logger.info("未检测到系统代理，外部网络保持直连")
+    return _SYSTEM_PROXY
+
+
 # ---------------------------------------------------------------- 音色清单
 async def fetch_voices() -> list[dict]:
     """拉取 edge-tts 音色清单（原始字段精简后返回）。"""
-    raw = await edge_tts.list_voices()
+    raw = await edge_tts.list_voices(proxy=_SYSTEM_PROXY)
     out = []
     for v in raw or []:
         short_name = v.get("ShortName")
@@ -117,7 +186,7 @@ async def synthesize(text: str, voice: str, rate: str | None = None,
     kwargs = {"volume": volume or TTS_VOLUME_BOOST}
     if rate:
         kwargs["rate"] = rate
-    communicate = edge_tts.Communicate(text, voice, **kwargs)
+    communicate = edge_tts.Communicate(text, voice, proxy=_SYSTEM_PROXY, **kwargs)
     chunks = []
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":

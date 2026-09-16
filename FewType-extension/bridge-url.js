@@ -23,14 +23,25 @@ export async function voxResolveBridgeUrl() {
   const tryPort = async (p) => {
     const base = "http://127.0.0.1:" + p;
     if (await voxProbePort(base)) {
-      await chrome.storage.local.set({ [BRIDGE_PORT_KEY]: p });
+      // offscreen document 不支持 chrome.storage（MV3 限制），访问会抛 TypeError；
+      // 缓存只是加速，写不进缓存就静默跳过，不影响端口解析结果。
+      try {
+        await chrome.storage.local.set({ [BRIDGE_PORT_KEY]: p });
+      } catch (e) {
+        /* storage 不可用（offscreen 等场景）忽略 */
+      }
       return base;
     }
     return null;
   };
   try {
-    const cached = await chrome.storage.local.get(BRIDGE_PORT_KEY);
-    const cachedPort = Number(cached[BRIDGE_PORT_KEY]);
+    let cachedPort = 0;
+    try {
+      const cached = await chrome.storage.local.get(BRIDGE_PORT_KEY);
+      cachedPort = Number(cached[BRIDGE_PORT_KEY]);
+    } catch (e) {
+      cachedPort = 0; // storage 不可用：无缓存，直接全量探测
+    }
     // 主线（5010）优先：缓存端口只有在命中主线时才做快速路径。
     // 若缓存是旧版端口（5005），直接按 [5010, 5005] 顺序重探——
     // 避免两条线同时运行时扩展粘在旧版 bridge 上，导致主线收不到心跳。

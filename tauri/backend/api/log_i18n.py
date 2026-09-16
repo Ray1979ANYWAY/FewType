@@ -108,9 +108,9 @@ _MSGS: dict[str, tuple[str, str, str]] = {
         "TTS synthesis failed: {type}: {err}",
     ),
     "speak_fail": (
-        "试听合成失败: {type}: {err}",
-        "試聽合成失敗: {type}: {err}",
-        "Preview synthesis failed: {type}: {err}",
+        "合成失败: {type}: {err}",
+        "合成失敗: {type}: {err}",
+        "Synthesis failed: {type}: {err}",
     ),
     "translate_fail": (
         "翻译失败: {type}: {err}",
