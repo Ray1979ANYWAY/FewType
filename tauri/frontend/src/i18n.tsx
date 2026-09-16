@@ -38,6 +38,15 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.window_minimize": "最小化",
     "app.window_close": "关闭",
 
+    "updater.title": "发现新版本",
+    "updater.new_version": "发现新版本 v{ver}，是否立即更新？",
+    "updater.update_now": "立即更新",
+    "updater.later": "稍后",
+    "updater.downloading": "正在下载更新… {p}%",
+    "updater.installing": "下载完成，正在安装并重启…",
+    "updater.error": "更新失败：{msg}",
+    "updater.manual": "也可以前往 GitHub Releases 手动下载",
+
     // 语音输入
     "voice.hint": "在任意文本框激活快捷键，即刻语音转文字",
     "voice.no_mic": "需要插麦克风",
@@ -251,6 +260,15 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.window_minimize": "最小化",
     "app.window_close": "關閉",
 
+    "updater.title": "發現新版本",
+    "updater.new_version": "發現新版本 v{ver}，是否立即更新？",
+    "updater.update_now": "立即更新",
+    "updater.later": "稍後",
+    "updater.downloading": "正在下載更新… {p}%",
+    "updater.installing": "下載完成，正在安裝並重啟…",
+    "updater.error": "更新失敗：{msg}",
+    "updater.manual": "也可以前往 GitHub Releases 手動下載",
+
     "voice.hint": "在任意文字框啟動快捷鍵，即刻語音轉文字",
     "voice.no_mic": "需要插麥克風",
     "voice.no_mic_title": "未偵測到麥克風，請插入後重試",
@@ -454,6 +472,15 @@ const dicts: Record<Lang, Record<string, string>> = {
     "app.log_empty": "No logs yet…",
     "app.window_minimize": "Minimize",
     "app.window_close": "Close",
+
+    "updater.title": "Update available",
+    "updater.new_version": "A new version v{ver} is available. Update now?",
+    "updater.update_now": "Update now",
+    "updater.later": "Later",
+    "updater.downloading": "Downloading update… {p}%",
+    "updater.installing": "Download complete. Installing and restarting…",
+    "updater.error": "Update failed: {msg}",
+    "updater.manual": "You can also download it manually from GitHub Releases",
 
     "voice.hint": "Press the hotkey in any text box and speak — it turns into text",
     "voice.no_mic": "Plug in a mic",

@@ -14,6 +14,7 @@ import StyleManager from "./components/StyleManager";
 import ProviderDialog from "./components/ProviderDialog";
 import HotkeyDialog from "./components/HotkeyDialog";
 import AboutDialog from "./components/AboutDialog";
+import UpdaterDialog from "./components/UpdaterDialog";
 import { resizeForTab, inTauri } from "./lib/window";
 import { getLogs, SpeechClient } from "./api";
 import { useI18n } from "./i18n";
@@ -39,6 +40,10 @@ export default function App() {
   const [hotkeyRev, setHotkeyRev] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
 
+  // 自动更新：启动延迟检查 GitHub Releases，发现新版本弹窗
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
   // 日志抽屉
   const [showLog, setShowLog] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -51,6 +56,26 @@ export default function App() {
 
   /** 日志卷帘：窗口向右扩展 320px（842→1162），高度锁死 668。
    *  main 固定 778px（842-64 侧边栏），与面板宽度完全解耦 → 动画期间内容零跳动 */
+  // 启动 4 秒后静默检查更新：命中新版本弹窗提醒；任何异常（离线/未配置）静默跳过
+  useEffect(() => {
+    if (!inTauri()) return;
+    const timer = window.setTimeout(() => {
+      (async () => {
+        try {
+          const { check } = await import("@tauri-apps/plugin-updater");
+          const update = await check();
+          if (update) {
+            setUpdateVersion(update.version);
+            setUpdateOpen(true);
+          }
+        } catch {
+          /* 离线或插件不可用：静默，不影响使用 */
+        }
+      })();
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // 全局监听后端事件：热键触发但 Provider 未配置时，后端广播 open_settings → 弹出 Provider 设置
   useEffect(() => {
     if (!inTauri()) return;
@@ -437,6 +462,11 @@ export default function App() {
         onSaved={() => setHotkeyRev((r) => r + 1)}
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <UpdaterDialog
+        open={updateOpen}
+        version={updateVersion}
+        onClose={() => setUpdateOpen(false)}
+      />
     </div>
   );
 }

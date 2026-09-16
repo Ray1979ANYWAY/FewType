@@ -20,7 +20,10 @@
       {
         "identifier": "shell:allow-execute",
         "allow": [{ "name": "binaries/fewtype-backend", "sidecar": true }]
-      }
+      },
+      "updater:default",
+      "process:default",
+      "process:allow-restart"
     ]
   },
   {

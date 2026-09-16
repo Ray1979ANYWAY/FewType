@@ -163,6 +163,10 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_main_window(app);
         }))
+        // 自动更新：检查 GitHub Releases manifest（见 tauri.conf.json plugins.updater）
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        // 更新安装完成后重启应用（@tauri-apps/plugin-process 的 relaunch）
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             spawn_backend(app);
             setup_tray(app)?;

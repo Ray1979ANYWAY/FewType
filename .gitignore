@@ -16,8 +16,7 @@ FewType-bridge/build/
 # 日志
 *.log
 
-# TTS 输出（用户生成的音频）
-FewType-bridge/tts_output/
+# TTS 输出（用户生成的音频�?FewType-bridge/tts_output/
 
 # 临时文件
 *.tmp
@@ -27,8 +26,7 @@ patch_*.py
 fix_*.py
 verify_*.js
 
-# 编辑器
-.vscode/
+# 编辑�?.vscode/
 .idea/
 *.swp
 *.swo
@@ -39,11 +37,9 @@ verify_*.js
 Thumbs.db
 desktop.ini
 
-# 开发原型截图（本地保留，不提交）
-proto-shots/
+# 开发原型截图（本地保留，不提交�?proto-shots/
 
-# 调试/回归脚本与截图（本地工具，不提交）
-_*.py
+# 调试/回归脚本与截图（本地工具，不提交�?_*.py
 _*.png
 
 # git 目录备份（本地保留，不提交）
@@ -58,3 +54,8 @@ tauri/src-tauri/target/
 tauri/frontend/dist/
 
 dist/
+
+dist/
+
+# update signing private key - never commit
+keys/
