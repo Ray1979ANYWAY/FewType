@@ -1,11 +1,11 @@
 {
-  "version": "3.1.17",
-  "notes": "3.1.17 test build for updater verification (backend-kill before install).",
-  "pub_date": "2026-09-16T20:16:34+08:00",
+  "version": "3.1.19",
+  "notes": "FewType 3.1.19: 4 switchable themes (Moss/Frost/Midnight/Ember), Chrome extension follows app theme, default hotkey Ctrl+Win, UI language follows system, version unified at 3.1.19.",
+  "pub_date": "2026-09-16T23:32:48+08:00",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvako0QlU0RW9NUDVpUE1FYnBCQ09CY21Ea3NWQ0NXNGk0SHlHRHhqZnNkb0RtdXkvZkM5NS81SVVVOEpZQU45NmlQMjJmdC9qYzZ0TTYraUV4RGNpS3dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTYwOTkzCWZpbGU6RmV3VHlwZV8zLjEuMTdfeDY0LXNldHVwLmV4ZQpBMDg4bTJwQy9WTW9wUUtMd052anFYMExKR0F1bmRKcmhxM2VrTjhVVHhXMGpCWFd0WEtTbVdLLzRRUFliRFRuaVM2UnBjVGg2OFk0T0xWV0x0aGxEQT09Cg==",
-      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.17/FewType_3.1.17_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakxoRVMxaVBUbk0zditxL1BxY2RTc2YzR0pjUW9NQkJmcjBUUVRZbUxab0NOUDlGMEJGRkwwS2NWQ0NIbTMrdjdqaVVKTjlIV3dpZWRGQjJoZ1MyblE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTcyNzM3CWZpbGU6RmV3VHlwZV8zLjEuMTlfeDY0LXNldHVwLmV4ZQpWc25ZY3VUVW1vR2E3ZVVqZG9IZ3N3TXBhK0g0ZUlkQ0ZJdjNHdDMwM2ZsRnRSMEk2Zzczd2VPWGhCaUxRbG8rMDRIcUltbWorSlZnNDVheGRabHNBdz09Cg==",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.19/FewType_3.1.19_x64-setup.exe"
     }
   }
 }
