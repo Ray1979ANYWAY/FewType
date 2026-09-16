@@ -1,0 +1,11 @@
+{
+  "version": "3.1.15",
+  "notes": "One-click auto update; dropdown selection now follows UI language; extension heartbeat prioritizes mainline port.",
+  "pub_date": "2026-09-16T09:30:00+08:00",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakxCdVVkaHVsb0t2T0ZYSi9aeS9iWnppMlQ1bE4rdXZTelZHR3BNTWVUc2ZObTZ2WEdnR0l4M2RoWTlGRnRWN25uTUU4SUNTdEhFb3ZxeWNBNHEwcHdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTQ5MzUzCWZpbGU6dXBkYXRlLmpzb24KTFFZQkh2RytiRHBDeFAwb3VPZTM4bThMRXRMZGs0ZEtpYWUxeHZVdHZYcmcyaGh2ZnRXVE4yNFhlTGwxUGFJNjlzV3VQWDl0a0hlK2pUNlRoSjNSQnc9PQo=",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.15/FewType_3.1.15_x64-setup.exe"
+    }
+  }
+}

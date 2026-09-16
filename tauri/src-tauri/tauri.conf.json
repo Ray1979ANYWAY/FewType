@@ -31,7 +31,7 @@
       "active": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhDQTg2RTU1ODcwN0ZFMjMKUldRai9nZUhWVzZvakd2eUQxT3NOTjNMYVBnQ2hjcUk5UVppL05UMnZ5Ri9MQjlMblp0MzVlN0MK",
       "endpoints": [
-        "https://github.com/Ray1979ANYWAY/FewType/releases/latest/download/update.json"
+        "https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/master/update.json"
       ]
     }
   },
