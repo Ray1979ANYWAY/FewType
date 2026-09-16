@@ -49,6 +49,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "updater.manual_download": "手动下载",
     "updater.download_mb": "已下载 {done} / {total} MB",
     "updater.attempt": "第 {n}/{max} 次尝试",
+    "updater.direct_link": "安装包直链（点击在浏览器下载）",
 
     // 语音输入
     "voice.hint": "在任意文本框激活快捷键，即刻语音转文字",
@@ -278,6 +279,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "updater.manual_download": "手動下載",
     "updater.download_mb": "已下載 {done} / {total} MB",
     "updater.attempt": "第 {n}/{max} 次嘗試",
+    "updater.direct_link": "安裝包直鏈（點擊在瀏覽器下載）",
 
     "voice.hint": "在任意文字框啟動快捷鍵，即刻語音轉文字",
     "voice.no_mic": "需要插麥克風",
@@ -498,6 +500,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "updater.manual_download": "Manual download",
     "updater.download_mb": "Downloaded {done} / {total} MB",
     "updater.attempt": "Attempt {n}/{max}",
+    "updater.direct_link": "Installer direct link (click to download)",
 
     "voice.hint": "Press the hotkey in any text box and speak — it turns into text",
     "voice.no_mic": "Plug in a mic",

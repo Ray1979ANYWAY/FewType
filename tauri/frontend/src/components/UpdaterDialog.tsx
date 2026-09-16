@@ -19,6 +19,11 @@ const RETRY_DELAY_MS = 2000;
 /** 手动下载兜底地址（GitHub Releases 最新版） */
 const MANUAL_URL = "https://github.com/Ray1979ANYWAY/FewType/releases/latest";
 
+/** 当前版本安装包直链（弹窗内直接给出，用户无需搜索） */
+function setupUrlFor(ver: string): string {
+  return `https://github.com/Ray1979ANYWAY/FewType/releases/download/v${ver}/FewType_${ver}_x64-setup.exe`;
+}
+
 function fmtMB(n: number): string {
   return (n / (1024 * 1024)).toFixed(1);
 }
@@ -43,11 +48,11 @@ export default function UpdaterDialog({
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  /** 用系统浏览器打开手动下载页 */
-  const openManual = async () => {
+  /** 用系统浏览器打开指定地址 */
+  const openUrl = async (url: string) => {
     try {
       const { open } = await import("@tauri-apps/plugin-shell");
-      await open(MANUAL_URL);
+      await open(url);
     } catch {
       // 打开失败静默——用户仍可复制链接
     }
@@ -148,6 +153,21 @@ export default function UpdaterDialog({
             <p className="text-[12.5px] leading-relaxed text-rose-400">
               {t("updater.error", { msg: error })}
             </p>
+            {version && (
+              <div className="flex flex-col gap-1 rounded-lg border border-border bg-input/60 px-2.5 py-2">
+                <span className="text-[10.5px] uppercase tracking-wide text-muted">
+                  {t("updater.direct_link")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void openUrl(setupUrlFor(version))}
+                  title={setupUrlFor(version)}
+                  className="cursor-pointer break-all text-left text-[11.5px] leading-relaxed text-accent2 hover:underline"
+                >
+                  {setupUrlFor(version)}
+                </button>
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -158,7 +178,7 @@ export default function UpdaterDialog({
               </button>
               <button
                 type="button"
-                onClick={() => void openManual()}
+                onClick={() => void openUrl(MANUAL_URL)}
                 className="rounded-lg border border-accent/50 bg-accent/15 px-3.5 py-1.5 text-[12.5px] font-semibold text-accent2 hover:bg-accent/25"
               >
                 {t("updater.manual_download")}
