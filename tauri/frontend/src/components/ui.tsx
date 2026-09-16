@@ -153,6 +153,11 @@ export function EditableSelect({
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
+  // 非编辑模式：输入框显示选中项对应的翻译 label（下拉选项已随界面语言翻译，选中值必须一致显示）
+  const displayValue = editable
+    ? value
+    : (options.find((o) => o.value === value)?.label ?? value);
+
   // 点击组件外部时收起菜单
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -175,7 +180,7 @@ export function EditableSelect({
     >
       <input
         type="text"
-        value={value}
+        value={displayValue}
         disabled={disabled}
         title={title}
         onChange={(e) => {
