@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FewType — Voice Typing, AI Writing Style &amp; Ebook Read-Aloud for Windows | Free &amp; Open Source</title>
-<meta name="description" content="FewType is a free, open-source Windows app that does four things: voice typing with AI translation and writing styles, natural-voice ebook reading in the browser, and long-text TTS for creators. No subscription — you connect the AI services you choose.">
-<meta name="keywords" content="voice typing, speech to text, dictation software, AI writing style, translate by voice, ebook reader TTS, natural voice text to speech, long text to speech, Chrome extension TTS, open source dictation, FewType">
+<meta name="description" content="FewType is a free, open-source Windows app with three built-in scenarios: voice typing with AI translation and writing styles, natural-voice ebook reading in the browser, and long-text TTS for creators. No subscription — you connect the AI services you choose.">
+<meta name="keywords" content="voice typing, speech to text, dictation software, AI writing style, translate by voice, ebook reader TTS, natural voice text to speech, long text to speech, Chrome extension TTS, open source dictation, Groq dictation, FewType">
 <meta name="author" content="FewType">
 <meta name="google-site-verification" content="QJv4m03hfnuF60OBnFUSlxXo10Lkfri8wf6cFZ19n0I" />
 <link rel="canonical" href="https://ray1979anyway.github.io/FewType/">
@@ -13,7 +13,7 @@
 <meta property="og:title" content="FewType — Voice Typing, AI Writing Style &amp; Ebook Read-Aloud">
 <meta property="og:description" content="Speak, and get your words typed, rewritten, translated or read back. Free &amp; open source — you supply the AI keys.">
 <meta property="og:url" content="https://ray1979anyway.github.io/FewType/">
-<meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/shot-main.png">
+<meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/demo-translation.gif">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/icon.png">
 <script type="application/ld+json">
@@ -27,9 +27,9 @@
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
   "featureList": ["Global hotkey voice typing", "AI translation and writing styles", "Natural-voice ebook reader extension", "Long-text TTS for creators"],
   "screenshot": [
-    "https://ray1979anyway.github.io/FewType/assets/shot-main.png",
-    "https://ray1979anyway.github.io/FewType/assets/shot-dictation.png",
-    "https://ray1979anyway.github.io/FewType/assets/shot-settings.png"
+    "https://ray1979anyway.github.io/FewType/assets/demo-translation.gif",
+    "https://ray1979anyway.github.io/FewType/assets/demo-reading.gif",
+    "https://ray1979anyway.github.io/FewType/assets/demo-tts.gif"
   ],
   "url": "https://github.com/Ray1979ANYWAY/FewType"
 }
@@ -38,221 +38,351 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.65; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(14,159,110,0.18); background:rgba(255,255,255,0.6); }
+  header { position:sticky; top:0; z-index:50; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(14,159,110,0.18); }
+  .head-in { display:flex; align-items:center; justify-content:space-between; gap:14px; max-width:1000px; margin:0 auto; padding:12px 24px; flex-wrap:wrap; }
   .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:19px; letter-spacing:-0.2px; }
   .logo img { width:30px; height:30px; border-radius:8px; display:block; box-shadow:0 2px 8px rgba(0,0,0,0.18); }
   .logo-text { background:linear-gradient(90deg,#F59E0B 0%,#EA7A16 48%,#FBBF24 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
-  nav a { color:#5E6E64; text-decoration:none; margin-left:20px; font-size:14px; }
-  nav a:hover { color:#047857; }
-  .hero { text-align:center; padding:66px 24px 50px; }
+  .nav { display:flex; gap:8px; flex-wrap:wrap; }
+  .nav-card { cursor:pointer; border:1px solid rgba(14,159,110,0.25); background:#FFFFFF; color:#2E3D34; border-radius:12px; padding:8px 16px; font-size:13.5px; font-weight:600; transition:all .15s; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+  .nav-card:hover { border-color:rgba(14,159,110,0.5); color:#047857; }
+  .nav-card.active { background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; border-color:transparent; box-shadow:0 4px 12px rgba(16,185,129,0.3); }
+  .lang-link { color:#5E6E64; text-decoration:none; font-size:13px; font-weight:600; }
+  .lang-link:hover { color:#047857; }
+  .hero { text-align:center; padding:56px 24px 40px; }
   .hero .tag { display:inline-block; font-size:12.5px; font-weight:600; color:#047857; background:rgba(16,185,129,0.1); border:1px solid rgba(14,159,110,0.25); border-radius:20px; padding:4px 14px; margin-bottom:18px; }
-  .hero h1 { font-size:36px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.2; }
+  .hero h1 { font-size:34px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.22; }
   .hero h1 span { background:linear-gradient(90deg,#047857,#10B981); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .hero p { color:#5E6E64; max-width:680px; margin:16px auto 26px; font-size:16.5px; }
-  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); }
+  .hero p { color:#5E6E64; max-width:700px; margin:16px auto 26px; font-size:16px; }
+  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); cursor:pointer; border:none; }
   .btn.ghost { background:#FFFFFF; color:#047857; border:1px solid rgba(14,159,110,0.4); box-shadow:none; }
   .btn:hover { filter:brightness(1.05); }
-  .section { padding:52px 24px; border-top:1px solid rgba(0,0,0,0.06); }
-  .section h2 { font-size:25px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
-  .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 32px; }
-  .scenes { display:flex; flex-direction:column; gap:18px; }
-  .scene { display:flex; gap:22px; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:24px 26px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
-  .scene .emoji { font-size:30px; flex:0 0 44px; text-align:center; }
-  .scene h3 { font-size:18px; color:#047857; margin-bottom:4px; }
-  .scene .lead { color:#8A9A90; font-size:13.5px; margin-bottom:12px; }
-  .scene ul { list-style:none; }
-  .scene li { font-size:14.5px; color:#2E3D34; padding:6px 0 6px 22px; position:relative; }
-  .scene li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
-  .why { display:flex; flex-direction:column; gap:0; }
-  .why-row { display:flex; gap:14px; padding:14px 0; border-bottom:1px solid rgba(0,0,0,0.06); align-items:flex-start; }
-  .why-row:last-child { border-bottom:none; }
-  .why-row .vs { flex:0 0 120px; font-size:13px; color:#8A9A90; padding-top:2px; }
-  .why-row .us { flex:1 1 auto; font-size:15px; font-weight:600; color:#16241D; }
-  .why-row .us small { display:block; font-weight:400; color:#5E6E64; font-size:13.5px; margin-top:2px; }
-  .cards { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
-  .card { flex:1 1 250px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
-  .card h3 { color:#047857; font-size:16.5px; margin-bottom:8px; }
-  .card p { color:#5E6E64; font-size:13.5px; }
-  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
-  .warn b { color:#92400E; }
-  .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
-  .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
-  .shot img { width:100%; display:block; }
-  .shot figcaption { background:#F0F4F1; color:#5E6E64; font-size:12.5px; text-align:center; padding:8px; }
-  .honest { background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:26px 28px; max-width:820px; margin:0 auto; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
-  .honest h3 { color:#16241D; font-size:17px; margin-bottom:12px; }
-  .honest ul { list-style:none; }
-  .honest li { font-size:14px; color:#2E3D34; padding:7px 0 7px 24px; position:relative; }
-  .honest li::before { content:"·"; position:absolute; left:8px; color:#10B981; font-weight:800; font-size:18px; top:4px; }
-  .honest .sponsor { margin-top:16px; background:#F0F8F3; border-radius:12px; padding:16px 18px; font-size:14px; color:#2E3D34; }
-  .honest .sponsor b { color:#047857; }
+  .scene-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; padding:8px 0 44px; }
+  .scene-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
+  .scene-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,0.09); border-color:rgba(14,159,110,0.4); }
+  .scene-card .emoji { font-size:28px; margin-bottom:10px; }
+  .scene-card h3 { color:#047857; font-size:17px; margin-bottom:6px; }
+  .scene-card p { color:#5E6E64; font-size:13.5px; }
+  .scene-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
+  .section { padding:48px 24px; border-top:1px solid rgba(0,0,0,0.06); }
+  .section h2 { font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
+  .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 30px; }
   .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
   .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
   .dl-box h3 { color:#16241D; margin-bottom:6px; }
   .dl-box .ver { color:#047857; font-size:13px; margin-bottom:14px; }
   .dl-box p { color:#5E6E64; font-size:13px; margin-bottom:18px; }
+  .honest { background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:24px 26px; max-width:820px; margin:0 auto; }
+  .honest h3 { color:#16241D; font-size:17px; margin-bottom:12px; }
+  .honest ul { list-style:none; }
+  .honest li { font-size:14px; color:#2E3D34; padding:7px 0 7px 24px; position:relative; }
+  .honest li::before { content:"·"; position:absolute; left:8px; color:#10B981; font-weight:800; font-size:18px; top:4px; }
+  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
+  .warn b { color:#92400E; }
   .note { color:#8A9A90; font-size:12.5px; margin-top:18px; text-align:center; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
-  .lang { font-size:13px; }
-  @media (max-width:680px){ .hero h1{font-size:27px;} .hero{padding:46px 16px 36px;} .scene{flex-direction:column;gap:10px;} .why-row{flex-direction:column;gap:4px;} .why-row .vs{flex:auto;} }
+  /* ===== 场景详情页 ===== */
+  .view { display:none; }
+  .view.active { display:block; }
+  .page-head { max-width:1000px; margin:0 auto; padding:40px 24px 8px; }
+  .back { background:none; border:none; color:#5E6E64; font-size:13.5px; cursor:pointer; padding:6px 0; font-weight:600; }
+  .back:hover { color:#047857; }
+  .page-head h1 { font-size:30px; font-weight:800; color:#16241D; margin-top:10px; letter-spacing:-0.4px; }
+  .page-head .lead { color:#5E6E64; font-size:15.5px; max-width:720px; margin-top:10px; }
+  .feat { display:flex; gap:28px; align-items:center; max-width:1000px; margin:26px auto 0; padding:0 24px; }
+  .feat.rev { flex-direction:row-reverse; }
+  .feat .txt { flex:1 1 46%; min-width:0; }
+  .feat .txt h3 { color:#047857; font-size:18px; margin-bottom:8px; }
+  .feat .txt p { color:#2E3D34; font-size:14.5px; }
+  .feat .demo { flex:1 1 50%; min-width:0; border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 3px 14px rgba(0,0,0,0.07); }
+  .feat .demo img { width:100%; display:block; }
+  .steps { max-width:1000px; margin:40px auto 0; padding:0 24px; }
+  .steps h2 { font-size:22px; font-weight:800; color:#16241D; margin-bottom:6px; }
+  .steps .sub2 { color:#8A9A90; font-size:14px; margin-bottom:18px; }
+  .steps ol { list-style:none; counter-reset:step; }
+  .steps li { counter-increment:step; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:12px; padding:14px 18px 14px 56px; position:relative; margin-bottom:10px; font-size:14.5px; color:#2E3D34; box-shadow:0 1px 5px rgba(0,0,0,0.03); }
+  .steps li::before { content:counter(step); position:absolute; left:16px; top:13px; width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:800; font-size:13.5px; display:flex; align-items:center; justify-content:center; }
+  .steps li b { color:#16241D; }
+  .steps .tip { margin-top:14px; background:#EFF7F2; border:1px solid rgba(14,159,110,0.2); border-radius:12px; padding:14px 16px; font-size:13.5px; color:#2E3D34; }
+  .page-cta { max-width:1000px; margin:34px auto 10px; padding:0 24px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .provider-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .provider-tags span { background:rgba(16,185,129,0.09); border:1px solid rgba(14,159,110,0.25); color:#047857; font-size:12.5px; font-weight:600; border-radius:16px; padding:3px 12px; }
+  @media (max-width:680px){ .hero h1{font-size:26px;} .hero{padding:42px 16px 30px;} .feat,.feat.rev{flex-direction:column;gap:14px;} .feat .txt,.feat .demo{flex:1 1 auto;} .head-in{justify-content:center;} }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><img src="assets/icon.png" alt="FewType icon"><span class="logo-text">FewType</span></div>
-  <nav>
-    <a href="#who">Who it's for</a>
-    <a href="#why">Why FewType</a>
-    <a href="#features">Features</a>
-    <a href="#open">Open source</a>
-    <a href="#download">Download</a>
-    <a class="lang" href="zh.html">中文</a>
-  </nav>
+  <div class="head-in">
+    <div class="logo"><img src="assets/icon.png" alt="FewType icon"><span class="logo-text">FewType</span></div>
+    <nav class="nav" aria-label="Main">
+      <button class="nav-card active" data-view="home" onclick="showView('home')">🏠 Home</button>
+      <button class="nav-card" data-view="voice" onclick="showView('voice')">🎙️ Voice Typing</button>
+      <button class="nav-card" data-view="ebook" onclick="showView('ebook')">📖 Ebook Reading</button>
+      <button class="nav-card" data-view="tts" onclick="showView('tts')">🎧 Long-Text TTS</button>
+    </nav>
+    <a class="lang-link" href="zh.html">中文</a>
+  </div>
 </header>
 
-<section class="hero">
-  <div class="tag">Free &amp; open source · No subscription · You supply the AI service keys</div>
-  <h1>Speak once. Get it typed, <span>rewritten, translated,</span> or read back.</h1>
-  <p>FewType puts four everyday things in one small Windows app: talk instead of typing, make your words sound the way you want, translate on the fly, and have ebooks read aloud in a natural voice. It's free and open source — you connect the AI services you choose. No subscription, no key included.</p>
-  <div>
-    <a class="btn" href="#download">Download for Windows</a>
-    <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">View on GitHub</a>
+<!-- ============ 首页 ============ -->
+<div id="view-home" class="view active">
+  <section class="hero">
+    <div class="tag">Free &amp; open source · No subscription · You supply the AI keys</div>
+    <h1>Speak once. Get it typed, <span>rewritten, translated,</span> or read back.</h1>
+    <p>FewType puts three everyday scenarios in one small Windows app: talk instead of typing, have ebooks read aloud in a natural voice, and turn long scripts into speech files. Free and open source — you connect the AI services you choose. No subscription, no key bundled.</p>
+    <div>
+      <a class="btn" href="#download">Download for Windows</a>
+      <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+  </section>
+
+  <div class="scene-cards wrap">
+    <div class="scene-card" onclick="showView('voice')">
+      <div class="emoji">🎙️</div>
+      <h3>Voice Typing</h3>
+      <p>Press a hotkey, talk, and your words land in any text box — with translation and writing styles built in.</p>
+      <span class="go">Explore →</span>
+    </div>
+    <div class="scene-card" onclick="showView('ebook')">
+      <div class="emoji">📖</div>
+      <h3>Ebook Reading</h3>
+      <p>A browser extension reads your ebooks aloud in a natural, flowing voice — eyes get a break.</p>
+      <span class="go">Explore →</span>
+    </div>
+    <div class="scene-card" onclick="showView('tts')">
+      <div class="emoji">🎧</div>
+      <h3>Long-Text TTS</h3>
+      <p>Paste a long script, pick a voice, get a clean audio file. A companion feature for creators.</p>
+      <span class="go">Explore →</span>
+    </div>
   </div>
-</section>
 
-<section class="section" id="who">
-  <div class="wrap">
-    <h2>Who is FewType for?</h2>
-    <p class="sub">Three scenarios, three different kinds of people. You'll probably recognize yourself in at least one.</p>
-    <div class="scenes">
-
-      <div class="scene">
-        <div class="emoji">🎙️</div>
-        <div>
-          <h3>Voice typing — talk instead of typing</h3>
-          <p class="lead">Press a global hotkey anywhere (Ctrl+Win or double-press Ctrl), speak, and your words land where your cursor is.</p>
-          <ul>
-            <li>Chat fast in messages and AI conversations — no more typing it all out</li>
-            <li>You care how your replies sound — pick a writing style and let it rewrite your words before they land</li>
-            <li>Speak one language, output another — translation goes straight into the text box</li>
-          </ul>
+  <section class="section" id="download">
+    <div class="wrap">
+      <h2>Download</h2>
+      <div class="dl">
+        <div class="dl-box">
+          <h3>Installer</h3>
+          <div class="ver">v3.1.21 · Windows 10/11 x64</div>
+          <p>Self-contained: bundles the runtime and auto-installs what's missing. Built-in auto-update.</p>
+          <a class="btn" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.21/FewType_3.1.21_x64-setup.exe" rel="noopener">Download Setup (.exe)</a>
+        </div>
+        <div class="dl-box">
+          <h3>Portable ZIP</h3>
+          <div class="ver">v3.1.21 · no install needed</div>
+          <p>Unzip and run. Includes the browser extension folder for ebook reading.</p>
+          <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.21/FewType_3.1.21_x64-portable.zip" rel="noopener">Download Portable (.zip)</a>
         </div>
       </div>
+      <p class="note">All releases: <a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#047857;">github.com/Ray1979ANYWAY/FewType/releases</a> · <a href="https://github.com/Ray1979ANYWAY/FewType/issues" style="color:#047857;">Report an issue</a> · Free &amp; open source (MIT)</p>
+    </div>
+  </section>
 
-      <div class="scene">
-        <div class="emoji">📖</div>
-        <div>
-          <h3>Ebook reading — let your ears do the work</h3>
-          <p class="lead">A browser extension reads ebooks aloud (Google Play Books, Koodo Reader, EPUB readers). A natural voice, not a robot — sentences flow continuously.</p>
-          <ul>
-            <li>You want a human-sounding voice and refuse robotic text-to-speech</li>
-            <li>Long focused reading tires your eyes — pair your eyes with your ears</li>
-            <li>You read during fragments of the day — commute, chores, anywhere your eyes are busy</li>
-          </ul>
+  <section class="section">
+    <div class="wrap">
+      <h2>Open source — and honest about limits</h2>
+      <p class="sub">FewType is an indie project. It doesn't pretend to be a mature team product, and that's part of the deal.</p>
+      <div class="honest">
+        <h3>What you should know</h3>
+        <ul>
+          <li><b>You supply the AI keys.</b> FewType is free software that doesn't sell access — you sign up for the speech and translation services yourself (built-in providers make this a 2-minute task; see each scenario's steps). No key is included or bundled with the app.</li>
+          <li><b>Free, open source (MIT), no account, no tracking.</b> The code, the builds, the roadmap — all public.</li>
+          <li><b>Not code-signed.</b> The note below explains what to expect on first run.</li>
+          <li><b>Built and maintained by one developer</b>, driven by real use and GitHub issues. Scope is honest: voice typing, ebook reading, long-text speech.</li>
+        </ul>
+        <div class="warn"><b>⚠️ About the Windows first-run warning</b><br>
+          FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records your raw dictation audio.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ 语音打字 ============ -->
+<div id="view-voice" class="view">
+  <div class="page-head">
+    <button class="back" onclick="showView('home')">← Back to Home</button>
+    <h1>Voice Typing — talk instead of typing</h1>
+    <p class="lead">Press a global hotkey in any app, speak, and your words land exactly where your cursor is. Beyond plain dictation, FewType can rewrite your words in a chosen writing style and translate them into another language before they hit the screen.</p>
+  </div>
+
+  <div class="feat">
+    <div class="txt">
+      <h3>🗣️ Dictation that works everywhere</h3>
+      <p>Chat windows, browsers, terminals, documents — one hotkey (Ctrl+Win, or double-press Ctrl) starts recording and your speech is typed where the cursor sits. No switching apps, no copy-paste.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-translation.gif" alt="FewType voice translation demo"></div>
+  </div>
+
+  <div class="feat rev">
+    <div class="txt">
+      <h3>🌍 Speak one language, output another</h3>
+      <p>Say it in Chinese, get English, Spanish, French, German, Japanese or Korean in the text box. The translation goes straight to the screen — no second window to manage.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-translation.gif" alt="FewType speech translation to Spanish"></div>
+  </div>
+
+  <div class="feat">
+    <div class="txt">
+      <h3>✍️ Writing styles that reshape your words</h3>
+      <p>Pick a style — e.g. "Karwai Wong" turns an ordinary sentence into a cinematic monologue, "Formal" turns scattered notes into a numbered, professional document. Your voice, your words, your chosen tone.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-style.gif" alt="FewType writing style demo"></div>
+  </div>
+
+  <div class="feat rev">
+    <div class="txt">
+      <h3>📄 Messy notes → clean documents</h3>
+      <p>Speak several things at once and the Formal style structures them into numbered points — a sloppy thought becomes a document-ready paragraph.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-formal.gif" alt="FewType formal style demo"></div>
+  </div>
+
+  <div class="steps">
+    <h2>What you need to do</h2>
+    <p class="sub2">It's really just two steps. The keys live on your machine and are never bundled with the app.</p>
+    <ol>
+      <li><b>Install FewType</b> on Windows 10/11 — the installer or the portable ZIP both work.</li>
+      <li><b>Get one API key</b> from a provider built into the app. Choose whichever suits you:
+        <div class="provider-tags">
+          <span>Groq — fast, free tier, works worldwide</span>
+          <span>Volcengine (火山引擎) — best for mainland China</span>
+          <span>SiliconFlow (硅基流动) — best for mainland China</span>
         </div>
-      </div>
-
-      <div class="scene">
-        <div class="emoji">🎧</div>
-        <div>
-          <h3>Long-text speech — for creators</h3>
-          <p class="lead">Paste a long script, pick a voice, get a natural-sounding audio file. A companion feature, but a lifesaver for people who produce spoken content.</p>
-          <ul>
-            <li>Voice-over creators who don't want to record every long script themselves</li>
-            <li>Digital presenters and virtual hosts that need clean speech audio</li>
-            <li>Podcast drafts, video voice-over, sample audiobooks, listening practice materials</li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
+      </li>
+      <li><b>Paste the key in Settings</b> — the app opens the provider dialog automatically the first time you press the hotkey.</li>
+      <li><b>Press the hotkey and talk.</b> Dictation, translation and styles all work from that moment on.</li>
+    </ol>
+    <div class="tip">💡 Translation and style features use an LLM key from the same provider — the settings dialog will point you to the exact field. No server setup, no configuration file to touch.</div>
   </div>
-</section>
 
-<section class="section" id="why">
-  <div class="wrap">
-    <h2>Why not just use the built-in one?</h2>
-    <p class="sub">Windows has voice typing. Paid dictation apps are polished. Here's what FewType does differently.</p>
-    <div class="why">
-      <div class="why-row">
-        <div class="vs">vs. Windows built-in</div>
-        <div class="us">Works in every app, not just the text boxes Windows can reach<small>Browsers, chat windows, terminals — text lands exactly where your cursor is.</small></div>
-      </div>
-      <div class="why-row">
-        <div class="vs">vs. paid dictation apps</div>
-        <div class="us">Free and open source, no subscription, no lock-in<small>Use the AI services you already have — your keys, your cost, your choice.</small></div>
-      </div>
-      <div class="why-row">
-        <div class="vs">vs. plain speech-to-text</div>
-        <div class="us">It doesn't just type your words — it can make them better<small>Built-in translation and writing styles, so your output sounds the way you want.</small></div>
-      </div>
-      <div class="why-row">
-        <div class="vs">vs. reader tools</div>
-        <div class="us">The ebook reader is part of the same download<small>One install gets you dictation and reading together — voices auto-match the book's script (Simplified / Traditional Chinese).</small></div>
-      </div>
-    </div>
+  <div class="page-cta">
+    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn ghost" onclick="showView('home')">Back to Home</a>
   </div>
-</section>
+</div>
 
-<section class="section" id="features">
-  <div class="wrap">
-    <h2>What's inside</h2>
-    <p class="sub">The essentials, in one glance.</p>
-    <div class="cards">
-      <div class="card"><h3>🔑 Your keys stay on this machine</h3><p>API keys live in a local config; the installer contains no keys. Copy or re-pack the app and a security warning appears. Audio and transcriptions are never written to logs.</p></div>
-      <div class="card"><h3>🌱 Small and light</h3><p>Low memory use, quiet in the background, a small installer. All the features, none of the bloat.</p></div>
-      <div class="card"><h3>🌍 Speak one, get another</h3><p>Chinese, English, Spanish, French, German, Japanese, Korean — say it, and it's translated for you.</p></div>
-      <div class="card"><h3>⚡ No waiting when no translation is needed</h3><p>Same language in and out? It goes straight to your screen.</p></div>
-      <div class="card"><h3>🧩 Ebook reading included</h3><p>The browser reader extension ships with the app — Chrome and Edge.</p></div>
-    </div>
+<!-- ============ 电子书阅读 ============ -->
+<div id="view-ebook" class="view">
+  <div class="page-head">
+    <button class="back" onclick="showView('home')">← Back to Home</button>
+    <h1>Ebook Reading — let your ears do the work</h1>
+    <p class="lead">A browser extension reads your ebooks aloud in a natural human voice — sentences flow continuously, no robotic breaks. Works with Google Play Books and Koodo Reader.</p>
+    <p class="lead" style="font-size:13.5px;color:#047857;background:rgba(16,185,129,0.08);border:1px solid rgba(14,159,110,0.2);border-radius:10px;padding:10px 14px;margin-top:12px;max-width:720px;">How it works: the desktop app runs the AI voice engine; the browser extension grabs the page's book text in one click and streams it to be read aloud.</p>
   </div>
-</section>
 
-<section class="section" id="open">
-  <div class="wrap">
-    <h2>Open source — and honest about limits</h2>
-    <p class="sub">FewType is an indie project. It doesn't pretend to be a mature team product, and that's part of the deal.</p>
-    <div class="honest">
-      <h3>What you should know</h3>
-      <ul>
-        <li><b>You supply the AI keys.</b> FewType is free software that doesn't sell access — you sign up for the speech, translation and voice services yourself (most major providers work; setup steps are in the README). No key is included or bundled with the app.</li>
-        <li><b>Free, open source (MIT), no account, no tracking.</b> The code, the builds, the roadmap — all public.</li>
-        <li><b>Not code-signed.</b> The note below explains what to expect on first run.</li>
-        <li><b>Built and maintained by one developer</b>, driven by real use and GitHub issues. Scope is honest: voice typing, ebook reading, long-text speech.</li>
-      </ul>
-      <div class="warn"><b>⚠️ About the Windows first-run warning</b><br>
-        FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records your raw dictation audio.</div>
-      <div class="sponsor">🤝 <b>Sponsoring this project means faster iteration.</b> If you find it useful, your support directly funds maintenance, new voices, better sentence flow, and the ideas on the roadmap. Sponsors genuinely change how much time this project gets.</div>
+  <div class="feat">
+    <div class="txt">
+      <h3>🗣️ A voice that sounds human, not robotic</h3>
+      <p>FewType uses natural neural voices with tuned sentence segmentation and synthesis, so paragraphs read smoothly and continuously — the way a real narrator would.</p>
     </div>
+    <div class="demo"><img src="assets/demo-reading.gif" alt="FewType ebook reading demo"></div>
   </div>
-</section>
 
-<section class="section" id="download">
-  <div class="wrap">
-    <h2>Download</h2>
-    <div class="dl">
-      <div class="dl-box">
-        <h3>Installer</h3>
-        <div class="ver">v3.1.20 · Windows 10/11 x64</div>
-        <p>Self-contained: bundles the runtime and auto-installs what's missing. Built-in auto-update.</p>
-        <a class="btn" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe" rel="noopener">Download Setup (.exe)</a>
-      </div>
-      <div class="dl-box">
-        <h3>Portable ZIP</h3>
-        <div class="ver">v3.1.20 · no install needed</div>
-        <p>Unzip and run. Includes the browser extension folder for ebook reading.</p>
-        <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-portable.zip" rel="noopener">Download Portable (.zip)</a>
-      </div>
+  <div class="feat rev">
+    <div class="txt">
+      <h3>👀 Give your eyes a break</h3>
+      <p>Long focused reading tires the eyes fast. Read with your ears during commutes, chores, or any moment your eyes are busy elsewhere.</p>
     </div>
-    <p class="note">All releases: <a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#047857;">github.com/Ray1979ANYWAY/FewType/releases</a> · <a href="https://github.com/Ray1979ANYWAY/FewType/issues" style="color:#047857;">Report an issue</a> · Free &amp; open source (MIT)</p>
+    <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType ebook reader with highlight"></div>
   </div>
-</section>
+
+  <div class="feat">
+    <div class="txt">
+      <h3>🌏 Script-aware voices</h3>
+      <p>The reader matches the voice to the book's script — Simplified Chinese books get a Simplified voice, Traditional Chinese books get a Traditional one, so multi-pronunciation characters are read correctly.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-reading.gif" alt="FewType ebook reading highlight"></div>
+  </div>
+
+  <div class="steps">
+    <h2>What you need to do</h2>
+    <p class="sub2">One install, then load the extension in your browser. That's it.</p>
+    <ol>
+      <li><b>Install FewType</b> — the <b>FewType-extension</b> folder ships inside the install directory (and inside the portable ZIP).</li>
+      <li><b>Load the extension</b> in Chrome or Edge: open <b>chrome://extensions</b> → enable <b>Developer mode</b> → <b>Load unpacked</b> → select the <b>FewType-extension</b> folder.</li>
+      <li><b>Run FewType</b> (it acts as the local bridge for the extension).</li>
+      <li><b>Open your ebook</b> on Google Play Books or Koodo Reader, click <b>Start Reading</b> in the extension popup — the page starts reading aloud, following along with a highlight.</li>
+    </ol>
+    <div class="tip">💡 Don't use ebook reading? Just skip the extension step — nothing else is affected. The reader supports Chrome and Edge; if you only read on one device, load it there once.</div>
+  </div>
+
+  <div class="page-cta">
+    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn ghost" onclick="showView('home')">Back to Home</a>
+  </div>
+</div>
+
+<!-- ============ 长文本转音频 ============ -->
+<div id="view-tts" class="view">
+  <div class="page-head">
+    <button class="back" onclick="showView('home')">← Back to Home</button>
+    <h1>Long-Text TTS — scripts into speech</h1>
+    <p class="lead">Paste a long script, pick a voice, and get a clean natural-sounding audio file. A companion feature that saves creators hours of recording.</p>
+  </div>
+
+  <div class="feat">
+    <div class="txt">
+      <h3>🎙️ From script to audio file</h3>
+      <p>Paste your draft, choose a language and a voice, hit generate — the app splits the text intelligently and synthesizes it into a single audio file in your output folder.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType long-text TTS demo"></div>
+  </div>
+
+  <div class="feat rev">
+    <div class="txt">
+      <h3>🌍 Auto-translation before speaking</h3>
+      <p>Input and output language differ? FewType translates the text first, then reads it — so you can paste English and get a Spanish voice-over without translating by hand.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType TTS translation"></div>
+  </div>
+
+  <div class="feat">
+    <div class="txt">
+      <h3>🎚️ Voices, speed, volume</h3>
+      <p>Hundreds of neural voices across many languages, with adjustable speed and volume. Preview before you generate, then export to a file.</p>
+    </div>
+    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType TTS voice selection"></div>
+  </div>
+
+  <div class="steps">
+    <h2>What you need to do</h2>
+    <p class="sub2">It's the quickest scenario — no keys, no extension.</p>
+    <ol>
+      <li><b>Install FewType</b> and open the <b>Long-Text TTS</b> tab.</li>
+      <li><b>Paste your script</b> and pick the output language.</li>
+      <li><b>Choose a voice</b> (and speed / volume if you like) — you can preview first.</li>
+      <li><b>Generate</b> — the audio file is saved to your folder (the last-used folder is remembered).</li>
+    </ol>
+    <div class="tip">💡 Great for: voice-over creators who don't want to record every line, digital presenters, podcast drafts, sample audiobooks, and listening-practice materials. If translation is needed, the app handles it automatically before speaking.</div>
+  </div>
+
+  <div class="page-cta">
+    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn ghost" onclick="showView('home')">Back to Home</a>
+  </div>
+</div>
 
 <footer>
   FewType — voice typing · AI style · ebook reading · long-text speech, one open-source app · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="zh.html">中文版</a>
 </footer>
+
+<script>
+(function(){
+  var views = document.querySelectorAll('.view');
+  var cards = document.querySelectorAll('.nav-card');
+  function showView(id){
+    for (var i=0;i<views.length;i++) views[i].classList.toggle('active', views[i].id === 'view-' + id);
+    for (var j=0;j<cards.length;j++) cards[j].classList.toggle('active', cards[j].dataset.view === id);
+    window.scrollTo(0,0);
+  }
+  window.showView = showView;
+  // 支持 hash 直达场景（如 #voice / #ebook / #tts），便于分享与 SEO 锚点
+  var h = (location.hash || '').replace('#','');
+  if (h === 'voice' || h === 'ebook' || h === 'tts') showView(h);
+})();
+</script>
 
 </body>
 </html>
