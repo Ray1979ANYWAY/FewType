@@ -59,9 +59,21 @@
   .honest ul { list-style:none; }
   .honest li { font-size:14px; color:#2E3D34; padding:7px 0 7px 24px; position:relative; }
   .honest li::before { content:"·"; position:absolute; left:8px; color:#10B981; font-weight:800; font-size:18px; top:4px; }
-  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
-  .warn b { color:#92400E; }
+  .warn { margin-top:16px; background:#EFF7F2; border:1px solid rgba(14,159,110,0.2); border-radius:12px; padding:16px 18px; font-size:14px; color:#2E3D34; line-height:1.7; }
+  .warn b { color:#16241D; }
   .note { color:#8A9A90; font-size:12.5px; margin-top:18px; text-align:center; }
+  .who { padding:8px 24px 46px; }
+  .who-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
+  .who-sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:6px auto 26px; }
+  .who-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .who-card { flex:1 1 280px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .who-card .emoji { font-size:26px; margin-bottom:8px; }
+  .who-card h3 { color:#047857; font-size:16px; margin-bottom:4px; }
+  .who-card .lead { color:#8A9A90; font-size:13px; margin-bottom:10px; }
+  .who-card ul { list-style:none; }
+  .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
+  .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
+  .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
   .view { display:none; }
@@ -121,23 +133,62 @@
     </div>
   </section>
 
+  <section class="who">
+    <div class="wrap">
+      <h2 class="who-title">FewType 适合谁？</h2>
+      <p class="who-sub">三大场景，三类不同的人。你大概率至少对号入座一个。</p>
+      <div class="who-cards">
+        <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
+          <div class="emoji">🎙️</div>
+          <h3>语音输入——说话代替打字</h3>
+          <p class="lead">任意窗口按全局热键（Ctrl+Win 或双击 Ctrl），开口就说，文字落在光标所在处。</p>
+          <ul>
+            <li>聊天、和 AI 对话时想说得快——不用逐字敲</li>
+            <li>在意回复读起来的感觉——选一个写作风格，上屏前自动改写</li>
+            <li>说一种语言、出另一种语言——翻译直接落进文本框</li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+        <div class="who-card" onclick="showView('ebook')" style="cursor:pointer;">
+          <div class="emoji">📖</div>
+          <h3>电子书朗读——让耳朵替你读</h3>
+          <p class="lead">浏览器扩展在页面里把电子书读给你听（Google Play 图书、Koodo Reader）。自然的人声，不是机器腔。</p>
+          <ul>
+            <li>要自然的人声，拒绝机器音</li>
+            <li>长时间专注看字眼睛累——视觉和听觉一起用</li>
+            <li>通勤、做家务、眼睛被占用——碎片时间也能听书</li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+        <div class="who-card" onclick="showView('tts')" style="cursor:pointer;">
+          <div class="emoji">🎧</div>
+          <h3>长文本转语音——给创作者</h3>
+          <p class="lead">粘贴一长段脚本、选个音色、得到一段自然语音的音频文件。它是附属功能，但对做口播内容的人是救命稻草。</p>
+          <ul>
+            <li>口播主播——长脚本不用自己一句句录</li>
+            <li>数字人 / 虚拟主播需要干净的语音素材</li>
+            <li>播客草稿、视频配音、有声书试听、听力练习材料</li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="scene-cards wrap">
     <div class="scene-card" onclick="showView('voice')">
       <div class="emoji">🎙️</div>
       <h3>语音打字</h3>
-      <p>按热键说话，文字落在任意输入框——内置 AI 翻译与写作风格。</p>
       <span class="go">查看详情 →</span>
     </div>
     <div class="scene-card" onclick="showView('ebook')">
       <div class="emoji">📖</div>
       <h3>电子书朗读</h3>
-      <p>浏览器扩展用自然流畅的人声朗读电子书——让眼睛歇一歇。</p>
       <span class="go">查看详情 →</span>
     </div>
     <div class="scene-card" onclick="showView('tts')">
       <div class="emoji">🎧</div>
       <h3>长文本转音频</h3>
-      <p>粘贴长稿、选个音色、生成干净的音频文件。创作者的附属利器。</p>
       <span class="go">查看详情 →</span>
     </div>
   </div>
@@ -175,8 +226,8 @@
           <li><b>未做代码签名。</b> 首次运行会遇到什么，见下方说明。</li>
           <li><b>由一位开发者持续维护</b>，由真实使用和 GitHub issues 驱动。能力边界明确：语音打字、电子书朗读、长文本转语音。</li>
         </ul>
-        <div class="warn"><b>⚠️ 关于 Windows 首次运行拦截的说明</b><br>
-          FewType 是免费开源的个人项目，目前未购买昂贵的商业代码签名。首次安装时 Windows SmartScreen 可能会弹出警告。这是安全的：请点击 <b>"更多信息 (More info)"</b> → <b>"仍要运行 (Run anyway)"</b> 即可。你的所有数据和密钥均存储在本地，程序不会记录任何录音原文。</div>
+        <div class="warn"><b>关于 Windows 首次运行的说明</b><br>
+          FewType 是免费开源的个人项目，目前未购买昂贵的商业代码签名。首次安装时 Windows SmartScreen 可能会弹出提示。这是安全的：请点击 <b>"更多信息 (More info)"</b> → <b>"仍要运行 (Run anyway)"</b> 即可。你的所有数据和密钥均存储在本地，程序不会记录任何录音原文。</div>
       </div>
     </div>
   </section>

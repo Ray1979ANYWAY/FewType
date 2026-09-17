@@ -77,9 +77,21 @@
   .honest ul { list-style:none; }
   .honest li { font-size:14px; color:#2E3D34; padding:7px 0 7px 24px; position:relative; }
   .honest li::before { content:"·"; position:absolute; left:8px; color:#10B981; font-weight:800; font-size:18px; top:4px; }
-  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
-  .warn b { color:#92400E; }
+  .warn { margin-top:16px; background:#EFF7F2; border:1px solid rgba(14,159,110,0.2); border-radius:12px; padding:16px 18px; font-size:14px; color:#2E3D34; line-height:1.7; }
+  .warn b { color:#16241D; }
   .note { color:#8A9A90; font-size:12.5px; margin-top:18px; text-align:center; }
+  .who { padding:8px 24px 46px; }
+  .who-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
+  .who-sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:6px auto 26px; }
+  .who-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .who-card { flex:1 1 280px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .who-card .emoji { font-size:26px; margin-bottom:8px; }
+  .who-card h3 { color:#047857; font-size:16px; margin-bottom:4px; }
+  .who-card .lead { color:#8A9A90; font-size:13px; margin-bottom:10px; }
+  .who-card ul { list-style:none; }
+  .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
+  .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
+  .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
   /* ===== 场景详情页 ===== */
@@ -140,23 +152,62 @@
     </div>
   </section>
 
+  <section class="who">
+    <div class="wrap">
+      <h2 class="who-title">Who is FewType for?</h2>
+      <p class="who-sub">Three scenarios, three kinds of people — you'll probably recognize yourself in at least one.</p>
+      <div class="who-cards">
+        <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
+          <div class="emoji">🎙️</div>
+          <h3>Voice typing — talk instead of typing</h3>
+          <p class="lead">Press a global hotkey anywhere, speak, and your words land where your cursor is.</p>
+          <ul>
+            <li>Chat and talk to AI faster — no more typing it all out</li>
+            <li>You care how your replies sound — pick a writing style, rewritten before it lands</li>
+            <li>Speak one language, output another — translation straight into the text box</li>
+          </ul>
+          <span class="go">Explore →</span>
+        </div>
+        <div class="who-card" onclick="showView('ebook')" style="cursor:pointer;">
+          <div class="emoji">📖</div>
+          <h3>Ebook reading — let your ears do the work</h3>
+          <p class="lead">A browser extension reads your ebooks in a natural voice, not a robot.</p>
+          <ul>
+            <li>You want a human-sounding voice and refuse robotic text-to-speech</li>
+            <li>Long focused reading tires your eyes — pair your eyes with your ears</li>
+            <li>Commute, chores, eyes busy — read with your ears in the fragments of the day</li>
+          </ul>
+          <span class="go">Explore →</span>
+        </div>
+        <div class="who-card" onclick="showView('tts')" style="cursor:pointer;">
+          <div class="emoji">🎧</div>
+          <h3>Long-text TTS — for creators</h3>
+          <p class="lead">Paste a long script, pick a voice, get a natural audio file. A companion feature — a lifesaver for spoken-content producers.</p>
+          <ul>
+            <li>Voice-over creators who don't want to record every long script themselves</li>
+            <li>Digital presenters and virtual hosts that need clean speech audio</li>
+            <li>Podcast drafts, video voice-over, audiobook samples, listening-practice materials</li>
+          </ul>
+          <span class="go">Explore →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="scene-cards wrap">
     <div class="scene-card" onclick="showView('voice')">
       <div class="emoji">🎙️</div>
       <h3>Voice Typing</h3>
-      <p>Press a hotkey, talk, and your words land in any text box — with translation and writing styles built in.</p>
       <span class="go">Explore →</span>
     </div>
     <div class="scene-card" onclick="showView('ebook')">
       <div class="emoji">📖</div>
       <h3>Ebook Reading</h3>
-      <p>A browser extension reads your ebooks aloud in a natural, flowing voice — eyes get a break.</p>
       <span class="go">Explore →</span>
     </div>
     <div class="scene-card" onclick="showView('tts')">
       <div class="emoji">🎧</div>
       <h3>Long-Text TTS</h3>
-      <p>Paste a long script, pick a voice, get a clean audio file. A companion feature for creators.</p>
       <span class="go">Explore →</span>
     </div>
   </div>
@@ -194,8 +245,8 @@
           <li><b>Not code-signed.</b> The note below explains what to expect on first run.</li>
           <li><b>Built and maintained by one developer</b>, driven by real use and GitHub issues. Scope is honest: voice typing, ebook reading, long-text speech.</li>
         </ul>
-        <div class="warn"><b>⚠️ About the Windows first-run warning</b><br>
-          FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records your raw dictation audio.</div>
+        <div class="warn"><b>About the Windows first-run message</b><br>
+          FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a message. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records your raw dictation audio.</div>
       </div>
     </div>
   </section>
