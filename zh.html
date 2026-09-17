@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FewType — Windows 语音输入与语音转文字 | AI 翻译润色 + 电子书朗读扩展</title>
+<meta name="description" content="FewType 是一款免费的 Windows 语音输入（听写）工具：全局热键随时随地说话转文字，支持 AI 翻译与润色、8 种目标语言，并附带 Chrome/Edge 电子书朗读扩展，简体/繁体音色自动匹配。支持 Groq、火山引擎、DeepSeek 等模型。" />
+<meta name="keywords" content="语音输入, 语音转文字, 听写软件, Windows 语音输入, AI 翻译润色, 电子书朗读, TTS 朗读扩展, Chrome 扩展, FewType">
+<meta name="author" content="FewType">
+<link rel="canonical" href="https://ray1979anyway.github.io/FewType/zh.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FewType — Windows 语音输入与语音转文字">
+<meta property="og:description" content="全局热键说话即打字，AI 翻译润色，浏览器扩展朗读电子书。" />
+<meta property="og:url" content="https://ray1979anyway.github.io/FewType/zh.html">
+<meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/shot-main.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23090D0A'/%3E%3Ctext x='16' y='22' font-size='16' font-weight='bold' text-anchor='middle' fill='%2334D399' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#0A0E0B; color:#E8EDE9; line-height:1.7; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(52,211,153,0.15); }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+  .logo-badge { width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,#10B981,#34D399); color:#04231A; display:flex; align-items:center; justify-content:center; font-weight:800; }
+  nav a { color:#9CA8A0; text-decoration:none; margin-left:20px; font-size:14px; }
+  nav a:hover { color:#34D399; }
+  .hero { text-align:center; padding:72px 24px 56px; }
+  .hero h1 { font-size:36px; font-weight:800; letter-spacing:-0.5px; }
+  .hero h1 span { background:linear-gradient(90deg,#34D399,#A7F3D0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { color:#9CA8A0; max-width:640px; margin:18px auto 32px; font-size:16.5px; }
+  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#04231A; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; }
+  .btn.ghost { background:transparent; color:#A7F3D0; border:1px solid rgba(52,211,153,0.4); }
+  .btn:hover { filter:brightness(1.08); }
+  .section { padding:56px 24px; border-top:1px solid rgba(255,255,255,0.06); }
+  .section h2 { font-size:26px; font-weight:700; text-align:center; margin-bottom:36px; }
+  .cards { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .card { flex:1 1 260px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; }
+  .card h3 { color:#34D399; font-size:17px; margin-bottom:10px; }
+  .card p { color:#9CA8A0; font-size:14px; }
+  .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); }
+  .shot img { width:100%; display:block; }
+  .shot figcaption { background:#0F1512; color:#9CA8A0; font-size:12.5px; text-align:center; padding:8px; }
+  .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
+  .dl-box { flex:1 1 300px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; text-align:center; }
+  .dl-box h3 { color:#E8EDE9; margin-bottom:6px; }
+  .dl-box .ver { color:#34D399; font-size:13px; margin-bottom:14px; }
+  .dl-box p { color:#9CA8A0; font-size:13px; margin-bottom:18px; }
+  .note { color:#6B7A70; font-size:12.5px; margin-top:18px; text-align:center; }
+  footer { border-top:1px solid rgba(255,255,255,0.06); padding:26px 24px; text-align:center; color:#6B7A70; font-size:13px; }
+  footer a { color:#9CA8A0; }
+  .lang { font-size:13px; }
+  @media (max-width:640px){ .hero h1{font-size:27px;} .hero{padding:48px 16px 36px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-badge">F</div>FewType</div>
+  <nav>
+    <a href="#features">功能</a>
+    <a href="#screenshots">截图</a>
+    <a href="#download">下载</a>
+    <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a>
+    <a class="lang" href="index.html">English</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Windows 上的<span>语音输入</span>与语音转文字</h1>
+  <p>任意窗口按下全局热键，开口就说、说完即上屏；可选 AI 翻译与润色，支持 8 种目标语言。配套浏览器扩展还能帮你朗读电子书，简繁体音色自动匹配。</p>
+  <div>
+    <a class="btn" href="#download">下载 Windows 版</a>
+    <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">前往 GitHub</a>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>一个热键，随处听写</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>🎙️ 全局语音输入</h3>
+        <p>Ctrl+Win 或双击 Ctrl 全局触发，浏览器、编辑器、聊天窗口、终端——任何能打字的地方都可用。自动上屏并恢复焦点。</p>
+      </div>
+      <div class="card">
+        <h3>🌐 AI 翻译与润色</h3>
+        <p>说一种语言、输出另一种。由 Groq、火山引擎、DeepSeek 或任意 OpenAI 兼容接口驱动的 LLM 翻译与润色；同语言时完全跳过 LLM，直出上屏。</p>
+      </div>
+      <div class="card">
+        <h3>📖 电子书朗读扩展</h3>
+        <p>Chrome/Edge 扩展，在浏览器里把电子书读给你听（Google Play Books、Koodo Reader、EPUB 阅读器等），简体书自动简体音色、繁体书自动繁体音色。</p>
+      </div>
+      <div class="card">
+        <h3>🔒 本地优先、保护隐私</h3>
+        <p>API Key 只存在本地配置；日志仅记录错误，转写内容绝不落盘。无账号、无遥测。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="screenshots">
+  <div class="wrap">
+    <h2>界面截图</h2>
+    <div class="shots">
+      <figure class="shot"><img src="assets/shot-main.png" alt="FewType 主界面" loading="lazy"><figcaption>主界面</figcaption></figure>
+      <figure class="shot"><img src="assets/shot-dictation.png" alt="FewType 听写与翻译确认" loading="lazy"><figcaption>听写与翻译</figcaption></figure>
+      <figure class="shot"><img src="assets/shot-settings.png" alt="FewType 设置界面" loading="lazy"><figcaption>设置</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="download">
+  <div class="wrap">
+    <h2>下载</h2>
+    <div class="dl">
+      <div class="dl-box">
+        <h3>安装版</h3>
+        <div class="ver">v3.1.20 · Windows 10/11 x64</div>
+        <p>自包含：已内置 VC 运行库，缺 WebView2 时自动安装；内置自动更新。</p>
+        <a class="btn" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe" rel="noopener">下载安装包 (.exe)</a>
+      </div>
+      <div class="dl-box">
+        <h3>免安装版</h3>
+        <div class="ver">v3.1.20 · 解压即用</div>
+        <p>解压即可运行，内含电子书朗读扩展文件夹，附 WebView2 安装程序。</p>
+        <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-portable.zip" rel="noopener">下载免安装版 (.zip)</a>
+      </div>
+    </div>
+    <p class="note">全部版本：<a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#34D399;">github.com/Ray1979ANYWAY/FewType/releases</a> · 免费开源（MIT）。程序未签名，Windows SmartScreen 首次运行可能提示，点"更多信息 → 仍要运行"即可。</p>
+  </div>
+</section>
+
+<footer>
+  FewType — 免费的 Windows 语音输入与 TTS 朗读工具 · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="index.html">English</a>
+</footer>
+
+</body>
+</html>

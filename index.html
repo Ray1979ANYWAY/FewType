@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FewType — Voice Dictation &amp; Speech-to-Text for Windows | AI TTS Ebook Reader</title>
+<meta name="description" content="FewType is a free voice dictation and speech-to-text app for Windows with AI translation &amp; text polishing, plus a TTS ebook reader Chrome extension that reads ebooks aloud with auto voice matching. Global hotkey, 8 languages, Groq/Volcengine/DeepSeek support.">
+<meta name="keywords" content="voice dictation, speech to text, voice typing, dictation software, Windows voice input, AI dictation, text to speech, TTS ebook reader, read ebooks aloud, chrome extension TTS, FewType">
+<meta name="author" content="FewType">
+<link rel="canonical" href="https://ray1979anyway.github.io/FewType/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FewType — Voice Dictation &amp; Speech-to-Text for Windows">
+<meta property="og:description" content="Dictate anywhere with a global hotkey. AI translation &amp; polish. Read ebooks aloud with a TTS browser extension.">
+<meta property="og:url" content="https://ray1979anyway.github.io/FewType/">
+<meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/shot-main.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23090D0A'/%3E%3Ctext x='16' y='22' font-size='16' font-weight='bold' text-anchor='middle' fill='%2334D399' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "FewType",
+  "alternateName": "FewType Voice Dictation",
+  "operatingSystem": "Windows 10/11",
+  "applicationCategory": "UtilitiesApplication",
+  "applicationSubCategory": "Speech-to-Text / Dictation",
+  "description": "Free voice dictation and speech-to-text app for Windows with AI translation, text polishing, and a TTS ebook reader browser extension.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "featureList": ["Global hotkey voice dictation", "AI translation & polish", "8 target languages", "TTS ebook reader extension", "Chrome/Edge supported"],
+  "screenshot": [
+    "https://ray1979anyway.github.io/FewType/assets/shot-main.png",
+    "https://ray1979anyway.github.io/FewType/assets/shot-dictation.png",
+    "https://ray1979anyway.github.io/FewType/assets/shot-settings.png"
+  ],
+  "url": "https://github.com/Ray1979ANYWAY/FewType"
+}
+</script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#0A0E0B; color:#E8EDE9; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(52,211,153,0.15); }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+  .logo-badge { width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,#10B981,#34D399); color:#04231A; display:flex; align-items:center; justify-content:center; font-weight:800; }
+  nav a { color:#9CA8A0; text-decoration:none; margin-left:20px; font-size:14px; }
+  nav a:hover { color:#34D399; }
+  .hero { text-align:center; padding:72px 24px 56px; }
+  .hero h1 { font-size:38px; font-weight:800; letter-spacing:-0.5px; }
+  .hero h1 span { background:linear-gradient(90deg,#34D399,#A7F3D0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { color:#9CA8A0; max-width:640px; margin:18px auto 32px; font-size:17px; }
+  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#04231A; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; }
+  .btn.ghost { background:transparent; color:#A7F3D0; border:1px solid rgba(52,211,153,0.4); }
+  .btn:hover { filter:brightness(1.08); }
+  .section { padding:56px 24px; border-top:1px solid rgba(255,255,255,0.06); }
+  .section h2 { font-size:26px; font-weight:700; text-align:center; margin-bottom:36px; }
+  .cards { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .card { flex:1 1 260px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; }
+  .card h3 { color:#34D399; font-size:17px; margin-bottom:10px; }
+  .card p { color:#9CA8A0; font-size:14px; }
+  .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); }
+  .shot img { width:100%; display:block; }
+  .shot figcaption { background:#0F1512; color:#9CA8A0; font-size:12.5px; text-align:center; padding:8px; }
+  .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
+  .dl-box { flex:1 1 300px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; text-align:center; }
+  .dl-box h3 { color:#E8EDE9; margin-bottom:6px; }
+  .dl-box .ver { color:#34D399; font-size:13px; margin-bottom:14px; }
+  .dl-box p { color:#9CA8A0; font-size:13px; margin-bottom:18px; }
+  .note { color:#6B7A70; font-size:12.5px; margin-top:18px; text-align:center; }
+  footer { border-top:1px solid rgba(255,255,255,0.06); padding:26px 24px; text-align:center; color:#6B7A70; font-size:13px; }
+  footer a { color:#9CA8A0; }
+  .lang { font-size:13px; }
+  code { background:rgba(255,255,255,0.07); padding:1px 6px; border-radius:4px; font-size:13px; }
+  @media (max-width:640px){ .hero h1{font-size:28px;} .hero{padding:48px 16px 36px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-badge">F</div>FewType</div>
+  <nav>
+    <a href="#features">Features</a>
+    <a href="#screenshots">Screenshots</a>
+    <a href="#download">Download</a>
+    <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a>
+    <a class="lang" href="zh.html">中文</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Voice Dictation &amp; <span>Speech-to-Text</span> for Windows</h1>
+  <p>Press a global hotkey anywhere, speak, and FewType types for you — with optional AI translation and text polishing in 8 languages. The bundled browser extension also reads your ebooks aloud with auto voice matching.</p>
+  <div>
+    <a class="btn" href="#download">Download for Windows</a>
+    <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>One hotkey, dictation everywhere</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>🎙️ Global Voice Dictation</h3>
+        <p>Trigger from any app with a hotkey (Ctrl+Win or double-press Ctrl). Works in browsers, editors, chat windows, terminals — anywhere you can type. Auto-pastes with focus restoration.</p>
+      </div>
+      <div class="card">
+        <h3>🌐 AI Translation &amp; Polish</h3>
+        <p>Speak one language, output another. LLM translation and text polishing powered by Groq, Volcengine, DeepSeek or any OpenAI-compatible endpoint. Same-language dictation skips the LLM entirely.</p>
+      </div>
+      <div class="card">
+        <h3>📖 TTS Ebook Reader Extension</h3>
+        <p>Chrome/Edge extension reads ebooks in your browser aloud (Google Play Books, Koodo Reader, EPUB readers). Simplified/Traditional Chinese voices auto-match the book's script.</p>
+      </div>
+      <div class="card">
+        <h3>🔒 Local-First &amp; Private</h3>
+        <p>Your API keys stay in your local config. Logs record errors only — transcription text is never written to disk. No accounts, no telemetry.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="screenshots">
+  <div class="wrap">
+    <h2>Screenshots</h2>
+    <div class="shots">
+      <figure class="shot"><img src="assets/shot-main.png" alt="FewType main window — voice dictation control panel" loading="lazy"><figcaption>Main window</figcaption></figure>
+      <figure class="shot"><img src="assets/shot-dictation.png" alt="FewType dictation with translation confirmation" loading="lazy"><figcaption>Dictation &amp; translation</figcaption></figure>
+      <figure class="shot"><img src="assets/shot-settings.png" alt="FewType settings — provider, hotkey, voice options" loading="lazy"><figcaption>Settings</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="download">
+  <div class="wrap">
+    <h2>Download</h2>
+    <div class="dl">
+      <div class="dl-box">
+        <h3>Installer</h3>
+        <div class="ver">v3.1.20 · Windows 10/11 x64</div>
+        <p>Self-contained: bundles the VC runtime and auto-installs WebView2 when missing. Includes built-in auto-update.</p>
+        <a class="btn" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe" rel="noopener">Download Setup (.exe)</a>
+      </div>
+      <div class="dl-box">
+        <h3>Portable ZIP</h3>
+        <div class="ver">v3.1.20 · no install needed</div>
+        <p>Unzip and run. Includes the browser extension folder for ebook reading. WebView2 setup bundled.</p>
+        <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-portable.zip" rel="noopener">Download Portable (.zip)</a>
+      </div>
+    </div>
+    <p class="note">All releases: <a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#34D399;">github.com/Ray1979ANYWAY/FewType/releases</a> · Free &amp; open source (MIT). Unsigned build — Windows SmartScreen may warn on first run; click "More info → Run anyway".</p>
+  </div>
+</section>
+
+<footer>
+  FewType — free voice dictation &amp; TTS reader for Windows · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="zh.html">中文版</a>
+</footer>
+
+</body>
+</html>
