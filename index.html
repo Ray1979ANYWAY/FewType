@@ -76,6 +76,8 @@
   .card { flex:1 1 250px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
   .card h3 { color:#047857; font-size:16.5px; margin-bottom:8px; }
   .card p { color:#5E6E64; font-size:13.5px; }
+  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
+  .warn b { color:#92400E; }
   .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
   .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
   .shot img { width:100%; display:block; }
@@ -202,7 +204,8 @@
     <h2>What's inside</h2>
     <p class="sub">The essentials, in one glance.</p>
     <div class="cards">
-      <div class="card"><h3>🔑 BYOK — your keys stay local</h3><p>Bring your own ASR/LLM/TTS keys. Config is local; transcription text never touches logs or disk.</p></div>
+      <div class="card"><h3>🔑 Keys never leave your machine</h3><p>API keys live in a protected local config. The installer ships with no keys — copying or re-packing the app triggers a security warning. Transcription text never touches logs.</p></div>
+      <div class="card"><h3>🌱 Lightweight by design</h3><p>Built on Tauri, not Electron — low memory footprint, quiet in the background, small installer. All the features, none of the bloat.</p></div>
       <div class="card"><h3>🌍 8 target languages</h3><p>Simplified/Traditional Chinese, English, Spanish, French, German, Japanese, Korean — speak, translate, output.</p></div>
       <div class="card"><h3>⚡ Same-language fast path</h3><p>Dictate Chinese → output Chinese without the LLM round-trip. Confirmation panel only appears when it's needed.</p></div>
       <div class="card"><h3>🧩 Extension included</h3><p>Ebook reader extension for Chrome/Edge, adaptive to both the new Tauri app and the legacy TK line.</p></div>
@@ -233,6 +236,8 @@
         <li><b>Not code-signed.</b> Windows SmartScreen may warn on first run — that's expected, click "More info → Run anyway".</li>
         <li><b>Built by one developer</b>, maintained through GitHub issues. Scope is defined by real use: voice input, ebook reading, long-text TTS — with clear boundaries around each.</li>
       </ul>
+      <div class="warn"><b>⚠️ About the Windows first-run warning</b><br>
+        FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records raw dictation audio.</div>
       <div class="sponsor">🤝 <b>Sponsoring this project means faster iteration.</b> If you find it useful, your support directly funds maintenance, new voices, better segmentation, and the ideas on the roadmap. Sponsors genuinely change how much time this project gets.</div>
     </div>
   </div>

@@ -54,6 +54,8 @@
   .card { flex:1 1 250px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
   .card h3 { color:#047857; font-size:16.5px; margin-bottom:8px; }
   .card p { color:#5E6E64; font-size:13.5px; }
+  .warn { margin-top:16px; background:#FFF8E8; border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:16px 18px; font-size:14px; color:#5B4314; line-height:1.7; }
+  .warn b { color:#92400E; }
   .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
   .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
   .shot img { width:100%; display:block; }
@@ -180,7 +182,8 @@
     <h2>里面有什么</h2>
     <p class="sub">核心能力，一眼看完。</p>
     <div class="cards">
-      <div class="card"><h3>🔑 自带 Key，本地保存</h3><p>ASR / LLM / TTS 的 Key 全部自己带，配置只在本地；转写内容绝不进日志、不落盘。</p></div>
+      <div class="card"><h3>🔑 密钥不出笼</h3><p>API Key 只存在本地受保护的配置里。安装包不内置任何密钥——复制或重新打包程序目录会触发安全警告；转写内容绝不进日志。</p></div>
+      <div class="card"><h3>🌱 轻量设计</h3><p>基于 Tauri（非 Electron），内存占用小、后台安静、安装包小。功能齐全，但不臃肿。</p></div>
       <div class="card"><h3>🌍 8 种目标语言</h3><p>简中/繁中、英语、西语、法语、德语、日语、韩语——说一种，出另一种。</p></div>
       <div class="card"><h3>⚡ 同语言直出</h3><p>说中文出中文时不绕 LLM，更快；确认面板只在需要的时候出现。</p></div>
       <div class="card"><h3>🧩 扩展随包</h3><p>Chrome/Edge 电子书朗读扩展，同时兼容新版 Tauri 应用与旧版 TK 线。</p></div>
@@ -211,6 +214,8 @@
         <li><b>程序未签名。</b> Windows SmartScreen 首次运行可能提示，属正常现象，点"更多信息 → 仍要运行"。</li>
         <li><b>由一位开发者维护</b>，通过 GitHub issues 迭代。能力边界由真实使用定义：语音输入、电子书朗读、长文本转语音，各自边界清晰。</li>
       </ul>
+      <div class="warn"><b>⚠️ 关于 Windows 首次运行拦截的说明</b><br>
+        FewType 是一个开源的免费个人项目，目前未购买昂贵的企业代码签名。首次安装时 Windows SmartScreen 可能会弹出警告。<b>操作方法：</b>请放心点击"更多信息 (More info)" → "仍要运行 (Run anyway)" 即可。你的所有数据和密钥均存储在本地，程序不会记录任何录音原文。</div>
       <div class="sponsor">🤝 <b>赞助这个项目，就等于给它更多迭代时间。</b> 如果你觉得它有用，你的支持会直接变成维护、新音色、更好的分段逻辑，以及路线图上的新想法。赞助真的会改变这个项目能分到多少时间。</div>
     </div>
   </div>
