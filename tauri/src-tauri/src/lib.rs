@@ -33,6 +33,52 @@ struct TrayHandle(TrayIcon);
 
 const BACKEND_PORT: &str = "5010";
 
+/// WebView2 Runtime 是否已安装（查注册表，与 NSIS 安装器同一 GUID 口径）
+fn webview2_installed() -> bool {
+    let keys = [
+        r"HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
+        r"HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
+        r"HKCU\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
+    ];
+    for k in keys {
+        if let Ok(out) = Command::new("reg").args(["query", k, "/v", "pv"]).output() {
+            if out.status.success() {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// 免安装版环境自愈：WebView2 缺失时静默运行同目录 WebView2Setup.exe 安装，
+/// 让用户解压后双击即可无感使用（NSIS 安装版由安装器负责，此处作为兜底，已装则直接跳过）。
+/// 轮询等待最多 120 秒（下载+静默安装），断网超时则放弃、照常启动，不无限卡住。
+fn ensure_webview2() {
+    if webview2_installed() {
+        return;
+    }
+    let setup_path = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("WebView2Setup.exe")))
+        .unwrap_or_default();
+    if !setup_path.exists() {
+        return;
+    }
+    if let Ok(mut child) = Command::new(&setup_path).args(["/silent", "/install"]).spawn() {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
+        loop {
+            if webview2_installed() {
+                let _ = child.kill();
+                break;
+            }
+            if std::time::Instant::now() > deadline {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2000));
+        }
+    }
+}
+
 /// 开发模式后端命令（依赖本机 Python 环境，可通过环境变量 FEWTYPE_PYTHON 覆盖）
 fn dev_backend_command() -> (String, Vec<String>) {
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -161,6 +207,8 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 窗口创建前先确保 WebView2（portable 免安装版缺运行库时自动静默安装）
+    ensure_webview2();
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         // 单实例锁：重复启动时唤起已有窗口并退出新实例

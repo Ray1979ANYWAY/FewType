@@ -769,15 +769,21 @@ function detectTextLang(text) {
   if (!text) return null;
   const sample = text.slice(0, 3000);
   let han = 0, kana = 0, hangul = 0, latin = 0;
+  let simp = 0, trad = 0;
   for (const ch of sample) {
-    if (/[\u4e00-\u9fff]/.test(ch)) han++;
-    else if (/[\u3040-\u30ff]/.test(ch)) kana++;
+    if (/[\u4e00-\u9fff]/.test(ch)) {
+      han++;
+      // 简/繁特征字统计：决定中文音色该用简体（Xiaoxiao 等）还是繁体（HsiaoChen 等），
+      // 避免用错字形导致多音字念错（如"了/行/乐"在简繁转换时容易选错读音）。
+      if (/[们国这华语说见时门开进对现发来样边过问还为实买卖风飞头关义从]/u.test(ch)) simp++;
+      else if (/[們國這華語說見時門開進對現發來樣邊過問還為實買賣風飛頭關義從]/u.test(ch)) trad++;
+    } else if (/[\u3040-\u30ff]/.test(ch)) kana++;
     else if (/[\uac00-\ud7af]/.test(ch)) hangul++;
     else if (/[a-zA-Z\u00c0-\u024f]/.test(ch)) latin++;
   }
   const total = han + kana + hangul + latin;
   if (total === 0) return null;
-  if (han / total > 0.5) return "zh";
+  if (han / total > 0.5) return trad > simp ? "zh-Hant" : "zh-Hans";
   if (kana / total > 0.3) return "ja";
   if (hangul / total > 0.3) return "ko";
   if (latin / total > 0.5) {
@@ -791,8 +797,11 @@ function detectTextLang(text) {
 }
 
 // 页面正文语言 → 自动匹配语言/音色下拉（覆盖上次记忆里不匹配的音色）。
-// 只把下拉切到能"读得动"当前文本的音色；用户如果手动选过同语言组的音色则不动。
+// 只提供"打开面板时的默认值"：用户一旦手动改过语言/音色，本会话内不再自动覆盖
+// （可能故意用简体音色念繁体书、用西语音色念英语等，那是用户的自由）。
+let userTouchedSelection = false;
 function autoMatchVoiceToPageLang(text) {
+  if (userTouchedSelection) return;
   const langKey = detectTextLang(text);
   if (!langKey) return;
   const group = langGroups.find((g) => g.key === langKey);
@@ -952,6 +961,7 @@ function restoreLastRate() {
 }
 
 document.getElementById("lang").addEventListener("change", (e) => {
+  userTouchedSelection = true;
   chrome.storage.local.set({ [LAST_LANG_KEY]: e.target.value });
   // 语言切换后重建音色下拉，并同步保存当前音色
   fillVoiceSelect();
@@ -960,6 +970,7 @@ document.getElementById("lang").addEventListener("change", (e) => {
 });
 
 document.getElementById("voice").addEventListener("change", (e) => {
+  userTouchedSelection = true;
   chrome.storage.local.set({ [LAST_VOICE_KEY]: e.target.value });
 });
 
@@ -1004,13 +1015,17 @@ document.getElementById("clearLog").addEventListener("click", () => {
   });
 });
 
-// 启动：先按浏览器系统语言铺好界面，再拉取音色清单并恢复上次偏好、拉取内容、轮询朗读状态
+// 启动：先按浏览器系统语言铺好界面，再拉取音色清单并恢复上次偏好；正文的自动语言匹配
+// 必须在恢复偏好之后执行（fetchLatest 本地很快、loadVoices 网络较慢，若并发会竞态：
+// autoMatch 切好的语言会被 restoreLastSelection 覆盖回去）。
 UI_LOCALE = detectUiLanguage();
 applyUiLanguage();
 applyBridgeTheme();
-loadVoices().then(() => restoreLastSelection());
+loadVoices().then(() => {
+  restoreLastSelection();
+  fetchLatest();
+});
 restoreLastRate();
-fetchLatest();
 refreshReadingState();
 startPolling();
 

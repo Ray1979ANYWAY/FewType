@@ -18,6 +18,7 @@ from __future__ import annotations
 from log_i18n import L
 
 import logging
+import re
 import threading
 import time
 from typing import Callable
@@ -126,6 +127,78 @@ class SpeechInputManager:
         with self._lock:
             self._active = False
 
+    # ------------------------------------------------------------ 语言一致判定
+    @staticmethod
+    def _same_lang(text: str, target_lang: str) -> bool:
+        """ASR 文本语言与目标语言是否一致。一致 → 无需翻译、无需弹确认面板，直接上屏。
+
+        检测思路：按字符区间统计汉字/假名/谚文/拉丁字母的主占比；
+        latin 系（英/西/法/德）先看独有字符特征（ñ/ç/äöüß 等），
+        无特征字符的短句再用各语言高频功能词兜底，避免"西语人说西语、
+        目标却是英文"这类场景被误判为同语言而漏掉翻译。
+        """
+        t = target_lang or ""
+        han = kana = hangul = latin = 0
+        for ch in text[:1000]:
+            o = ord(ch)
+            if 0x4E00 <= o <= 0x9FFF:
+                han += 1
+            elif 0x3040 <= o <= 0x30FF:
+                kana += 1
+            elif 0xAC00 <= o <= 0xD7AF:
+                hangul += 1
+            elif ch.isascii() and ch.isalpha():
+                latin += 1
+        total = han + kana + hangul + latin
+        if total == 0:
+            return False
+        if han / total > 0.5 and "中文" in t:
+            return True
+        if (kana + han) / total > 0.5 and ("日" in t or t == "Japanese"):
+            return True
+        if hangul / total > 0.5 and ("韩" in t or "한" in t or t == "Korean"):
+            return True
+        if latin == 0:
+            return False
+        # ---- latin 系细分 ----
+        low = text[:1000].lower()
+        if re.search(r"[ñÑ¿¡]", text):
+            src = "es"
+        elif re.search(r"[çœàâêîôûùëïÿ]", text, re.I):
+            src = "fr"
+        elif re.search(r"[äöüßÄÖÜ]", text):
+            src = "de"
+        else:
+            # 高频功能词兜底（短句/无重音场景），按词边界匹配避免标点干扰
+            de_words = ["ich", "du", "der", "die", "das", "und", "nicht",
+                        "ist", "ein", "eine", "liebe", "dich", "sehr",
+                        "bitte", "guten", "aber", "auch"]
+            fr_words = ["le", "les", "et", "est", "je", "vous",
+                        "bonjour", "comment", "ne", "pas"]
+            es_words = ["el", "los", "las", "es", "un", "una",
+                        "que", "por", "no"]
+            score = {"es": 0, "fr": 0, "de": 0}
+            for w in de_words:
+                if re.search(r"(?<![a-z])" + w + r"(?![a-z])", low):
+                    score["de"] += 1
+            for w in fr_words:
+                if re.search(r"(?<![a-z])" + w + r"(?![a-z])", low):
+                    score["fr"] += 1
+            for w in es_words:
+                if re.search(r"(?<![a-z])" + w + r"(?![a-z])", low):
+                    score["es"] += 1
+            best = max(score, key=score.get)
+            src = best if score[best] >= 2 else "en"
+        if "西班牙" in t or t == "Spanish":
+            return src == "es"
+        if "法" in t or t == "French":
+            return src == "fr"
+        if "德" in t or t == "German":
+            return src == "de"
+        if t == "English":
+            return src == "en"
+        return False
+
     # ------------------------------------------------------------ 翻译确认
     def confirm(self, text: str, source: str, cancel: bool = False) -> bool:
         """用户在前端确认/修改原文后回调：唤醒等待中的转写线程继续翻译。
@@ -223,31 +296,45 @@ class SpeechInputManager:
             self._emit({"type": "status", "state": "idle", "message": "空闲"})
             return
 
-        # 翻译模式：转写完成后先给用户编辑确认原文，确认后再翻译上屏
+        # 翻译模式：先判断 ASR 语言与目标语言是否一致——
+        # 一致（如说中文、目标也是简体中文）则跳过确认面板和 LLM 翻译，直接上屏；
+        # 不一致才弹确认面板，确认后再翻译上屏。
+        skip_llm = False
         if translate:
-            self._emit({"type": "status", "state": "confirming",
-                        "message": "请确认原文"})
-            self._emit({"type": "confirm", "text": raw, "source": self._source,
-                        "mode": mode, "target_lang": target_lang})
-            confirmed = self._wait_confirm()
-            if confirmed is None:
-                # 用户取消 / 超时：放弃本次翻译上屏（录音状态已结束，不丢内容于输入框）
+            if self._same_lang(raw, target_lang):
                 self._emit({"type": "log",
-                            "message": "已取消翻译上屏（未确认原文）"})
-                with self._lock:
-                    self._active = False
-                    self._session = None
-                    self._session_queue = None
-                    self._sender = None
-                    self._recorder = None
-                self._emit({"type": "status", "state": "idle", "message": "空闲"})
-                return
-            raw = confirmed
-            logger.info("[debug] 原文已确认")
+                            "message": "语言一致，跳过翻译与确认，直接上屏"})
+                logger.info("[debug] ASR 语言与目标一致，跳过 LLM/确认面板")
+                skip_llm = True
+            else:
+                self._emit({"type": "status", "state": "confirming",
+                            "message": "请确认原文"})
+                self._emit({"type": "confirm", "text": raw, "source": self._source,
+                            "mode": mode, "target_lang": target_lang})
+                confirmed = self._wait_confirm()
+                if confirmed is None:
+                    # 用户取消 / 超时：放弃本次翻译上屏（录音状态已结束，不丢内容于输入框）
+                    self._emit({"type": "log",
+                                "message": "已取消翻译上屏（未确认原文）"})
+                    with self._lock:
+                        self._active = False
+                        self._session = None
+                        self._session_queue = None
+                        self._sender = None
+                        self._recorder = None
+                    self._emit({"type": "status", "state": "idle", "message": "空闲"})
+                    return
+                raw = confirmed
+                logger.info("[debug] 原文已确认")
 
         try:
-            final = self._polish(provider, raw, mode, translate,
-                                 target_lang, custom_prompt)
+            if skip_llm:
+                # 同语言直出：只走格式层（数字/缩写/空格/标点），不调 LLM
+                from normalize import normalize_text
+                final = normalize_text(raw.strip())
+            else:
+                final = self._polish(provider, raw, mode, translate,
+                                     target_lang, custom_prompt)
             logger.info("[debug] 翻译/润色完成")
         except Exception as e:  # noqa: BLE001
             logger.error(L("stt_fail", type=type(e).__name__, err=e))
