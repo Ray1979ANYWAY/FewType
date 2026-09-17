@@ -1,11 +1,11 @@
 {
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvaks2cklXMFd3cE5jNS83U0lxbnY5YTNXSmFlYWY5cklGMnArVllTejdRNXBCeWx2QytCOXhaMXdKNG51L08rRjFaREl2VnhIRTlqbmRKcjNOYzdtdmdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjE4OTc4CWZpbGU6RmV3VHlwZV8zLjEuMjBfeDY0LXNldHVwLmV4ZQpNeEdiNHRhdHEwaktqSjNRMTkzKzFmbVlDeTQ1amlVZVAyRXR2M0J0eER0Q0p2RTEzWE03UnU4ZmYrdCsydmFWU0FONllwMXZuNHR2M2p4Z2tkN3hBdz09Cg==",
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakNQN3o3LzFZRGdRL3gzRGY3SHEwVXlrUWRUVHdxYU16Y0ZnRGswTGdWSkl5M0FXR2ExYzQ4czRZMGlDQXVnL21tekpkV042cm5vaFV5aWI3UWtWMUE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjQzMDU0CWZpbGU6RmV3VHlwZV8zLjEuMjBfeDY0LXNldHVwLmV4ZQpZVXRucUphNWFiVFMramVGM2Q1NU43L2lBRGFkWHBHb3pOU0hqWC9NVS9LSnRWQ2F5T1dSMTlHdHlkWFVKbXh3MGR4dzdRSzlXVEN6WTlQL1JRYTNCQT09Cg==",
                                              "url":  "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe"
                                          }
                   },
-    "pub_date":  "2026-09-17T12:23:25+08:00",
+    "pub_date":  "2026-09-17T11:04:52Z",
     "version":  "3.1.20",
     "notes":  "FewType 3.1.20: same-language dictation skips LLM translation \u0026 confirmation panel; extension: zh-Hans/zh-Hant voice auto-match, 2.25x/2.5x playback speed, popup race fix."
 }
