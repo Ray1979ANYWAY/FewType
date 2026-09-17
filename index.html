@@ -15,7 +15,7 @@
 <meta property="og:url" content="https://ray1979anyway.github.io/FewType/">
 <meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/shot-main.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23090D0A'/%3E%3Ctext x='16' y='22' font-size='16' font-weight='bold' text-anchor='middle' fill='%2334D399' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="assets/icon.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -38,47 +38,48 @@
 </script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#0A0E0B; color:#E8EDE9; line-height:1.6; }
+  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.6; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(52,211,153,0.15); }
-  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
-  .logo-badge { width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,#10B981,#34D399); color:#04231A; display:flex; align-items:center; justify-content:center; font-weight:800; }
-  nav a { color:#9CA8A0; text-decoration:none; margin-left:20px; font-size:14px; }
-  nav a:hover { color:#34D399; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(14,159,110,0.18); background:rgba(255,255,255,0.6); }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:19px; letter-spacing:-0.2px; }
+  .logo img { width:30px; height:30px; border-radius:8px; display:block; box-shadow:0 2px 8px rgba(0,0,0,0.18); }
+  .logo-text { background:linear-gradient(90deg,#FDE68A 0%,#FFEDD5 45%,#FBBF24 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.12)); }
+  nav a { color:#5E6E64; text-decoration:none; margin-left:20px; font-size:14px; }
+  nav a:hover { color:#047857; }
   .hero { text-align:center; padding:72px 24px 56px; }
-  .hero h1 { font-size:38px; font-weight:800; letter-spacing:-0.5px; }
-  .hero h1 span { background:linear-gradient(90deg,#34D399,#A7F3D0); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .hero p { color:#9CA8A0; max-width:640px; margin:18px auto 32px; font-size:17px; }
-  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#04231A; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; }
-  .btn.ghost { background:transparent; color:#A7F3D0; border:1px solid rgba(52,211,153,0.4); }
-  .btn:hover { filter:brightness(1.08); }
-  .section { padding:56px 24px; border-top:1px solid rgba(255,255,255,0.06); }
-  .section h2 { font-size:26px; font-weight:700; text-align:center; margin-bottom:36px; }
+  .hero h1 { font-size:38px; font-weight:800; letter-spacing:-0.5px; color:#16241D; }
+  .hero h1 span { background:linear-gradient(90deg,#047857,#10B981); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { color:#5E6E64; max-width:640px; margin:18px auto 32px; font-size:17px; }
+  .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); }
+  .btn.ghost { background:#FFFFFF; color:#047857; border:1px solid rgba(14,159,110,0.4); box-shadow:none; }
+  .btn:hover { filter:brightness(1.05); }
+  .section { padding:56px 24px; border-top:1px solid rgba(0,0,0,0.06); }
+  .section h2 { font-size:26px; font-weight:700; text-align:center; margin-bottom:36px; color:#16241D; }
   .cards { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
-  .card { flex:1 1 260px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; }
-  .card h3 { color:#34D399; font-size:17px; margin-bottom:10px; }
-  .card p { color:#9CA8A0; font-size:14px; }
+  .card { flex:1 1 260px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .card h3 { color:#047857; font-size:17px; margin-bottom:10px; }
+  .card p { color:#5E6E64; font-size:14px; }
   .shots { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
-  .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); }
+  .shot { flex:1 1 280px; min-width:0; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
   .shot img { width:100%; display:block; }
-  .shot figcaption { background:#0F1512; color:#9CA8A0; font-size:12.5px; text-align:center; padding:8px; }
+  .shot figcaption { background:#F0F4F1; color:#5E6E64; font-size:12.5px; text-align:center; padding:8px; }
   .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
-  .dl-box { flex:1 1 300px; min-width:0; background:#0F1512; border:1px solid rgba(52,211,153,0.18); border-radius:14px; padding:24px; text-align:center; }
-  .dl-box h3 { color:#E8EDE9; margin-bottom:6px; }
-  .dl-box .ver { color:#34D399; font-size:13px; margin-bottom:14px; }
-  .dl-box p { color:#9CA8A0; font-size:13px; margin-bottom:18px; }
-  .note { color:#6B7A70; font-size:12.5px; margin-top:18px; text-align:center; }
-  footer { border-top:1px solid rgba(255,255,255,0.06); padding:26px 24px; text-align:center; color:#6B7A70; font-size:13px; }
-  footer a { color:#9CA8A0; }
+  .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .dl-box h3 { color:#16241D; margin-bottom:6px; }
+  .dl-box .ver { color:#047857; font-size:13px; margin-bottom:14px; }
+  .dl-box p { color:#5E6E64; font-size:13px; margin-bottom:18px; }
+  .note { color:#8A9A90; font-size:12.5px; margin-top:18px; text-align:center; }
+  footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
+  footer a { color:#5E6E64; }
   .lang { font-size:13px; }
-  code { background:rgba(255,255,255,0.07); padding:1px 6px; border-radius:4px; font-size:13px; }
+  code { background:rgba(0,0,0,0.05); padding:1px 6px; border-radius:4px; font-size:13px; }
   @media (max-width:640px){ .hero h1{font-size:28px;} .hero{padding:48px 16px 36px;} }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><div class="logo-badge">F</div>FewType</div>
+  <div class="logo"><img src="assets/icon.png" alt="FewType icon"><span class="logo-text">FewType</span></div>
   <nav>
     <a href="#features">Features</a>
     <a href="#screenshots">Screenshots</a>
@@ -149,7 +150,7 @@
         <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-portable.zip" rel="noopener">Download Portable (.zip)</a>
       </div>
     </div>
-    <p class="note">All releases: <a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#34D399;">github.com/Ray1979ANYWAY/FewType/releases</a> · Free &amp; open source (MIT). Unsigned build — Windows SmartScreen may warn on first run; click "More info → Run anyway".</p>
+    <p class="note">All releases: <a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#047857;">github.com/Ray1979ANYWAY/FewType/releases</a> · Free &amp; open source (MIT). Unsigned build — Windows SmartScreen may warn on first run; click "More info → Run anyway".</p>
   </div>
 </section>
 
