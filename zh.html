@@ -78,6 +78,8 @@
   .feat .txt p { color:#2E3D34; font-size:14.5px; }
   .feat .demo { flex:1 1 50%; min-width:0; border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 3px 14px rgba(0,0,0,0.07); }
   .feat .demo img { width:100%; display:block; }
+  .feat.nodemo .txt { flex:1 1 100%; }
+  .feat.nodemo { padding:22px 26px; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
   .steps { max-width:1000px; margin:40px auto 0; padding:0 24px; }
   .steps h2 { font-size:22px; font-weight:800; color:#16241D; margin-bottom:6px; }
   .steps .sub2 { color:#8A9A90; font-size:14px; margin-bottom:18px; }
@@ -168,7 +170,7 @@
       <div class="honest">
         <h3>你需要知道的事</h3>
         <ul>
-          <li><b>AI 密钥由你自己提供。</b> FewType 是免费软件，不卖服务——语音识别与翻译服务由你自己开通（内置 Provider 让这一步只要两分钟，见各场景步骤）。应用内不捆绑、不附带任何密钥。</li>
+          <li><b>AI 密钥由你自己提供——这正是 FewType 保持免费的原因。</b> 无订阅、无捆绑。在应用内置的 Provider 里选一家（Groq、火山引擎或硅基流动），申请一个密钥粘贴到设置即可，全程约两分钟，各场景都有分步引导。密钥只存在你的电脑里，绝不离机。</li>
           <li><b>免费、开源（MIT）、无账号、无追踪。</b> 代码、构建产物、路线图全部公开。</li>
           <li><b>未做代码签名。</b> 首次运行会遇到什么，见下方说明。</li>
           <li><b>由一位开发者持续维护</b>，由真实使用和 GitHub issues 驱动。能力边界明确：语音打字、电子书朗读、长文本转语音。</li>
@@ -193,7 +195,7 @@
       <h3>🗣️ 全应用可用，哪里都能打</h3>
       <p>聊天窗口、浏览器、终端、文档——一个热键（Ctrl+Win，或双击 Ctrl）开始录音，语音直接打到光标处。不用切换应用，不用复制粘贴。</p>
     </div>
-    <div class="demo"><img src="assets/demo-translation.gif" alt="FewType 语音翻译演示"></div>
+    <div class="demo"><img src="assets/demo-hotkey.png" alt="FewType 自定义热键设置"></div>
   </div>
 
   <div class="feat rev">
@@ -266,15 +268,14 @@
       <h3>👀 让眼睛歇一歇</h3>
       <p>长时间专注看书，眼睛很快就累。通勤、做家务、任何眼睛忙不过来的碎片时间，用耳朵接着读。</p>
     </div>
-    <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType 电子书朗读高亮"></div>
+    <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType 电子书朗读界面"></div>
   </div>
 
-  <div class="feat">
+  <div class="feat nodemo">
     <div class="txt">
       <h3>🌏 音色自动匹配书的内容</h3>
       <p>朗读器会按书的文字自动匹配音色——简体书用简体音色、繁体书用繁体音色，多音字也读得更准。</p>
     </div>
-    <div class="demo"><img src="assets/demo-reading.gif" alt="FewType 电子书朗读高亮跟随"></div>
   </div>
 
   <div class="steps">
@@ -316,15 +317,14 @@
       <h3>🌍 朗读前自动翻译</h3>
       <p>输入和输出语言不一致？FewType 会先翻译再朗读——粘贴英文，直接得到西班牙语配音，不用手动翻译。</p>
     </div>
-    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType 转音频自动翻译"></div>
+    <div class="demo"><img src="assets/demo-tts-ui.png" alt="FewType 长文本转音频界面"></div>
   </div>
 
-  <div class="feat">
+  <div class="feat nodemo">
     <div class="txt">
       <h3>🎚️ 音色、语速、音量</h3>
       <p>上百种神经音色覆盖多种语言，语速音量可调。先试听再生成，最后导出成文件。</p>
     </div>
-    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType 音色选择"></div>
   </div>
 
   <div class="steps">

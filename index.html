@@ -97,6 +97,8 @@
   .feat .txt p { color:#2E3D34; font-size:14.5px; }
   .feat .demo { flex:1 1 50%; min-width:0; border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,0.1); background:#FFFFFF; box-shadow:0 3px 14px rgba(0,0,0,0.07); }
   .feat .demo img { width:100%; display:block; }
+  .feat.nodemo .txt { flex:1 1 100%; }
+  .feat.nodemo { padding:22px 26px; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
   .steps { max-width:1000px; margin:40px auto 0; padding:0 24px; }
   .steps h2 { font-size:22px; font-weight:800; color:#16241D; margin-bottom:6px; }
   .steps .sub2 { color:#8A9A90; font-size:14px; margin-bottom:18px; }
@@ -187,7 +189,7 @@
       <div class="honest">
         <h3>What you should know</h3>
         <ul>
-          <li><b>You supply the AI keys.</b> FewType is free software that doesn't sell access — you sign up for the speech and translation services yourself (built-in providers make this a 2-minute task; see each scenario's steps). No key is included or bundled with the app.</li>
+          <li><b>You bring your own AI key — that's what keeps FewType free.</b> No subscription, nothing bundled. Pick a built-in provider (Groq, Volcengine or SiliconFlow), get a free key, paste it in Settings — about two minutes, with step-by-step guides in each scenario. Your key never leaves your machine.</li>
           <li><b>Free, open source (MIT), no account, no tracking.</b> The code, the builds, the roadmap — all public.</li>
           <li><b>Not code-signed.</b> The note below explains what to expect on first run.</li>
           <li><b>Built and maintained by one developer</b>, driven by real use and GitHub issues. Scope is honest: voice typing, ebook reading, long-text speech.</li>
@@ -212,7 +214,7 @@
       <h3>🗣️ Dictation that works everywhere</h3>
       <p>Chat windows, browsers, terminals, documents — one hotkey (Ctrl+Win, or double-press Ctrl) starts recording and your speech is typed where the cursor sits. No switching apps, no copy-paste.</p>
     </div>
-    <div class="demo"><img src="assets/demo-translation.gif" alt="FewType voice translation demo"></div>
+    <div class="demo"><img src="assets/demo-hotkey.png" alt="FewType custom hotkey settings"></div>
   </div>
 
   <div class="feat rev">
@@ -285,15 +287,14 @@
       <h3>👀 Give your eyes a break</h3>
       <p>Long focused reading tires the eyes fast. Read with your ears during commutes, chores, or any moment your eyes are busy elsewhere.</p>
     </div>
-    <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType ebook reader with highlight"></div>
+    <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType ebook reader interface"></div>
   </div>
 
-  <div class="feat">
+  <div class="feat nodemo">
     <div class="txt">
-      <h3>🌏 Script-aware voices</h3>
-      <p>The reader matches the voice to the book's script — Simplified Chinese books get a Simplified voice, Traditional Chinese books get a Traditional one, so multi-pronunciation characters are read correctly.</p>
+      <h3>🌏 Voices that match the book</h3>
+      <p>The reader picks the voice that matches the book's language automatically, so words with multiple pronunciations are read correctly in context.</p>
     </div>
-    <div class="demo"><img src="assets/demo-reading.gif" alt="FewType ebook reading highlight"></div>
   </div>
 
   <div class="steps">
@@ -335,15 +336,14 @@
       <h3>🌍 Auto-translation before speaking</h3>
       <p>Input and output language differ? FewType translates the text first, then reads it — so you can paste English and get a Spanish voice-over without translating by hand.</p>
     </div>
-    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType TTS translation"></div>
+    <div class="demo"><img src="assets/demo-tts-ui.png" alt="FewType long-text TTS interface"></div>
   </div>
 
-  <div class="feat">
+  <div class="feat nodemo">
     <div class="txt">
       <h3>🎚️ Voices, speed, volume</h3>
       <p>Hundreds of neural voices across many languages, with adjustable speed and volume. Preview before you generate, then export to a file.</p>
     </div>
-    <div class="demo"><img src="assets/demo-tts.gif" alt="FewType TTS voice selection"></div>
   </div>
 
   <div class="steps">
