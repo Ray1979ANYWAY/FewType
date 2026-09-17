@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FewType — Voice Dictation, AI Style Rewriting &amp; Ebook Read-Aloud for Windows | Open Source</title>
-<meta name="description" content="FewType is a free, open-source Windows app that combines three things: voice dictation with AI translation &amp; style rewriting (your own API key), a natural-voice ebook reader extension, and long-text TTS for creators. Bring your own key — no subscription.">
-<meta name="keywords" content="voice dictation, speech to text, voice typing, AI writing style, translate by voice, ebook reader TTS, natural voice text to speech, long text to speech, Chrome extension TTS, open source dictation, FewType">
+<title>FewType — Voice Typing, AI Writing Style &amp; Ebook Read-Aloud for Windows | Free &amp; Open Source</title>
+<meta name="description" content="FewType is a free, open-source Windows app that does four things: voice typing with AI translation and writing styles, natural-voice ebook reading in the browser, and long-text TTS for creators. No subscription — you connect the AI services you choose.">
+<meta name="keywords" content="voice typing, speech to text, dictation software, AI writing style, translate by voice, ebook reader TTS, natural voice text to speech, long text to speech, Chrome extension TTS, open source dictation, FewType">
 <meta name="author" content="FewType">
 <meta name="google-site-verification" content="QJv4m03hfnuF60OBnFUSlxXo10Lkfri8wf6cFZ19n0I" />
 <link rel="canonical" href="https://ray1979anyway.github.io/FewType/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="FewType — Voice Dictation, AI Style Rewriting &amp; Ebook Read-Aloud">
-<meta property="og:description" content="Speak, and get your words typed, rewritten, translated or read back. Free &amp; open source — bring your own API key.">
+<meta property="og:title" content="FewType — Voice Typing, AI Writing Style &amp; Ebook Read-Aloud">
+<meta property="og:description" content="Speak, and get your words typed, rewritten, translated or read back. Free &amp; open source — you supply the AI keys.">
 <meta property="og:url" content="https://ray1979anyway.github.io/FewType/">
 <meta property="og:image" content="https://ray1979anyway.github.io/FewType/assets/shot-main.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -21,13 +21,11 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "FewType",
-  "operateOn": "Windows 10/11",
   "operatingSystem": "Windows 10/11",
   "applicationCategory": "UtilitiesApplication",
-  "applicationSubCategory": "Speech-to-Text / Dictation / TTS",
-  "description": "Open-source voice dictation, AI style rewriting, and ebook read-aloud TTS for Windows. Bring-your-own-API-key, no subscription.",
+  "description": "Open-source Windows app for voice typing, AI translation and writing styles, ebook read-aloud, and long-text TTS. No subscription — users connect their own AI services.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "featureList": ["Global hotkey dictation", "AI style rewriting & translation", "Same-language fast path (no LLM)", "Ebook reader TTS extension", "Long-text TTS for creators"],
+  "featureList": ["Global hotkey voice typing", "AI translation and writing styles", "Natural-voice ebook reader extension", "Long-text TTS for creators"],
   "screenshot": [
     "https://ray1979anyway.github.io/FewType/assets/shot-main.png",
     "https://ray1979anyway.github.io/FewType/assets/shot-dictation.png",
@@ -51,7 +49,6 @@
   .hero h1 { font-size:36px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.2; }
   .hero h1 span { background:linear-gradient(90deg,#047857,#10B981); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero p { color:#5E6E64; max-width:680px; margin:16px auto 26px; font-size:16.5px; }
-  .hero .small { color:#8A9A90; font-size:13px; margin-top:-14px; }
   .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); }
   .btn.ghost { background:#FFFFFF; color:#047857; border:1px solid rgba(14,159,110,0.4); box-shadow:none; }
   .btn:hover { filter:brightness(1.05); }
@@ -108,7 +105,7 @@
   <nav>
     <a href="#who">Who it's for</a>
     <a href="#why">Why FewType</a>
-    <a href="#screenshots">Screenshots</a>
+    <a href="#features">Features</a>
     <a href="#open">Open source</a>
     <a href="#download">Download</a>
     <a class="lang" href="zh.html">中文</a>
@@ -116,9 +113,9 @@
 </header>
 
 <section class="hero">
-  <div class="tag">Free &amp; open source · Bring your own API key</div>
+  <div class="tag">Free &amp; open source · No subscription · You supply the AI service keys</div>
   <h1>Speak once. Get it typed, <span>rewritten, translated,</span> or read back.</h1>
-  <p>FewType is not just another dictation app. It's voice input, AI writing style, one-key translation, and natural-voice ebook reading — four things in one, built by an indie developer who uses it every day.</p>
+  <p>FewType puts four everyday things in one small Windows app: talk instead of typing, make your words sound the way you want, translate on the fly, and have ebooks read aloud in a natural voice. It's free and open source — you connect the AI services you choose. No subscription, no key included.</p>
   <div>
     <a class="btn" href="#download">Download for Windows</a>
     <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">View on GitHub</a>
@@ -134,12 +131,12 @@
       <div class="scene">
         <div class="emoji">🎙️</div>
         <div>
-          <h3>Voice input — talk instead of typing</h3>
-          <p class="lead">Press a global hotkey anywhere (Ctrl+Win or double-press Ctrl), speak, and it types for you — with the window focus restored before pasting.</p>
+          <h3>Voice typing — talk instead of typing</h3>
+          <p class="lead">Press a global hotkey anywhere (Ctrl+Win or double-press Ctrl), speak, and your words land where your cursor is.</p>
           <ul>
-            <li>Everyday chats &amp; AI conversations — express fast, skip the typing labor</li>
-            <li>You care about how your output sounds — custom styles rewrite your words the way you want them said</li>
-            <li>One-key translation to screen — speak Chinese, output English (8 target languages)</li>
+            <li>Chat fast in messages and AI conversations — no more typing it all out</li>
+            <li>You care how your replies sound — pick a writing style and let it rewrite your words before they land</li>
+            <li>Speak one language, output another — translation goes straight into the text box</li>
           </ul>
         </div>
       </div>
@@ -147,12 +144,12 @@
       <div class="scene">
         <div class="emoji">📖</div>
         <div>
-          <h3>Ebook reading — listen instead of staring</h3>
-          <p class="lead">A browser extension reads ebooks aloud in your browser (Google Play Books, Koodo Reader, EPUB readers). Not a robotic voice — sentence segmentation and synthesis are tuned for continuity.</p>
+          <h3>Ebook reading — let your ears do the work</h3>
+          <p class="lead">A browser extension reads ebooks aloud (Google Play Books, Koodo Reader, EPUB readers). A natural voice, not a robot — sentences flow continuously.</p>
           <ul>
-            <li>You need a natural human voice and refuse machine-sounding TTS</li>
-            <li>Long focused reading tires your eyes — dual audio+visual channels keep you going</li>
-            <li>You read during fragments of time that can't be fully focused — commute, chores, eyes busy</li>
+            <li>You want a human-sounding voice and refuse robotic text-to-speech</li>
+            <li>Long focused reading tires your eyes — pair your eyes with your ears</li>
+            <li>You read during fragments of the day — commute, chores, anywhere your eyes are busy</li>
           </ul>
         </div>
       </div>
@@ -160,12 +157,12 @@
       <div class="scene">
         <div class="emoji">🎧</div>
         <div>
-          <h3>Long-text TTS — for creators</h3>
-          <p class="lead">Type or paste a long script, pick a voice, get a natural-voice audio file. A companion feature, but a lifesaver for people who produce spoken content.</p>
+          <h3>Long-text speech — for creators</h3>
+          <p class="lead">Paste a long script, pick a voice, get a natural-sounding audio file. A companion feature, but a lifesaver for people who produce spoken content.</p>
           <ul>
-            <li>Voice-over creators who don't want to record every long script by themselves</li>
-            <li>Feeding audio to digital humans / virtual presenters</li>
-            <li>Podcast drafts, video voice-over, audiobook prototyping, listening practice materials</li>
+            <li>Voice-over creators who don't want to record every long script themselves</li>
+            <li>Digital presenters and virtual hosts that need clean speech audio</li>
+            <li>Podcast drafts, video voice-over, sample audiobooks, listening practice materials</li>
           </ul>
         </div>
       </div>
@@ -177,23 +174,23 @@
 <section class="section" id="why">
   <div class="wrap">
     <h2>Why not just use the built-in one?</h2>
-    <p class="sub">Windows has voice typing. Wispr Flow has polish. Here's what FewType does differently.</p>
+    <p class="sub">Windows has voice typing. Paid dictation apps are polished. Here's what FewType does differently.</p>
     <div class="why">
       <div class="why-row">
         <div class="vs">vs. Windows built-in</div>
-        <div class="us">Works in every app, not just system text boxes — browsers, terminals, chat windows, self-drawn menus<small>Focus restoration + simulated paste means it lands where your cursor is, even in apps the system can't reach.</small></div>
+        <div class="us">Works in every app, not just the text boxes Windows can reach<small>Browsers, chat windows, terminals — text lands exactly where your cursor is.</small></div>
       </div>
       <div class="why-row">
-        <div class="vs">vs. paid dictation (Wispr Flow…)</div>
-        <div class="us">Free &amp; open source, bring your own key — no subscription, no vendor lock-in<small>Use Groq, Volcengine, DeepSeek or any OpenAI-compatible endpoint. Your keys, your cost control.</small></div>
+        <div class="vs">vs. paid dictation apps</div>
+        <div class="us">Free and open source, no subscription, no lock-in<small>Use the AI services you already have — your keys, your cost, your choice.</small></div>
       </div>
       <div class="why-row">
-        <div class="vs">vs. plain STT tools</div>
-        <div class="us">Style rewriting + translation built in — dictation that also writes better<small>Custom styles (e.g. cinematic prose), one-key translation, and a same-language fast path that skips the LLM.</small></div>
+        <div class="vs">vs. plain speech-to-text</div>
+        <div class="us">It doesn't just type your words — it can make them better<small>Built-in translation and writing styles, so your output sounds the way you want.</small></div>
       </div>
       <div class="why-row">
-        <div class="vs">vs. TTS readers</div>
-        <div class="us">The ebook reader ships with the app — one download covers dictation + reading<small>Simplified/Traditional Chinese voices auto-match the book's script; long-text TTS covers the creator side.</small></div>
+        <div class="vs">vs. reader tools</div>
+        <div class="us">The ebook reader is part of the same download<small>One install gets you dictation and reading together — voices auto-match the book's script (Simplified / Traditional Chinese).</small></div>
       </div>
     </div>
   </div>
@@ -204,22 +201,11 @@
     <h2>What's inside</h2>
     <p class="sub">The essentials, in one glance.</p>
     <div class="cards">
-      <div class="card"><h3>🔑 Keys never leave your machine</h3><p>API keys live in a protected local config. The installer ships with no keys — copying or re-packing the app triggers a security warning. Transcription text never touches logs.</p></div>
-      <div class="card"><h3>🌱 Lightweight by design</h3><p>Built on Tauri, not Electron — low memory footprint, quiet in the background, small installer. All the features, none of the bloat.</p></div>
-      <div class="card"><h3>🌍 8 target languages</h3><p>Simplified/Traditional Chinese, English, Spanish, French, German, Japanese, Korean — speak, translate, output.</p></div>
-      <div class="card"><h3>⚡ Same-language fast path</h3><p>Dictate Chinese → output Chinese without the LLM round-trip. Confirmation panel only appears when it's needed.</p></div>
-      <div class="card"><h3>🧩 Extension included</h3><p>Ebook reader extension for Chrome/Edge, adaptive to both the new Tauri app and the legacy TK line.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="screenshots">
-  <div class="wrap">
-    <h2>Screenshots</h2>
-    <div class="shots">
-      <figure class="shot"><img src="assets/shot-main.png" alt="FewType main window — voice dictation control panel" loading="lazy"><figcaption>Main window</figcaption></figure>
-      <figure class="shot"><img src="assets/shot-dictation.png" alt="FewType dictation with translation confirmation" loading="lazy"><figcaption>Dictation &amp; translation</figcaption></figure>
-      <figure class="shot"><img src="assets/shot-settings.png" alt="FewType settings — provider, hotkey, voice options" loading="lazy"><figcaption>Settings</figcaption></figure>
+      <div class="card"><h3>🔑 Your keys stay on this machine</h3><p>API keys live in a local config; the installer contains no keys. Copy or re-pack the app and a security warning appears. Audio and transcriptions are never written to logs.</p></div>
+      <div class="card"><h3>🌱 Small and light</h3><p>Low memory use, quiet in the background, a small installer. All the features, none of the bloat.</p></div>
+      <div class="card"><h3>🌍 Speak one, get another</h3><p>Chinese, English, Spanish, French, German, Japanese, Korean — say it, and it's translated for you.</p></div>
+      <div class="card"><h3>⚡ No waiting when no translation is needed</h3><p>Same language in and out? It goes straight to your screen.</p></div>
+      <div class="card"><h3>🧩 Ebook reading included</h3><p>The browser reader extension ships with the app — Chrome and Edge.</p></div>
     </div>
   </div>
 </section>
@@ -231,14 +217,14 @@
     <div class="honest">
       <h3>What you should know</h3>
       <ul>
-        <li><b>You need your own API keys.</b> FewType is BYOK — you register for the ASR / LLM / TTS services yourself. Recognition and translation quality depend on the service you pick.</li>
-        <li><b>Free, open source (MIT), no accounts, no telemetry.</b> The code, the builds, the roadmap — all public.</li>
-        <li><b>Not code-signed.</b> Windows SmartScreen may warn on first run — that's expected, click "More info → Run anyway".</li>
-        <li><b>Built by one developer</b>, maintained through GitHub issues. Scope is defined by real use: voice input, ebook reading, long-text TTS — with clear boundaries around each.</li>
+        <li><b>You supply the AI keys.</b> FewType is free software that doesn't sell access — you sign up for the speech, translation and voice services yourself (most major providers work; setup steps are in the README). No key is included or bundled with the app.</li>
+        <li><b>Free, open source (MIT), no account, no tracking.</b> The code, the builds, the roadmap — all public.</li>
+        <li><b>Not code-signed.</b> The note below explains what to expect on first run.</li>
+        <li><b>Built and maintained by one developer</b>, driven by real use and GitHub issues. Scope is honest: voice typing, ebook reading, long-text speech.</li>
       </ul>
       <div class="warn"><b>⚠️ About the Windows first-run warning</b><br>
-        FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records raw dictation audio.</div>
-      <div class="sponsor">🤝 <b>Sponsoring this project means faster iteration.</b> If you find it useful, your support directly funds maintenance, new voices, better segmentation, and the ideas on the roadmap. Sponsors genuinely change how much time this project gets.</div>
+        FewType is a free, open-source personal project and doesn't yet pay for expensive enterprise code signing. On first install, Windows SmartScreen may show a warning. It's safe: click <b>"More info"</b> → <b>"Run anyway"</b>. All your data and keys stay on this machine — the program never records your raw dictation audio.</div>
+      <div class="sponsor">🤝 <b>Sponsoring this project means faster iteration.</b> If you find it useful, your support directly funds maintenance, new voices, better sentence flow, and the ideas on the roadmap. Sponsors genuinely change how much time this project gets.</div>
     </div>
   </div>
 </section>
@@ -250,13 +236,13 @@
       <div class="dl-box">
         <h3>Installer</h3>
         <div class="ver">v3.1.20 · Windows 10/11 x64</div>
-        <p>Self-contained: bundles the VC runtime and auto-installs WebView2 when missing. Built-in auto-update.</p>
+        <p>Self-contained: bundles the runtime and auto-installs what's missing. Built-in auto-update.</p>
         <a class="btn" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe" rel="noopener">Download Setup (.exe)</a>
       </div>
       <div class="dl-box">
         <h3>Portable ZIP</h3>
         <div class="ver">v3.1.20 · no install needed</div>
-        <p>Unzip and run. Includes the browser extension folder for ebook reading. WebView2 setup bundled.</p>
+        <p>Unzip and run. Includes the browser extension folder for ebook reading.</p>
         <a class="btn ghost" href="https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-portable.zip" rel="noopener">Download Portable (.zip)</a>
       </div>
     </div>
@@ -265,7 +251,7 @@
 </section>
 
 <footer>
-  FewType — voice dictation · AI style · ebook reading · long-text TTS — one open-source app · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="zh.html">中文版</a>
+  FewType — voice typing · AI style · ebook reading · long-text speech, one open-source app · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="zh.html">中文版</a>
 </footer>
 
 </body>
