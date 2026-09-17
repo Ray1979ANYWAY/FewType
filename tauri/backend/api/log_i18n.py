@@ -152,6 +152,109 @@ _MSGS: dict[str, tuple[str, str, str]] = {
         "FewType API 啟動: http://{host}:{port} (文件 /api/docs)",
         "FewType API started: http://{host}:{port} (docs /api/docs)",
     ),
+    # speech_service 状态与日志
+    "speech_aborted": (
+        "已中止当前任务",
+        "已中止目前任務",
+        "Task aborted",
+    ),
+    "listening": (
+        "聆听中…",
+        "聆聽中…",
+        "Listening…",
+    ),
+    "listening_start": (
+        "开始聆听",
+        "開始聆聽",
+        "Listening started",
+    ),
+    "transcribing": (
+        "转写中…",
+        "轉寫中…",
+        "Transcribing…",
+    ),
+    "polishing": (
+        "润色中…",
+        "潤飾中…",
+        "Polishing…",
+    ),
+    "confirm_prompt": (
+        "请确认原文",
+        "請確認原文",
+        "Please confirm the text",
+    ),
+    "confirm_cancel": (
+        "已取消翻译上屏（未确认原文）",
+        "已取消翻譯上屏（未確認原文）",
+        "Translation cancelled (text not confirmed)",
+    ),
+    "lang_same_skip": (
+        "语言一致，跳过翻译与确认，直接上屏",
+        "語言一致，跳過翻譯與確認，直接上屏",
+        "Same language detected; skipping translation & confirmation",
+    ),
+    "commit_len": (
+        "上屏 {n} 字",
+        "上屏 {n} 字",
+        "Committed {n} chars",
+    ),
+    "committed": (
+        "已上屏",
+        "已上屏",
+        "Committed",
+    ),
+    "idle": (
+        "空闲",
+        "閒置",
+        "Idle",
+    ),
+    "fail_generic": (
+        "失败: {err}",
+        "失敗: {err}",
+        "Failed: {err}",
+    ),
+    "asr_no_result": (
+        "火山识别无返回结果（可能音频过短或静音）",
+        "火山辨識無返回結果（可能音訊過短或靜音）",
+        "No ASR result (audio too short or silent)",
+    ),
+    "no_speech": (
+        "未检测到语音（录音过短或静音）",
+        "未偵測到語音（錄音過短或靜音）",
+        "No speech detected (recording too short or silent)",
+    ),
+    # main / ws
+    "api_key_missing": (
+        "未填写 API Key",
+        "未填寫 API Key",
+        "API Key is required",
+    ),
+    "ws_invalid_start": (
+        "start 参数不合法",
+        "start 參數不合法",
+        "Invalid start parameters",
+    ),
+    "ws_already_recording": (
+        "已在录制（另一个会话）",
+        "已在錄製（另一個會話）",
+        "Already recording (another session)",
+    ),
+    "ws_started": (
+        "开始录音",
+        "開始錄音",
+        "Recording started",
+    ),
+    # tts_service
+    "proxy_followed": (
+        "已跟随系统代理: {proxy}",
+        "已跟隨系統代理: {proxy}",
+        "Following system proxy: {proxy}",
+    ),
+    "proxy_none": (
+        "未检测到系统代理，外部网络保持直连",
+        "未偵測到系統代理，外部網路保持直連",
+        "No system proxy detected; external requests stay direct",
+    ),
     # speech_service
     "stt_fail": (
         "STT 流程失败: {type}: {err}",

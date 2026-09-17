@@ -308,7 +308,7 @@ class WinHotkey:
             # ---- Ctrl 松开 ----
             if self._dc_recording:
                 # 【第二次松开】结束录音
-                logger.info("[hook-diag] 第二下松开 → 结束录音/上屏")
+                logger.info("[hook-diag] second release -> end recording/commit")
                 self._dc_recording = False
                 self.rec = False
                 self._dc_first_pressed = False

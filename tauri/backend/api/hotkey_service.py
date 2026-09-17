@@ -246,7 +246,7 @@ class GlobalHotkeyService:
             if self._wake_event:
                 kernel32.SetEvent(self._wake_event)  # 立即唤醒，零延迟执行 rebuild
         else:
-            logger.warning("hotkey 线程已退出，重新启动")
+            logger.warning("hotkey thread exited; restarting")
             self._thread = None
             self.start()
 
@@ -302,7 +302,7 @@ class GlobalHotkeyService:
         combo = (cfg.get("stt_hotkey") or "double_ctrl").strip().lower()
         mode = "double_ctrl" if combo == "double_ctrl" else "combo"
         mods, trigger = hotkey_hook.parse_combo(combo) if mode == "combo" else ([], None)
-        logger.info(f"[debug] 重建热键钩子: combo={combo} mode={mode}")
+        logger.info(f"[debug] rebuild hook: combo={combo} mode={mode}")
         try:
             hook = hotkey_hook.WinHotkey(
                 mods, trigger, self._on_begin, self._on_end, mode=mode
@@ -382,7 +382,7 @@ class GlobalHotkeyService:
 
         由 speech 线程调用：写剪贴板 + 模拟 Ctrl+V（钩子 _ignore_all 保险）。
         """
-        logger.info("[debug] on_commit 已收到文本")
+        logger.info("[debug] on_commit received text")
         now = time.time()
         self._paste_count += 1
         # 防抖：同一文本 1.5s 内重复的 commit 直接拦截（双次上屏防御）。
@@ -424,14 +424,14 @@ class GlobalHotkeyService:
                     _restore_foreground(self._prev_window)
                     time.sleep(0.02)
                 except Exception as e:  # noqa: BLE001
-                    logger.error(f"[debug] 恢复前台窗口失败: {e}")
+                    logger.error(f"[debug] restore foreground window failed: {e}")
             # 打印粘贴前焦点窗口标题，用于验证焦点是否已回到目标窗口
             try:
                 hwnd = user32.GetForegroundWindow()
                 length = user32.GetWindowTextLengthW(hwnd)
                 buf = ctypes.create_unicode_buffer(length + 1)
                 user32.GetWindowTextW(hwnd, buf, length + 1)
-                logger.info(f"[debug] 粘贴前前台窗口: {buf.value}")
+                logger.info(f"[debug] foreground window before paste: {buf.value}")
             except Exception:  # noqa: BLE001
                 pass
             time.sleep(0.05)  # 等剪贴板就绪

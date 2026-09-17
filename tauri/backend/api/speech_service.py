@@ -122,8 +122,8 @@ class SpeechInputManager:
             except Exception:
                 pass
         self._emit({"type": "status", "state": "idle",
-                    "message": "已中止当前任务"})
-        self._emit({"type": "log", "message": "已中止当前任务"})
+                    "message": L("speech_aborted")})
+        self._emit({"type": "log", "message": L("speech_aborted")})
         with self._lock:
             self._active = False
 
@@ -269,8 +269,8 @@ class SpeechInputManager:
         platform = pc.get("platform", "groq")
 
         self._emit({"type": "status", "state": "listening",
-                    "message": "聆听中…"})
-        self._emit({"type": "log", "message": "开始聆听"})
+                    "message": L("listening")})
+        self._emit({"type": "log", "message": L("listening_start")})
 
         raw: str | None = None
         try:
@@ -283,7 +283,7 @@ class SpeechInputManager:
             self._emit({"type": "status", "state": "error",
                         "message": f"{type(e).__name__}: {e}"})
             self._emit({"type": "error", "message": str(e)})
-            self._emit({"type": "log", "message": f"失败: {e}"})
+            self._emit({"type": "log", "message": L("fail_generic", err=e)})
             raw = None
 
         if raw is None:
@@ -293,7 +293,7 @@ class SpeechInputManager:
                 self._session_queue = None
                 self._sender = None
                 self._recorder = None
-            self._emit({"type": "status", "state": "idle", "message": "空闲"})
+            self._emit({"type": "status", "state": "idle", "message": L("idle")})
             return
 
         # 翻译模式：先判断 ASR 语言与目标语言是否一致——
@@ -303,29 +303,29 @@ class SpeechInputManager:
         if translate:
             if self._same_lang(raw, target_lang):
                 self._emit({"type": "log",
-                            "message": "语言一致，跳过翻译与确认，直接上屏"})
-                logger.info("[debug] ASR 语言与目标一致，跳过 LLM/确认面板")
+                            "message": L("lang_same_skip")})
+                logger.info("[debug] ASR lang matches target; skip LLM/confirm")
                 skip_llm = True
             else:
                 self._emit({"type": "status", "state": "confirming",
-                            "message": "请确认原文"})
+                            "message": L("confirm_prompt")})
                 self._emit({"type": "confirm", "text": raw, "source": self._source,
                             "mode": mode, "target_lang": target_lang})
                 confirmed = self._wait_confirm()
                 if confirmed is None:
                     # 用户取消 / 超时：放弃本次翻译上屏（录音状态已结束，不丢内容于输入框）
                     self._emit({"type": "log",
-                                "message": "已取消翻译上屏（未确认原文）"})
+                                "message": L("confirm_cancel")})
                     with self._lock:
                         self._active = False
                         self._session = None
                         self._session_queue = None
                         self._sender = None
                         self._recorder = None
-                    self._emit({"type": "status", "state": "idle", "message": "空闲"})
+                    self._emit({"type": "status", "state": "idle", "message": L("idle")})
                     return
                 raw = confirmed
-                logger.info("[debug] 原文已确认")
+                logger.info("[debug] text confirmed")
 
         try:
             if skip_llm:
@@ -335,29 +335,29 @@ class SpeechInputManager:
             else:
                 final = self._polish(provider, raw, mode, translate,
                                      target_lang, custom_prompt)
-            logger.info("[debug] 翻译/润色完成")
+            logger.info("[debug] polish/translate done")
         except Exception as e:  # noqa: BLE001
             logger.error(L("stt_fail", type=type(e).__name__, err=e))
             self._emit({"type": "status", "state": "error",
                         "message": f"{type(e).__name__}: {e}"})
             self._emit({"type": "error", "message": str(e)})
-            self._emit({"type": "log", "message": f"失败: {e}"})
+            self._emit({"type": "log", "message": L("fail_generic", err=e)})
             final = None
 
         if final is not None:
             self._emit({"type": "final", "text": final})
             self._emit({"type": "commit", "text": final, "source": self._source})
-            self._emit({"type": "log", "message": f"上屏 {len(final)} 字"})
+            self._emit({"type": "log", "message": L("commit_len", n=len(final))})
             self._emit({"type": "status", "state": "committing",
-                        "message": "已上屏"})
-            logger.info("[debug] commit 事件已发出")
+                        "message": L("committed")})
+            logger.info("[debug] commit event sent")
         with self._lock:
             self._active = False
             self._session = None
             self._session_queue = None
             self._sender = None
             self._recorder = None
-        self._emit({"type": "status", "state": "idle", "message": "空闲"})
+        self._emit({"type": "status", "state": "idle", "message": L("idle")})
 
     # ------------------------------------------------------------ 火山流式
     def _run_streaming(self, provider, mode, custom_prompt) -> str:
@@ -406,11 +406,11 @@ class SpeechInputManager:
         if self._cancel.is_set():
             return None  # type: ignore[return-value]
         self._emit({"type": "status", "state": "transcribing",
-                    "message": "转写中…"})
+                    "message": L("transcribing")})
         raw_asr = sess.finish(timeout=60)
         if not raw_asr:
-            raise RuntimeError("火山识别无返回结果（可能音频过短或静音）")
-        self._emit({"type": "log", "message": f"ASR 结果: {raw_asr[:60]}"})
+            raise RuntimeError(L("asr_no_result"))
+        # 隐私：不记录转写内容（用户要求日志仅用于排查错误）
         return raw_asr
 
     # ------------------------------------------------------------ Block 模式
@@ -425,9 +425,9 @@ class SpeechInputManager:
         if self._cancel.is_set():
             return None  # type: ignore[return-value]
         if raw is None:
-            raise RuntimeError("未检测到语音（录音过短或静音）")
+            raise RuntimeError(L("no_speech"))
         self._emit({"type": "status", "state": "transcribing",
-                    "message": "转写中…"})
+                    "message": L("transcribing")})
 
         mp3 = stt_engine.compress_audio(raw, rec.sr)
         if mp3:
@@ -453,8 +453,8 @@ class SpeechInputManager:
             except Exception:
                 pass
         if not raw_asr:
-            raise RuntimeError("转写无结果（可能音频过短或静音）")
-        self._emit({"type": "log", "message": f"ASR 结果: {raw_asr[:60]}"})
+            raise RuntimeError(L("asr_no_result"))
+        # 隐私：不记录转写内容（用户要求日志仅用于排查错误）
         return raw_asr
 
     # ------------------------------------------------------------ 润色/翻译
@@ -465,7 +465,7 @@ class SpeechInputManager:
                                              translate, target_lang,
                                              custom_prompt)
         self._emit({"type": "status", "state": "polishing",
-                    "message": "润色中…"})
+                    "message": L("polishing")})
         out = stt_engine.process_result(provider, raw_asr, mode, translate,
                                         target_lang, custom_prompt)
         return out

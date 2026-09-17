@@ -135,9 +135,9 @@ def init_system_proxy() -> str | None:
         # 用户手动设置了环境变量代理时优先用户的（setdefault 不覆盖）
         os.environ.setdefault("HTTP_PROXY", _SYSTEM_PROXY)
         os.environ.setdefault("HTTPS_PROXY", _SYSTEM_PROXY)
-        logger.info("已跟随系统代理: %s", _SYSTEM_PROXY)
+        logger.info(L("proxy_followed", proxy=_SYSTEM_PROXY))
     else:
-        logger.info("未检测到系统代理，外部网络保持直连")
+        logger.info(L("proxy_none"))
     return _SYSTEM_PROXY
 
 

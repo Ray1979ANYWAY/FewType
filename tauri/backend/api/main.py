@@ -143,7 +143,7 @@ logging.getLogger().addHandler(_log_handler)
 def _on_speech_event(ev: dict) -> None:
     """全局事件订阅：热键触发的会话 → 后端自动上屏（其他事件忽略）。"""
     if ev.get("type") == "commit" and ev.get("source") == "hotkey":
-        logger.info("[debug] commit 事件已路由到 on_commit")
+        logger.info("[debug] commit event routed to on_commit")
         _hotkey.on_commit(ev.get("text", ""))
 
 
@@ -306,7 +306,7 @@ async def provider_test(req: ProviderRequest):
     try:
         prov = _provider_from_req(req)
         if not (req.api_key or (load_config().get("provider") or {}).get("api_key")):
-            return {"ok": False, "message": "未填写 API Key"}
+            return {"ok": False, "message": L("api_key_missing")}
         msg = await asyncio.to_thread(prov.test_connection, 12)
         return {"ok": True, "message": msg}
     except Exception as e:  # noqa: BLE001
@@ -488,11 +488,11 @@ async def _ws_recv_loop(ws: WebSocket, queue: asyncio.Queue):
             try:
                 start_cfg = STTStartConfig(**cfg)
             except Exception:
-                await ws.send_json({"type": "error", "message": "start 参数不合法"})
+                await ws.send_json({"type": "error", "message": L("ws_invalid_start")})
                 continue
             ok = _speech.start(start_cfg.model_dump())
             await ws.send_json({"type": "log",
-                                "message": "已在录制（另一个会话）" if not ok else "开始录音"})
+                                "message": L("ws_already_recording") if not ok else L("ws_started")})
         elif mtype == "stop":
             _speech.stop()
         elif mtype == "abort":
