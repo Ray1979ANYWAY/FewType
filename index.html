@@ -36,7 +36,7 @@
 </script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.65; }
+  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.7; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
   header { position:sticky; top:0; z-index:50; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(14,159,110,0.18); }
   .head-in { display:flex; align-items:center; justify-content:space-between; gap:14px; max-width:1000px; margin:0 auto; padding:12px 24px; flex-wrap:wrap; }
@@ -49,9 +49,9 @@
   .nav-card.active { background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; border-color:transparent; box-shadow:0 4px 12px rgba(16,185,129,0.3); }
   .lang-link { color:#5E6E64; text-decoration:none; font-size:13px; font-weight:600; }
   .lang-link:hover { color:#047857; }
-  .hero { text-align:center; padding:56px 24px 40px; }
+  .hero { text-align:center; padding:56px 24px 24px; }
   .hero .tag { display:inline-block; font-size:12.5px; font-weight:600; color:#047857; background:rgba(16,185,129,0.1); border:1px solid rgba(14,159,110,0.25); border-radius:20px; padding:4px 14px; margin-bottom:18px; }
-  .hero h1 { font-size:34px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.22; }
+  .hero h1 { font-size:42px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.22; }
   .hero h1 span { background:linear-gradient(90deg,#047857,#10B981); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero p { color:#5E6E64; max-width:700px; margin:16px auto 26px; font-size:16px; }
   .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); cursor:pointer; border:none; }
@@ -61,7 +61,9 @@
   .section h2 { font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
   .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 30px; }
   .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
-  .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); position:relative; }
+  .dl-box.recommended { border-color:rgba(14,159,110,0.5); box-shadow:0 0 0 1px rgba(14,159,110,0.22), 0 0 20px rgba(14,159,110,0.16), 0 4px 16px rgba(0,0,0,0.06); }
+  .rec-tag { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#047857; color:#FFFFFF; font-size:11px; font-weight:700; letter-spacing:.5px; padding:3px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(4,120,87,0.35); }
   .dl-box h3 { color:#16241D; margin-bottom:6px; }
   .dl-box .ver { color:#047857; font-size:13px; margin-bottom:14px; }
   .dl-box p { color:#5E6E64; font-size:13px; margin-bottom:18px; }
@@ -86,14 +88,14 @@
   .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
   .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
   .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
-  .themes { padding:8px 24px 46px; }
+  .themes { padding:24px 0 48px; }
   .themes-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
   .themes-sub { text-align:center; color:#8A9A90; font-size:14px; margin:6px auto 26px; }
   .theme-grid { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; z-index:1; }
-  .theme-item:hover { z-index:10; }
-  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(0,0,0,0.12); box-shadow:0 4px 16px rgba(0,0,0,0.10); display:block; transition:transform .25s ease, box-shadow .25s ease; cursor:zoom-in; }
-  .theme-item:hover img { transform:scale(3); box-shadow:0 24px 60px rgba(0,0,0,0.32); }
+  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; transition:transform 0.25s ease, box-shadow 0.25s ease; }
+  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(14,159,110,0.18); box-shadow:0 4px 16px rgba(0,0,0,0.06); display:block; transition:inherit; }
+  .theme-item:hover { transform:translateY(-6px); }
+  .theme-item:hover img { box-shadow:0 16px 32px rgba(4,120,87,0.15), 0 4px 12px rgba(0,0,0,0.08); border-color:rgba(14,159,110,0.4); }
   .theme-item .tname { text-align:center; font-size:13.5px; font-weight:700; color:#047857; margin-top:10px; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
@@ -155,6 +157,19 @@
     </div>
   </section>
 
+  <section class="themes">
+    <div class="wrap">
+      <h2 class="themes-title">Native UI, four built-in themes</h2>
+      <p class="themes-sub">Moss, Frost, Midnight, Ember — pick the mood that fits your desktop.</p>
+      <div class="theme-grid">
+        <div class="theme-item"><img src="assets/theme1.png" alt="Moss theme — voice input screen"><div class="tname">Moss</div></div>
+        <div class="theme-item"><img src="assets/theme2.png" alt="Frost theme — ebook reading screen"><div class="tname">Frost</div></div>
+        <div class="theme-item"><img src="assets/theme3.png" alt="Midnight theme — long-text TTS screen"><div class="tname">Midnight</div></div>
+        <div class="theme-item"><img src="assets/theme4.png" alt="Ember theme — settings screen"><div class="tname">Ember</div></div>
+      </div>
+    </div>
+  </section>
+
   <section class="who">
     <div class="wrap">
       <h2 class="who-title">Who is FewType for?</h2>
@@ -163,32 +178,32 @@
         <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
           <div class="emoji">🎙️</div>
           <h3>Voice typing — talk instead of typing</h3>
-          <p class="lead">Press a global hotkey anywhere, speak, and your words land where your cursor is.</p>
+          <p class="lead">Press <strong>a global hotkey</strong> anywhere, speak, and your words land where your cursor is.</p>
           <ul>
-            <li>Chat and talk to AI faster — no more typing it all out</li>
-            <li>You care how your replies sound — define your own tone, AI rewrites before it lands</li>
-            <li>Speak one language, output another — translation straight into the text box</li>
+            <li>Chat and talk to AI faster — <strong>no more typing it all out</strong></li>
+            <li>You care how your replies sound — <strong>define your own tone</strong>, AI rewrites <strong>before it lands</strong></li>
+            <li>Speak one language, output another — <strong>translation straight into the text box</strong></li>
           </ul>
           <span class="go">Explore →</span>
         </div>
         <div class="who-card" onclick="showView('ebook')" style="cursor:pointer;">
           <div class="emoji">📖</div>
           <h3>Ebook reading — let your ears do the work</h3>
-          <p class="lead">A browser extension reads your ebooks in a natural voice, not a robot.</p>
+          <p class="lead">A browser extension reads your ebooks in <strong>a natural voice</strong>, not a robot.</p>
           <ul>
-            <li>You want a human-sounding voice and refuse robotic text-to-speech</li>
-            <li>Long focused reading tires your eyes — pair your eyes with your ears</li>
-            <li>Chores, eyes busy — read with your ears in the fragments of the day</li>
+            <li>You want a <strong>human-sounding voice</strong> and refuse <strong>robotic text-to-speech</strong></li>
+            <li>Long focused reading tires your eyes — <strong>pair your eyes with your ears</strong></li>
+            <li>Chores, eyes busy — <strong>read with your ears</strong> in the fragments of the day</li>
           </ul>
           <span class="go">Explore →</span>
         </div>
         <div class="who-card" onclick="showView('tts')" style="cursor:pointer;">
           <div class="emoji">🎧</div>
           <h3>Long-text TTS — for creators</h3>
-          <p class="lead">Paste a long script, pick a voice, get a natural audio file. A companion feature — a lifesaver for spoken-content producers.</p>
+          <p class="lead">Paste a long script, pick a voice, <strong>get a natural audio file</strong>. A companion feature — a lifesaver for spoken-content producers.</p>
           <ul>
-            <li>Voice-over creators who don't want to record every long script themselves</li>
-            <li>Digital presenters and virtual hosts that need clean speech audio</li>
+            <li>Voice-over creators who don't want to <strong>record every long script themselves</strong></li>
+            <li>Digital presenters and virtual hosts that need <strong>clean speech audio</strong></li>
             <li>Podcast drafts, video voice-over, audiobook samples, listening-practice materials</li>
           </ul>
           <span class="go">Explore →</span>
@@ -197,24 +212,12 @@
     </div>
   </section>
 
-  <section class="themes">
-    <div class="wrap">
-      <h2 class="themes-title">Four built-in themes</h2>
-      <p class="themes-sub">Moss night, frost white, midnight blue, or ember — pick the mood that fits your workspace.</p>
-      <div class="theme-grid">
-        <div class="theme-item"><img src="assets/theme1.png" alt="Moss theme — voice input screen"><div class="tname">Moss Night</div></div>
-        <div class="theme-item"><img src="assets/theme2.png" alt="Frost theme — ebook reading screen"><div class="tname">Frost</div></div>
-        <div class="theme-item"><img src="assets/theme3.png" alt="Midnight theme — long-text TTS screen"><div class="tname">Midnight</div></div>
-        <div class="theme-item"><img src="assets/theme4.png" alt="Ember theme — settings screen"><div class="tname">Ember</div></div>
-      </div>
-    </div>
-  </section>
-
   <section class="section" id="download">
     <div class="wrap">
       <h2>Download</h2>
       <div class="dl">
-        <div class="dl-box">
+        <div class="dl-box recommended">
+          <span class="rec-tag">Recommended</span>
           <h3>Installer</h3>
           <div class="ver">v3.1.21 · Windows 10/11 x64</div>
           <p>Self-contained: bundles the runtime and auto-installs what's missing. Built-in auto-update.</p>
@@ -255,7 +258,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← Back to Home</button>
     <h1>Voice Typing — talk instead of typing</h1>
-    <p class="lead">Press a global hotkey in any app, speak, and your words land exactly where your cursor is. Beyond plain dictation, FewType can rewrite your words in a tone you define — with built-in style examples to start from — and translate them into another language before they hit the screen.</p>
+    <p class="lead">Press <strong>a global hotkey</strong> in any app, speak, and your words land exactly where your cursor is. Beyond plain dictation, FewType can <strong>rewrite your words in a tone you define</strong> — with built-in style examples to start from — and <strong>translate them into another language</strong> before they hit the screen.</p>
   </div>
 
   <div class="feat">
@@ -309,7 +312,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">Download for Windows</a>
     <a class="btn ghost" onclick="showView('home')">Back to Home</a>
   </div>
 </div>
@@ -334,7 +337,7 @@
   <div class="feat rev">
     <div class="txt">
       <h3>👀 Give your eyes a break</h3>
-      <p>Long focused reading tires the eyes fast. Read with your ears during chores, or any moment your eyes are busy elsewhere.</p>
+      <p>Long focused reading tires the eyes fast. <strong>Read with your ears</strong> during chores, or any moment your eyes are busy elsewhere.</p>
     </div>
     <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType ebook reader interface"></div>
   </div>
@@ -359,7 +362,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">Download for Windows</a>
     <a class="btn ghost" onclick="showView('home')">Back to Home</a>
   </div>
 </div>
@@ -369,7 +372,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← Back to Home</button>
     <h1>Long-Text TTS — scripts into speech</h1>
-    <p class="lead">Paste a long script, pick a voice, and get a clean natural-sounding audio file. A companion feature that saves creators hours of recording.</p>
+    <p class="lead">Paste a long script, pick a voice, and <strong>get a clean natural-sounding audio file</strong>. A companion feature that saves creators hours of recording.</p>
   </div>
 
   <div class="feat">
@@ -396,7 +399,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">Download FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">Download for Windows</a>
     <a class="btn ghost" onclick="showView('home')">Back to Home</a>
   </div>
 </div>

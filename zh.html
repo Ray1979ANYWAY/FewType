@@ -18,7 +18,7 @@
 <link rel="icon" href="assets/icon.png">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.65; }
+  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.75; letter-spacing:0.2px; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
   header { position:sticky; top:0; z-index:50; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(14,159,110,0.18); }
   .head-in { display:flex; align-items:center; justify-content:space-between; gap:14px; max-width:1000px; margin:0 auto; padding:12px 24px; flex-wrap:wrap; }
@@ -31,9 +31,9 @@
   .nav-card.active { background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; border-color:transparent; box-shadow:0 4px 12px rgba(16,185,129,0.3); }
   .lang-link { color:#5E6E64; text-decoration:none; font-size:13px; font-weight:600; }
   .lang-link:hover { color:#047857; }
-  .hero { text-align:center; padding:56px 24px 40px; }
+  .hero { text-align:center; padding:56px 24px 24px; }
   .hero .tag { display:inline-block; font-size:12.5px; font-weight:600; color:#047857; background:rgba(16,185,129,0.1); border:1px solid rgba(14,159,110,0.25); border-radius:20px; padding:4px 14px; margin-bottom:18px; }
-  .hero h1 { font-size:34px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.22; }
+  .hero h1 { font-size:42px; font-weight:800; letter-spacing:-0.5px; color:#16241D; line-height:1.22; }
   .hero h1 span { background:linear-gradient(90deg,#047857,#10B981); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero p { color:#5E6E64; max-width:700px; margin:16px auto 26px; font-size:16px; }
   .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); cursor:pointer; border:none; }
@@ -43,7 +43,9 @@
   .section h2 { font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
   .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 30px; }
   .dl { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
-  .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .dl-box { flex:1 1 300px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:14px; padding:24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.04); position:relative; }
+  .dl-box.recommended { border-color:rgba(14,159,110,0.5); box-shadow:0 0 0 1px rgba(14,159,110,0.22), 0 0 20px rgba(14,159,110,0.16), 0 4px 16px rgba(0,0,0,0.06); }
+  .rec-tag { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#047857; color:#FFFFFF; font-size:11px; font-weight:700; letter-spacing:.5px; padding:3px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(4,120,87,0.35); }
   .dl-box h3 { color:#16241D; margin-bottom:6px; }
   .dl-box .ver { color:#047857; font-size:13px; margin-bottom:14px; }
   .dl-box p { color:#5E6E64; font-size:13px; margin-bottom:18px; }
@@ -68,14 +70,14 @@
   .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
   .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
   .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
-  .themes { padding:8px 24px 46px; }
+  .themes { padding:24px 0 48px; }
   .themes-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
   .themes-sub { text-align:center; color:#8A9A90; font-size:14px; margin:6px auto 26px; }
   .theme-grid { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; z-index:1; }
-  .theme-item:hover { z-index:10; }
-  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(0,0,0,0.12); box-shadow:0 4px 16px rgba(0,0,0,0.10); display:block; transition:transform .25s ease, box-shadow .25s ease; cursor:zoom-in; }
-  .theme-item:hover img { transform:scale(3); box-shadow:0 24px 60px rgba(0,0,0,0.32); }
+  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; transition:transform 0.25s ease, box-shadow 0.25s ease; }
+  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(14,159,110,0.18); box-shadow:0 4px 16px rgba(0,0,0,0.06); display:block; transition:inherit; }
+  .theme-item:hover { transform:translateY(-6px); }
+  .theme-item:hover img { box-shadow:0 16px 32px rgba(4,120,87,0.15), 0 4px 12px rgba(0,0,0,0.08); border-color:rgba(14,159,110,0.4); }
   .theme-item .tname { text-align:center; font-size:13.5px; font-weight:700; color:#047857; margin-top:10px; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
@@ -136,52 +138,10 @@
     </div>
   </section>
 
-  <section class="who">
-    <div class="wrap">
-      <h2 class="who-title">FewType 适合谁？</h2>
-      <p class="who-sub">三大场景，三类不同的人。你大概率至少对号入座一个。</p>
-      <div class="who-cards">
-        <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
-          <div class="emoji">🎙️</div>
-          <h3>语音输入——说话代替打字</h3>
-          <p class="lead">任意窗口按全局热键（Ctrl+Win 或双击 Ctrl），开口就说，文字落在光标所在处。</p>
-          <ul>
-            <li>聊天、和 AI 对话时想说得快——不用逐字敲</li>
-            <li>在意回复读起来的感觉——口吻自己定，AI 按你的提示词上屏前改写</li>
-            <li>说一种语言、出另一种语言——翻译直接落进文本框</li>
-          </ul>
-          <span class="go">查看详情 →</span>
-        </div>
-        <div class="who-card" onclick="showView('ebook')" style="cursor:pointer;">
-          <div class="emoji">📖</div>
-          <h3>电子书朗读——让耳朵替你读</h3>
-          <p class="lead">浏览器扩展在页面里把电子书读给你听（Google Play 图书、Koodo Reader）。自然的人声，不是机器腔。</p>
-          <ul>
-            <li>要自然的人声，拒绝机器音</li>
-            <li>长时间专注看字眼睛累——视觉和听觉一起用</li>
-            <li>做家务、眼睛被占用——碎片时间也能听书</li>
-          </ul>
-          <span class="go">查看详情 →</span>
-        </div>
-        <div class="who-card" onclick="showView('tts')" style="cursor:pointer;">
-          <div class="emoji">🎧</div>
-          <h3>长文本转语音——给创作者</h3>
-          <p class="lead">粘贴一长段脚本、选个音色、得到一段自然语音的音频文件。它是附属功能，但对做口播内容的人是救命稻草。</p>
-          <ul>
-            <li>口播主播——长脚本不用自己一句句录</li>
-            <li>数字人 / 虚拟主播需要干净的语音素材</li>
-            <li>播客草稿、视频配音、有声书试听、听力练习材料</li>
-          </ul>
-          <span class="go">查看详情 →</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section class="themes">
     <div class="wrap">
-      <h2 class="themes-title">四套内置主题</h2>
-      <p class="themes-sub">苔绿暗夜、霜白、暮蓝、余烬——挑一个合你工作氛围的。</p>
+      <h2 class="themes-title">原生界面与四套内置主题</h2>
+      <p class="themes-sub">苔绿、霜白、暮蓝、余烬，挑选合你桌面的氛围。</p>
       <div class="theme-grid">
         <div class="theme-item"><img src="assets/theme1-1.png" alt="苔绿暗夜主题——语音输入界面"><div class="tname">苔绿暗夜</div></div>
         <div class="theme-item"><img src="assets/theme2-1.png" alt="霜白主题——电子书朗读界面"><div class="tname">霜白</div></div>
@@ -191,11 +151,54 @@
     </div>
   </section>
 
+  <section class="who">
+    <div class="wrap">
+      <h2 class="who-title">FewType 适合谁？</h2>
+      <p class="who-sub">三大场景，三类不同的人。你大概率至少对号入座一个。</p>
+      <div class="who-cards">
+        <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
+          <div class="emoji">🎙️</div>
+          <h3>语音输入——说话代替打字</h3>
+          <p class="lead">任意窗口按<strong>全局热键</strong>（Ctrl+Win 或双击 Ctrl），开口就说，文字落在光标所在处。</p>
+          <ul>
+            <li>聊天、和 AI 对话时想说得快——<strong>不用逐字敲</strong></li>
+            <li>在意回复读起来的感觉——<strong>口吻自己定</strong>，AI 按你的提示词<strong>上屏前改写</strong></li>
+            <li>说一种语言、出另一种语言——<strong>翻译直接落进文本框</strong></li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+        <div class="who-card" onclick="showView('ebook')" style="cursor:pointer;">
+          <div class="emoji">📖</div>
+          <h3>电子书朗读——让耳朵替你读</h3>
+          <p class="lead">浏览器扩展在页面里把电子书读给你听（Google Play 图书、Koodo Reader）。<strong>自然的人声</strong>，不是机器腔。</p>
+          <ul>
+            <li>要<strong>自然的人声</strong>，<strong>拒绝机器音</strong></li>
+            <li>长时间专注看字眼睛累——<strong>视觉和听觉一起用</strong></li>
+            <li>做家务、眼睛被占用——<strong>碎片时间也能听书</strong></li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+        <div class="who-card" onclick="showView('tts')" style="cursor:pointer;">
+          <div class="emoji">🎧</div>
+          <h3>长文本转语音——给创作者</h3>
+          <p class="lead">粘贴一长段脚本、选个音色、<strong>得到一段自然语音的音频文件</strong>。它是附属功能，但对做口播内容的人是救命稻草。</p>
+          <ul>
+            <li>口播主播——长脚本<strong>不用自己一句句录</strong></li>
+            <li>数字人 / 虚拟主播需要<strong>干净的语音素材</strong></li>
+            <li>播客草稿、视频配音、有声书试听、听力练习材料</li>
+          </ul>
+          <span class="go">查看详情 →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="download">
     <div class="wrap">
       <h2>下载</h2>
       <div class="dl">
-        <div class="dl-box">
+        <div class="dl-box recommended">
+          <span class="rec-tag">推荐</span>
           <h3>安装版</h3>
           <div class="ver">v3.1.21 · Windows 10/11 x64</div>
           <p>自包含：内置运行环境，缺失组件自动补装。支持内置自动更新。</p>
@@ -236,7 +239,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← 返回首页</button>
     <h1>语音打字——说话代替打字</h1>
-    <p class="lead">在任意应用里按全局热键、开口说话，文字就落在光标所在处。不止于听写——FewType 还能在文字上屏前，按你自定义的口吻改写（内置风格示范可作起点），或翻译成另一种语言。</p>
+    <p class="lead">在任意应用里按<strong>全局热键</strong>、开口说话，文字就落在光标所在处。不止于听写——FewType 还能在文字上屏前，按你<strong>自定义的口吻改写</strong>（内置风格示范可作起点），或<strong>翻译成另一种语言</strong>。</p>
   </div>
 
   <div class="feat">
@@ -290,7 +293,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">下载 FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">下载 Windows 版</a>
     <a class="btn ghost" onclick="showView('home')">返回首页</a>
   </div>
 </div>
@@ -315,7 +318,7 @@
   <div class="feat rev">
     <div class="txt">
       <h3>👀 让眼睛歇一歇</h3>
-      <p>长时间专注看书，眼睛很快就累。做家务、任何眼睛忙不过来的碎片时间，用耳朵接着读。</p>
+      <p>长时间专注看书，眼睛很快就累。做家务、任何眼睛忙不过来的碎片时间，<strong>用耳朵接着读</strong>。</p>
     </div>
     <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType 电子书朗读界面"></div>
   </div>
@@ -340,7 +343,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">下载 FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">下载 Windows 版</a>
     <a class="btn ghost" onclick="showView('home')">返回首页</a>
   </div>
 </div>
@@ -350,7 +353,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← 返回首页</button>
     <h1>长文本转音频——把稿子变成声音</h1>
-    <p class="lead">粘贴长稿、选个音色、得到干净的音频文件。为内容创作者省下大把录音时间的附属功能。</p>
+    <p class="lead">粘贴长稿、选个音色、<strong>得到干净的音频文件</strong>。为内容创作者省下大把录音时间的附属功能。</p>
   </div>
 
   <div class="feat">
@@ -377,7 +380,7 @@
   </div>
 
   <div class="page-cta">
-    <a class="btn" href="#download">下载 FewType</a>
+    <a class="btn" href="#download" onclick="event.preventDefault(); showView('home'); setTimeout(function(){ var d=document.getElementById('download'); if(d) d.scrollIntoView({behavior:'smooth'}); }, 50);">下载 Windows 版</a>
     <a class="btn ghost" onclick="showView('home')">返回首页</a>
   </div>
 </div>
