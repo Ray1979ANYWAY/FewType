@@ -18,6 +18,7 @@ import UpdaterDialog from "./components/UpdaterDialog";
 import { resizeForTab, inTauri } from "./lib/window";
 import { getConfig, getLogs, SpeechClient, updateConfig } from "./api";
 import { useI18n } from "./i18n";
+import { emit } from "@tauri-apps/api/event";
 
 const VIEW_TITLES: Record<ViewKey, string> = {
   voice: "app.view_voice",
@@ -51,10 +52,11 @@ export default function App() {
     localStorage.setItem("fewtype.theme", theme);
   }, [theme]);
 
-  /** 切换主题：本地即时生效 + 写后端 config（扩展跟随的权威值） */
+  /** 切换主题：本地即时生效 + 写后端 config（扩展跟随的权威值）+ 广播给 HUD 窗口实时同步 */
   const applyTheme = (t: string) => {
     setTheme(t);
     void updateConfig({ theme: t }).catch(() => {});
+    emit("fewtype:theme", t).catch(() => {});
   };
 
   // 主题权威 = 主程序本地选择（localStorage）：

@@ -13,6 +13,11 @@ import {
   type ReactNode,
 } from "react";
 import { getConfig, updateConfig } from "./api";
+// Tauri 事件广播：语言切换实时推送给 HUD 等独立窗口（localStorage 跨窗口可能隔离，storage 事件不可靠）
+import { emit, listen } from "@tauri-apps/api/event";
+
+/** 跨窗口语言广播事件名 */
+export const LANG_EVENT = "fewtype:lang";
 
 export type Lang = "zh-CN" | "zh-TW" | "en-US";
 
@@ -252,9 +257,10 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hud.error": "出错",
     "hud.idle": "空闲",
     "hud.committed": "已上屏",
-    "hud.confirm_title": "请确认原文（可修改）",
+    "hud.confirm_title": "请确认原文",
     "hud.confirm_submit": "翻译并上屏",
     "hud.confirm_cancel": "取消",
+    "hud.confirm_hint": "Enter 上屏 · Esc 取消",
   },
 
   /* ================================================================ 繁體中文 */
@@ -478,9 +484,10 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hud.error": "出錯",
     "hud.idle": "空閒",
     "hud.committed": "已上屏",
-    "hud.confirm_title": "請確認原文（可修改）",
+    "hud.confirm_title": "請確認原文",
     "hud.confirm_submit": "翻譯並上屏",
     "hud.confirm_cancel": "取消",
+    "hud.confirm_hint": "Enter 上屏 · Esc 取消",
   },
 
   /* ================================================================ English */
@@ -704,9 +711,10 @@ const dicts: Record<Lang, Record<string, string>> = {
     "hud.error": "Error",
     "hud.idle": "Idle",
     "hud.committed": "Committed",
-    "hud.confirm_title": "Confirm the original text (editable)",
+    "hud.confirm_title": "Confirm text",
     "hud.confirm_submit": "Translate & Commit",
     "hud.confirm_cancel": "Cancel",
+    "hud.confirm_hint": "Enter to commit · Esc to cancel",
   },
 };
 
@@ -776,6 +784,47 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // 跨窗口语言广播监听：主窗口切语言 → Tauri event → 本窗口（主窗口自身 + HUD）实时跟随
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    listen<Lang>(LANG_EVENT, (e) => {
+      const v = e.payload;
+      if (v === "zh-CN" || v === "zh-TW" || v === "en-US") {
+        setLangState(v);
+        try {
+          localStorage.setItem(UI_LANG_KEY, v);
+        } catch {
+          /* 忽略 */
+        }
+      }
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
+  // 跨窗口即时同步（兜底 2）：localStorage 变更广播 storage 事件（同一 origin 共享时生效）。
+  // HUD 等独立窗口与主窗口同 origin 时，主界面切语言后无需重启即跟随。
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      const k = e.key;
+      if (k !== UI_LANG_KEY && k !== UI_LANG_KEY_LEGACY) return;
+      const v = e.newValue;
+      if (v === "zh-CN" || v === "zh-TW" || v === "en-US") {
+        setLangState(v);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
     try {
@@ -786,6 +835,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     updateConfig({ ui_lang: l }).catch(() => {
       /* 后端写失败不阻塞本地切换 */
     });
+    // 广播给其他窗口（HUD 等）：Tauri 事件比 storage 事件可靠（跨窗口隔离场景）
+    emit(LANG_EVENT, l).catch(() => {});
   }, []);
 
   const t = useCallback(

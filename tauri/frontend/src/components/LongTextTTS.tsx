@@ -91,25 +91,56 @@ const TARGET_LOCALE: Record<string, string> = {
 const HANT_CHARS =
   "這個說時後來裡為與無沒這樣麼還讓過們對點嗎請開關體學書讀話語聽寫見車門風會愛國問題決發現認識覺應夠臺灣東興歡長";
 
-/** 启发式语言检测：'zh' / 'zh-hant' / 'ja' / 'ko' / 'other'（拉丁等） */
+/** 拉丁语系常用停用词表：用于区分 en/es/fr/de（这些语言字形相同，无法用 Unicode 区分） */
+const LATIN_STOPWORDS: Record<string, string[]> = {
+  en: ["the", "and", "of", "to", "you", "is", "that", "this", "with", "for", "have", "was", "are", "it", "not", "as", "on", "be", "your", "will", "in", "but"],
+  es: ["el", "la", "los", "las", "de", "que", "y", "en", "es", "por", "una", "con", "para", "se", "del", "un", "no", "su", "como", "más", "pero"],
+  fr: ["le", "la", "les", "de", "des", "que", "et", "en", "est", "pour", "une", "dans", "au", "aux", "par", "un", "ce", "il", "plus", "pas", "sur"],
+  de: ["der", "die", "das", "und", "ist", "ich", "nicht", "ein", "eine", "mit", "zu", "sich", "auf", "für", "den", "von", "im", "wie", "aus", "auch", "dass"],
+};
+
+/** 拉丁文本语言检测：统计停用词命中数，≥3 才算可信（短文本/专有名词不误判） */
+function detectLatinLang(text: string): string {
+  const words = text.toLowerCase().match(/[a-zà-ÿ'’-]+/g) ?? [];
+  if (words.length < 5) return "other";
+  let best = "other";
+  let bestN = 0;
+  for (const [code, stops] of Object.entries(LATIN_STOPWORDS)) {
+    let n = 0;
+    for (const w of words) if (stops.includes(w)) n++;
+    if (n > bestN) {
+      bestN = n;
+      best = code;
+    }
+  }
+  return bestN >= 3 ? best : "other";
+}
+
+/** 启发式语言检测：'zh' / 'zh-hant' / 'ja' / 'ko' / 'en' / 'es' / 'fr' / 'de' / 'other' */
 function detectInputLang(text: string): string {
   if (/[\uAC00-\uD7A3]/.test(text)) return "ko";
   if (/[\u3040-\u30FF]/.test(text)) return "ja";
   const han = text.match(/[\u4E00-\u9FFF]/g) ?? [];
-  if (han.length === 0 || han.length / Math.max(text.length, 1) < 0.2) return "other";
+  if (han.length === 0 || han.length / Math.max(text.length, 1) < 0.2) {
+    // 拉丁等：用停用词表进一步区分 en/es/fr/de，
+    // 避免"英文输入 + 西语/法语/德语输出"被误判为同语言而漏翻译
+    return detectLatinLang(text);
+  }
   const hant = han.filter((ch) => HANT_CHARS.includes(ch)).length;
   return hant / han.length > 0.1 ? "zh-hant" : "zh";
 }
 
-/** 是否需要翻译（拉丁语言之间不自动翻译，保守策略，同 Tk 版） */
+/**
+ * 是否需要翻译：检测到的输入语言 ≠ 输出语言 → 翻译。
+ * 无法可靠判断输入语言（"other"）→ 保守不翻译。
+ * "用西语音色读英语"场景：语言下拉选 English（= 输入语言，不翻译），音色单独选 Alvaro。
+ */
 function needsTranslation(text: string, outputLang: string): boolean {
   const loc = TARGET_LOCALE[outputLang] ?? "zh-CN";
   if (!text.trim()) return false;
   const inLang = detectInputLang(text);
   const outPrimary = loc.split("-", 1)[0].toLowerCase();
-  if (inLang === "other") {
-    return !["en", "es", "fr", "de"].includes(outPrimary);
-  }
+  if (inLang === "other") return false;
   if (inLang.startsWith("zh")) {
     if (outPrimary !== "zh") return true;
     const inHant = inLang === "zh-hant";

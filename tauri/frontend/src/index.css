@@ -134,30 +134,8 @@ body {
   --t-glow-btn: rgba(192, 106, 53, 0.35);
 }
 
-/* HUD 悬浮胶囊：固定 Moss 视觉（悬浮在任意应用之上，不随主窗口主题变） */
-.hud-window[data-theme="moss"],
-.hud-window {
-  --t-bg: #090d0a;
-  --t-card: #121a15;
-  --t-card2: #0b1e14;
-  --t-input: #1a261f;
-  --t-border: #27372d;
-  --t-border-hover: #10b981;
-  --t-accent: #10b981;
-  --t-accent2: #34d399;
-  --t-text: #ecfdf5;
-  --t-muted: #6b7280;
-  --t-mid: #9ca3af;
-  --t-warn: #f59e0b;
-  --t-brand: #fbbf24;
-  --t-brand2: #fcd34d;
-  --t-brand3: #f59e0b;
-  --t-destructive: #f43f5e;
-  --t-destructive2: #fb7185;
-  --t-glow: rgba(16, 185, 129, 0.25);
-  --t-glow-strong: rgba(52, 211, 153, 0.9);
-  --t-glow-btn: rgba(16, 185, 129, 0.35);
-}
+/* HUD 悬浮胶囊与确认面板：跟随主窗口主题（data-theme 由 HudOverlay 挂载），
+   不在此固定任何主题值；无 data-theme 时回退 :root 默认 Moss。 */
 
 /* ============================================================
    FewType 主题映射（Tailwind v4 @theme）

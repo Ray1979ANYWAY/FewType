@@ -17,12 +17,14 @@ import {
   SpeechState,
   API_BASE,
   confirmSpeech,
+  getConfig,
 } from "../api";
-import { useI18n } from "../i18n";
+import { useI18n, type Lang } from "../i18n";
+import { listen } from "@tauri-apps/api/event";
 
 const HUD_W = 500;
 const HUD_H = 64;
-const CONFIRM_H = 380;
+const THEME_KEY = "fewtype.theme";
 
 /** 调试日志桥：把前端定位/权限失败打到后端日志（日志抽屉可见） */
 const logBridge = (msg: string) => {
@@ -41,12 +43,77 @@ const WAVE_BARS = [
   { h: 6, delay: "360ms" },
 ];
 
+/** 目标语言名映射：后端透传的是中文名/原文（如"西班牙语"），确认面板需按界面语言显示 */
+const TARGET_LANG_NAMES: Record<string, Record<Lang, string>> = {
+  "简体中文": { "zh-CN": "简体中文", "zh-TW": "简体中文", "en-US": "Simplified Chinese" },
+  "繁體中文": { "zh-CN": "繁體中文", "zh-TW": "繁體中文", "en-US": "Traditional Chinese" },
+  English: { "zh-CN": "English", "zh-TW": "English", "en-US": "English" },
+  "西班牙语": { "zh-CN": "西班牙语", "zh-TW": "西班牙語", "en-US": "Spanish" },
+  "法语": { "zh-CN": "法语", "zh-TW": "法語", "en-US": "French" },
+  "德语": { "zh-CN": "德语", "zh-TW": "德語", "en-US": "German" },
+  日本語: { "zh-CN": "日本語", "zh-TW": "日本語", "en-US": "Japanese" },
+  한국어: { "zh-CN": "한국어", "zh-TW": "한국어", "en-US": "Korean" },
+};
+
+function targetLangLabel(name: string, lang: Lang): string {
+  return TARGET_LANG_NAMES[name]?.[lang] ?? name;
+}
+
 export default function HudOverlay() {
-  const { t } = useI18n();
+  const { t, setLang, lang } = useI18n();
   const [state, setState] = useState<SpeechState>("idle");
   const [message, setMessage] = useState("");
   const [partial, setPartial] = useState("");
   const [visible, setVisible] = useState(false);
+
+  // 主题跟随主窗口：HUD 是独立窗口，需自行挂载 data-theme 并同步
+  const [theme, setThemeState] = useState<string>(
+    () => localStorage.getItem(THEME_KEY) || "moss"
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  // 跨窗口主题同步：主窗口切主题 → Tauri event 广播 → 本窗口实时跟随
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    listen<string>("fewtype:theme", (e) => {
+      if (e.payload) setThemeState(e.payload);
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
+  // 跨窗口主题同步（兜底）：主窗口改主题写 localStorage → storage 事件广播到 HUD
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === THEME_KEY && e.newValue) setThemeState(e.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // 权威源兜底：localStorage 若跨窗口隔离，显示/确认时从后端 config 拉语言与主题
+  const syncFromBackend = useCallback(async () => {
+    try {
+      const cfg = await getConfig();
+      if (cfg.ui_lang === "zh-CN" || cfg.ui_lang === "zh-TW" || cfg.ui_lang === "en-US") {
+        setLang(cfg.ui_lang);
+      }
+      if (cfg.theme) setThemeState(cfg.theme);
+    } catch {
+      /* 后端不可用：沿用当前值 */
+    }
+  }, [setLang]);
+
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const winRef = useRef<ReturnType<typeof getCurrentWindow> | null>(null);
   const textRef = useRef<HTMLDivElement | null>(null);
@@ -138,6 +205,7 @@ export default function HudOverlay() {
       hideTimer.current = null;
     }
     setVisible(true);
+    void syncFromBackend();
     const win = winRef.current;
     if (!win) return;
     win.show().catch(() => {});
@@ -158,7 +226,7 @@ export default function HudOverlay() {
     } else {
       logBridge("show: wa null, skip positioning");
     }
-  }, []);
+  }, [syncFromBackend]);
 
   // 确认模式 ↔ 胶囊模式切换：窗口尺寸 / 位置 / 点击穿透
   useEffect(() => {
@@ -171,16 +239,9 @@ export default function HudOverlay() {
         // 每步独立容错：任一失败（如 hidden 窗口 setFocus 被拒）不阻断后续尺寸/定位
         win.setIgnoreCursorEvents(false).catch(() => {}); // 确认框需要可交互
         win.setFocus().catch(() => {}); // 抢焦点：让击键直达 textarea，可直接回车上屏
-        await win.setSize(new LogicalSize(HUD_W, CONFIRM_H)).catch(() => {});
-        if (wa) {
-          const sf = await win.scaleFactor().catch(() => 1);
-          const y = Math.max(0, wa.bottom - Math.round(CONFIRM_H * sf) - 12);
-          await win
-            .setPosition(new PhysicalPosition(cx, y))
-            .catch((e) => logBridge(`confirm-mode: setPosition FAIL ${String(e)}`));
-        } else {
-          logBridge("confirm-mode: wa null, skip positioning");
-        }
+        // 注意：确认模式不在此预定位（CONFIRM_H 固定高 + 屏幕中部 y=648 的旧方案会造成
+        // 与 adaptive effect 的异步竞跑——adaptive 后贴底、confirm-mode 后定位到中部，谁后完成谁赢，
+        // 导致面板随机"跑上去"）。尺寸与贴底定位全部交由下方 adaptive effect 按内容高度计算。
       } else {
         await win.setSize(new LogicalSize(HUD_W, HUD_H)).catch(() => {});
         if (wa) {
@@ -297,6 +358,7 @@ export default function HudOverlay() {
             setConfirmSource(ev.source);
             setConfirmTarget(ev.target_lang ?? "");
             setConfirming(true);
+            void syncFromBackend();
             showHud();
             break;
           case "commit":
@@ -313,7 +375,7 @@ export default function HudOverlay() {
       disposed = true;
       client.close();
     };
-  }, [showHud, fadeOut, exitConfirm, t]);
+  }, [showHud, fadeOut, exitConfirm, t, syncFromBackend]);
 
   const isActive =
     state === "listening" ||
@@ -345,30 +407,30 @@ export default function HudOverlay() {
       <div className="flex h-screen w-screen items-start justify-center bg-transparent">
         <div
           ref={panelRef}
-          className="w-full rounded-2xl border border-accent/20 bg-[#0D1410]/85 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+          className="w-full rounded-2xl border border-accent/20 bg-card/90 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
         >
           {/* 顶部固定行：标题 + 目标 + 操作按钮 */}
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-[13px] font-bold text-[#ECFDF5]">
+              <span className="truncate text-[13px] font-bold text-text">
                 {t("hud.confirm_title")}
               </span>
               {confirmTarget && (
-                <span className="shrink-0 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11.5px] text-[#34D399]">
-                  → {confirmTarget}
+                <span className="shrink-0 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11.5px] text-accent2">
+                  → {targetLangLabel(confirmTarget, lang)}
                 </span>
               )}
             </div>
             <div className="flex shrink-0 gap-2">
               <button
                 onClick={cancelConfirm}
-                className="rounded-lg border border-[#27372D] bg-[#1A261F] px-4 py-1.5 text-[12.65px] text-[#9CA3AF] transition-colors hover:border-[#10B981] hover:text-[#ECFDF5]"
+                className="rounded-lg border border-border bg-input px-4 py-1.5 text-[12.65px] text-mid transition-colors hover:border-accent hover:text-text"
               >
                 {t("hud.confirm_cancel")}
               </button>
               <button
                 onClick={submitConfirm}
-                className="rounded-lg bg-[#10B981] px-4 py-1.5 text-[12.65px] font-bold text-[#090D0A] transition-colors hover:bg-[#34D399]"
+                className="rounded-lg bg-accent px-4 py-1.5 text-[12.65px] font-bold text-bg transition-colors hover:bg-accent2"
               >
                 {t("hud.confirm_submit")}
               </button>
@@ -396,11 +458,11 @@ export default function HudOverlay() {
               }
             }}
             autoFocus
-            className="min-h-[40px] max-h-[240px] w-full resize-none overflow-y-auto rounded-lg border border-[#27372D] bg-[#1A261F] px-3 py-2 text-[13px] leading-relaxed text-[#ECFDF5] outline-none transition-colors focus:border-[#10B981]"
+            className="min-h-[40px] max-h-[240px] w-full resize-none overflow-y-auto rounded-lg border border-border bg-input px-3 py-2 text-[13px] leading-relaxed text-text outline-none transition-colors focus:border-accent"
           />
-          {/* 底部固定行：快捷键提示 */}
+          {/* 底部固定行：快捷键提示（跟随界面语言） */}
           <div className="mt-1.5 text-center text-[10.5px] text-accent/50">
-            Enter 上屏 · Esc 取消
+            {t("hud.confirm_hint")}
           </div>
         </div>
       </div>
@@ -411,7 +473,7 @@ export default function HudOverlay() {
     <div className="flex h-screen w-screen items-start justify-center bg-transparent">
       {/* 玻璃拟态胶囊容器 */}
       <div
-        className={`mt-1 flex max-w-[400px] items-center gap-3 rounded-full border border-accent/20 bg-[#0D1410]/75 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-opacity duration-500 ${
+        className={`mt-1 flex max-w-[400px] items-center gap-3 rounded-full border border-accent/20 bg-card/75 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-opacity duration-500 ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -422,8 +484,8 @@ export default function HudOverlay() {
               key={i}
               className={`w-0.5 origin-bottom rounded-full transition-colors duration-300 ${
                 isActive
-                  ? "animate-[hud-wave_1.1s_ease-in-out_infinite] bg-[#34D399] shadow-[0_0_6px_rgba(52,211,153,0.8)]"
-                  : "bg-[#37463d]"
+                  ? "animate-[hud-wave_1.1s_ease-in-out_infinite] bg-accent2 shadow-[0_0_6px_var(--t-glow-strong)]"
+                  : "bg-border"
               }`}
               style={{ height: `${b.h}px`, animationDelay: b.delay }}
             />
@@ -432,7 +494,7 @@ export default function HudOverlay() {
 
         {/* 状态文字（呼吸灯：亮度 + 翡翠光晕脉动） */}
         <span
-          className={`shrink-0 whitespace-nowrap text-[13.8px] font-bold text-[#ECFDF5] ${
+          className={`shrink-0 whitespace-nowrap text-[13.8px] font-bold text-text ${
             isActive ? "animate-[hud-breathe_1.8s_ease-in-out_infinite]" : ""
           }`}
         >
@@ -440,12 +502,12 @@ export default function HudOverlay() {
         </span>
 
         {/* 中间半透明竖线分隔 */}
-        <span className="h-4 w-px shrink-0 bg-[#34D399]/40" />
+        <span className="h-4 w-px shrink-0 bg-accent2/40" />
 
         {/* 右侧实时文字：平滑滚动跟随最新 + 左端渐变隐退 */}
         <div
           ref={textRef}
-          className="scrollbar-none min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[12.65px] text-[#6EE7B7]/90 [mask-image:linear-gradient(to_right,transparent_0%,black_18%)]"
+          className="scrollbar-none min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[12.65px] text-accent2/90 [mask-image:linear-gradient(to_right,transparent_0%,black_18%)]"
           style={{
             scrollBehavior: "smooth",
             willChange: "transform",

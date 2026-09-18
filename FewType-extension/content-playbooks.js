@@ -656,56 +656,76 @@
       break;
     }
 
-    // 用 normMap 把 [idx, idx+coverLen) 转成若干不跨节点的 Range
+    // 用 normMap 把 [idx, idx+coverLen) 转成 Range 列表
     const ranges = [];
-    let rangeStart = null;
-    let prev = null;
     const end = Math.min(idx + coverLen, normMap.length);
     // 更新锚点：本 chunk 在页面文本里的结束位置，供下一次单向推进。
     // 注意：这里先记录 idx 起始位置，若最终没生成任何 Range（匹配串都是空白之类
     // 的极端情况）则不该推进锚点——所以 anchor 更新放在返回前的条件判断里。
     const anchorFrom = idx;
     const anchorTo = end;
-    for (let i = idx; i < end; i++) {
-      const m = normMap[i];
-      if (m._space && m.ch === " ") {
-        // 空白：结束当前 range，不单独包 mark（避免空方块）
-        if (rangeStart) {
-          try {
-            const r = document.createRange();
-            r.setStart(rangeStart.node, rangeStart.offset);
-            r.setEnd(prev.node, prev.offset + 1);
-            if (r.toString().trim().length > 0) ranges.push(r);
-          } catch (e) {}
-          rangeStart = null;
+
+    if (canUseCssHighlight) {
+      // CSS Highlight 路径：一个连续 Range 覆盖整块（含词间空白、允许跨节点）。
+      // CSS Custom Highlight 对任意 Range 都能渲染，空白间隙同样着色——
+      // 视觉上整句连续，不再逐词断开（旧实现按空白切段导致英文高亮一块块断掉）。
+      // 每次高亮前 clearHighlight 会先删除旧 Highlight，天然不重叠。
+      if (end > idx) {
+        const s = normMap[idx];
+        const e = normMap[end - 1];
+        try {
+          const r = document.createRange();
+          r.setStart(s.node, s.offset);
+          r.setEnd(e.node, e.offset + 1);
+          if (r.toString().trim().length > 0) ranges.push(r);
+        } catch (e) {}
+      }
+    } else {
+      // mark 回退路径：按空白切段、不跨节点（mark 的 surroundContents 不能包跨节点
+      // 内容；纯空格 mark 会渲染成空方块挤压排版）。
+      let rangeStart = null;
+      let prev = null;
+      for (let i = idx; i < end; i++) {
+        const m = normMap[i];
+        if (m._space && m.ch === " ") {
+          // 空白：结束当前 range，不单独包 mark（避免空方块）
+          if (rangeStart) {
+            try {
+              const r = document.createRange();
+              r.setStart(rangeStart.node, rangeStart.offset);
+              r.setEnd(prev.node, prev.offset + 1);
+              if (r.toString().trim().length > 0) ranges.push(r);
+            } catch (e) {}
+            rangeStart = null;
+          }
+          prev = m;
+          continue;
+        }
+        if (
+          !rangeStart ||
+          prev.node !== m.node ||
+          m.offset !== prev.offset + 1
+        ) {
+          if (rangeStart) {
+            try {
+              const r = document.createRange();
+              r.setStart(rangeStart.node, rangeStart.offset);
+              r.setEnd(prev.node, prev.offset + 1);
+              if (r.toString().trim().length > 0) ranges.push(r);
+            } catch (e) {}
+          }
+          rangeStart = m;
         }
         prev = m;
-        continue;
       }
-      if (
-        !rangeStart ||
-        prev.node !== m.node ||
-        m.offset !== prev.offset + 1
-      ) {
-        if (rangeStart) {
-          try {
-            const r = document.createRange();
-            r.setStart(rangeStart.node, rangeStart.offset);
-            r.setEnd(prev.node, prev.offset + 1);
-            if (r.toString().trim().length > 0) ranges.push(r);
-          } catch (e) {}
-        }
-        rangeStart = m;
+      if (rangeStart && prev) {
+        try {
+          const r = document.createRange();
+          r.setStart(rangeStart.node, rangeStart.offset);
+          r.setEnd(prev.node, prev.offset + 1);
+          if (r.toString().trim().length > 0) ranges.push(r);
+        } catch (e) {}
       }
-      prev = m;
-    }
-    if (rangeStart && prev) {
-      try {
-        const r = document.createRange();
-        r.setStart(rangeStart.node, rangeStart.offset);
-        r.setEnd(prev.node, prev.offset + 1);
-        if (r.toString().trim().length > 0) ranges.push(r);
-      } catch (e) {}
     }
     // 有实际高亮范围才推进锚点；空匹配不推进（防止锚点被空白串污染）
     if (ranges.length > 0) lastEndChar = anchorTo;
