@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ray1979anyway.github.io/FewType/sitemap.xml
