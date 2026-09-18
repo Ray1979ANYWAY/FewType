@@ -20,8 +20,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/icon.png">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',-apple-system,'PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.75; letter-spacing:0.2px; }
+  body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI Variable Display','Segoe UI','PingFang SC','Hiragino Sans GB','Noto Sans SC','Microsoft YaHei',sans-serif; background:#F5F7F4; color:#1F2D26; line-height:1.75; letter-spacing:0.2px; }
+  .key-badge, .ver, .tag, kbd, code { font-family:'JetBrains Mono','Fira Code','Cascadia Code','Consolas',monospace; letter-spacing:-0.02em; }
+  kbd { background:#EFF3F0; border:1px solid rgba(14,159,110,0.28); border-bottom-width:2px; border-radius:5px; padding:1px 6px; font-size:0.92em; color:#14532D; white-space:nowrap; }
   .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
   header { position:sticky; top:0; z-index:50; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-bottom:1px solid rgba(14,159,110,0.18); }
   .head-in { display:flex; align-items:center; justify-content:space-between; gap:14px; max-width:1000px; margin:0 auto; padding:12px 24px; flex-wrap:wrap; }
@@ -162,7 +166,7 @@
         <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
           <div class="emoji">🎙️</div>
           <h3>语音输入——说话代替打字</h3>
-          <p class="lead">任意窗口按<strong>全局热键</strong>（Ctrl+Win 或双击 Ctrl），开口就说，文字落在光标所在处。</p>
+          <p class="lead">任意窗口按<strong>全局热键</strong>（<kbd>Ctrl+Win</kbd> 或双击 <kbd>Ctrl</kbd>），开口就说，文字落在光标所在处。</p>
           <ul>
             <li>聊天、和 AI 对话时想说得快——<strong>不用逐字敲</strong></li>
             <li>在意回复读起来的感觉——<strong>口吻自己定</strong>，AI 按你的提示词<strong>上屏前改写</strong></li>
@@ -248,7 +252,7 @@
   <div class="feat">
     <div class="txt">
       <h3>🗣️ 全应用可用，哪里都能打</h3>
-      <p>聊天窗口、浏览器、终端、文档——一个热键（Ctrl+Win，或双击 Ctrl）开始录音，语音直接打到光标处。不用切换应用，不用复制粘贴。</p>
+      <p>聊天窗口、浏览器、终端、文档——一个热键（<kbd>Ctrl+Win</kbd>，或双击 <kbd>Ctrl</kbd>）开始录音，语音直接打到光标处。不用切换应用，不用复制粘贴。</p>
     </div>
     <div class="demo"><img src="assets/demo-hotkey.png" alt="FewType 自定义热键设置"></div>
   </div>
