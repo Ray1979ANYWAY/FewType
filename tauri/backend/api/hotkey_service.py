@@ -26,6 +26,7 @@ from ctypes import wintypes
 import pyperclip
 
 import hotkey_hook
+from audio_duck import ducker
 from config_store import load_config
 
 logger = logging.getLogger("fewtype.hotkey")
@@ -42,6 +43,14 @@ VK_LWIN = 0x5B
 VK_RWIN = 0x5C
 VK_ESCAPE = 0x1B
 WM_QUIT = 0x0012
+
+# ---- 保活（keepalive）----
+# 背景：LL 钩子回调由系统投递到安装线程，空闲后 Win11 会降低后台进程 CPU 配额
+# （Power Throttling），回调响应变慢 → 系统静默丢弃按键事件 → 热键"要按几次才有反应"。
+# 对策：① 进程提权 HIGH_PRIORITY_CLASS 防节流（治本）；② 低频重挂钩子兜底
+# （防御系统静默丢弃 LL 钩子事件；录音中跳过，不中断会话）。
+HIGH_PRIORITY_CLASS = 0x80
+REHOOK_INTERVAL = 600  # 每 10 分钟重挂一次
 
 # GetMenu：判断目标窗口是否有 Win32 菜单栏（决定是否补发 Esc 清理 Alt 激活的菜单）
 user32.GetMenu.argtypes = [wintypes.HWND]
@@ -76,6 +85,10 @@ kernel32.ResetEvent.argtypes = [wintypes.HANDLE]
 kernel32.ResetEvent.restype = wintypes.BOOL
 kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 kernel32.CloseHandle.restype = wintypes.BOOL
+# 保活：进程提权防后台节流
+kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+kernel32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+kernel32.SetPriorityClass.restype = wintypes.BOOL
 
 
 def _find_app_window() -> int | None:
@@ -253,6 +266,12 @@ class GlobalHotkeyService:
     # ------------------------------------------------------------ 钩子线程
     def _run(self) -> None:
         self._rebuild()
+        # 保活 1/2：进程提权（HIGH_PRIORITY_CLASS），防止 Windows 后台节流
+        # 导致 LL 钩子回调延迟（静置后热键迟钝的根因之一）。失败静默无害。
+        try:
+            kernel32.SetPriorityClass(kernel32.GetCurrentProcess(), HIGH_PRIORITY_CLASS)
+        except Exception:
+            pass
         # Windows 消息循环：LL 钩子回调由系统投递到此线程队列。
         # 等待策略：MsgWaitForMultipleObjectsEx（事件驱动 + 200ms 超时兜底）。
         #  - 钩子消息到达 → 立即返回处理（零延迟，按键响应与 GetMessageW 阻塞式一样快）
@@ -262,14 +281,25 @@ class GlobalHotkeyService:
         #   也不用 PeekMessage+sleep 轮询：50ms 空转让每个按键响应变肉）
         self._wake_event = kernel32.CreateEventW(None, False, False, None)
         msg = wintypes.MSG()
+        last_rebuild = time.time()
         try:
             while not self._stop_event.is_set():
                 try:
                     cmd = self._cmd_q.get_nowait()
                     if cmd == "rebuild":
                         self._rebuild()
+                        last_rebuild = time.time()
                 except queue.Empty:
                     pass
+                # 保活 2/2：低频重挂钩子（防御系统静默丢弃 LL 钩子事件）。
+                # 只在空闲时重挂——录音中跳过，避免中断进行中的会话；
+                # 重挂只换钩子句柄，热键配置不变，对其他应用零影响。
+                if time.time() - last_rebuild >= REHOOK_INTERVAL:
+                    hook = self._hook
+                    if hook is None or not hook.rec:
+                        logger.info("[keepalive] rehooking WH_KEYBOARD_LL")
+                        self._rebuild()
+                    last_rebuild = time.time()
                 rc = user32.MsgWaitForMultipleObjectsEx(
                     1, ctypes.byref(wintypes.HANDLE(self._wake_event)),
                     200, 0xFF, 0)  # QS_ALLINPUT = 0xFF
@@ -370,11 +400,22 @@ class GlobalHotkeyService:
             "target_lang": cfg.get("stt_target_lang", "简体中文"),
             "_source": "hotkey",
         })
+        if ok:
+            # 录音占用时压低其他播放音频音量（ducking），结束恢复
+            try:
+                ducker.start()
+            except Exception:
+                logger.debug("audio duck start failed", exc_info=True)
         logger.info(L("hotkey_recording", mode=mode, style=cfg.get("stt_custom_style"), ok=ok))
 
     def _on_end(self) -> None:
         """成员键松开 → 停止录音，进入转写收尾。"""
         self._speech.stop()
+        # 录音结束：恢复被压低的会话音量
+        try:
+            ducker.stop()
+        except Exception:
+            logger.debug("audio duck stop failed", exc_info=True)
 
     # ------------------------------------------------------------ 上屏
     def on_commit(self, text: str) -> None:

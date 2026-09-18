@@ -2528,3 +2528,41 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
   2) 移动后 .git/config 的 core.worktree 仍指向旧路径 D:/Documents/VoxEcho，git status 全部显示 deleted——git config core.worktree 改新路径即恢复。
   3) worktree 指针：D:\Documents\VoxEcho-tk\.git 的 gitdir 指向主 .git/worktrees/...，主仓库路径变更后必须同步改，否则 TK worktree 断链。
   4) PowerShell -creplace 对含 > 的字符串会当正则报错；批量写回必须显式 UTF8Encoding(False) 防 BOM（历史坑：BOM 曾破坏 vite ESM 检测）。
+
+## 2026-09-19 静置后热键迟滞根因 + 保活方案（hotkey keepalive）
+
+### 症状
+- 电脑静置一段时间后，热键唤起延迟、要按几次才有反应（Ctrl+Win / 双击 Ctrl / 自定义组合全模式）
+
+### 根因
+- WH_KEYBOARD_LL 钩子回调由系统投递到【安装钩子线程】的消息队列；空闲后 Win11 会降低后台进程 CPU 配额（Power Throttling）→ 回调被降频 → 响应变慢 → 系统对 LL 钩子做超时判断并**静默丢弃按键事件**（不报错）→ "按几次才有反应"。这是 LL 钩子的经典坑，不是硬件问题（用户曾误判去换电池）。
+
+### 方案选型（关键决策）
+- **RegisterHotKey 不可行**：系统热键全局独占（ERROR_HOTKEY_ALREADY_REGISTERED），FewType 注册 Ctrl+Win 后微信的 Ctrl+Win 直接失效——历史"微信 Ctrl+Win 失效"就是独占/吞键冲突。LL 钩子不独占，才能与微信共存。
+- **最终方案 = 提权 + 低频重挂**：
+  1. 进程提权 SetPriorityClass(HIGH_PRIORITY_CLASS)（治本：防后台节流）
+  2. 每 10 分钟低频重挂钩子（兜底：防御系统静默丢弃；录音中跳过）
+- 重挂只换钩子句柄，热键配置不变，对其他应用零影响；三种模式（Ctrl+Win/自定义/双击 Ctrl）共用一个钩子，全部覆盖。
+
+### 实现要点（hotkey_service.py）
+- 提权放钩子线程 `_run()` 开头；重挂放消息循环（200ms 超时兜底处检查 last_rebuild）。
+- **重挂必须在钩子线程内执行**：LL 钩子回调投递到安装线程消息循环，跨线程重挂会让回调挂到无消息循环的线程 → 钩子失效（不能直接开新线程 Unhook/Rehook）。
+- 录音中跳过重挂（hook.rec 判断），避免中断会话；重挂只换句柄，状态机（实例属性）不受影响。
+- 回滚点：git tag `pre-hotkey-keepalive`（3.1.21, commit 0973011e）。
+
+### 边界认知（双击 Ctrl 吞键）
+- 第二次 Ctrl 按下被吞 + 350ms 窗口内跟按 Ctrl+组合键 → 组合失效或误触发录音（窗口极短，实际误触概率低，可接受）。
+- 录音中 Win 被吞是刻意的（防开始菜单抢焦点）；录音结束补发的 Ctrl-up 是注入事件，其他应用钩子能看到，但多余 up 无副作用。
+
+## 2026-09-19 IME 热键也是全局注册（豆包输入法 Ctrl+Win 唤起）
+
+- IME 的切换类热键（中英切换/语音/工具条唤起）很多是**系统级注册**，不在输入框也生效——"IME 不是全局"的前提不成立。
+- LL 钩子是**链式**调用：排在链前的钩子（后启动进程）先看到按键并响应，FewType 的吞键（return 1）只能拦住自己后面的钩子，**管不到链前面的 IME**。
+- 解法：改 IME 热键（豆包输入法可编辑：左 ALT 长按 / 右 ALT+空格）。**别把 FewType 热键设成 ALT 系**——组合键模式成员键按下会被吞住判定，IME 的左 ALT 长按收不到。
+- FewType 钩子不吞 ALT/空格，录音中也可正常唤起 IME。
+
+## 2026-09-18 voxtype 竞品分析（github.com/peteonrails/voxtype）
+
+- 同赛道（voice-to-text）但平台相反：Linux 离线听写、Rust、1487 stars、无 Windows 版，不构成直接竞争。
+- 最大洞见：**Linux 版不自己监听键盘**——把热键交给合成器（系统层绑定 record start/stop），应用只响应命令；Windows 对应 RegisterHotKey，但独占冲突 → 折中走保活（见 09-19 条目）。
+- 其他可借鉴：上屏回退链（wtype→dotool→clipboard；我们目前 Ctrl+V 单通道，可加"焦点恢复失败→剪贴板兜底"）、录音提示音、Modifier Key Interference 排查文档（我们踩过的 Alt/焦点坑值得写成维护文档）。
