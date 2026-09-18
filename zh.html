@@ -39,13 +39,6 @@
   .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); cursor:pointer; border:none; }
   .btn.ghost { background:#FFFFFF; color:#047857; border:1px solid rgba(14,159,110,0.4); box-shadow:none; }
   .btn:hover { filter:brightness(1.05); }
-  .scene-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; padding:8px 0 44px; }
-  .scene-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
-  .scene-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,0.09); border-color:rgba(14,159,110,0.4); }
-  .scene-card .emoji { font-size:28px; margin-bottom:10px; }
-  .scene-card h3 { color:#047857; font-size:17px; margin-bottom:6px; }
-  .scene-card p { color:#5E6E64; font-size:13.5px; }
-  .scene-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
   .section { padding:48px 24px; border-top:1px solid rgba(0,0,0,0.06); }
   .section h2 { font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
   .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 30px; }
@@ -66,7 +59,8 @@
   .who-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
   .who-sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:6px auto 26px; }
   .who-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-  .who-card { flex:1 1 280px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .who-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
+  .who-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,0.09); border-color:rgba(14,159,110,0.4); }
   .who-card .emoji { font-size:26px; margin-bottom:8px; }
   .who-card h3 { color:#047857; font-size:16px; margin-bottom:4px; }
   .who-card .lead { color:#8A9A90; font-size:13px; margin-bottom:10px; }
@@ -74,6 +68,15 @@
   .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
   .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
   .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
+  .themes { padding:8px 24px 46px; }
+  .themes-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
+  .themes-sub { text-align:center; color:#8A9A90; font-size:14px; margin:6px auto 26px; }
+  .theme-grid { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; z-index:1; }
+  .theme-item:hover { z-index:10; }
+  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(0,0,0,0.12); box-shadow:0 4px 16px rgba(0,0,0,0.10); display:block; transition:transform .25s ease, box-shadow .25s ease; cursor:zoom-in; }
+  .theme-item:hover img { transform:scale(3); box-shadow:0 24px 60px rgba(0,0,0,0.32); }
+  .theme-item .tname { text-align:center; font-size:13.5px; font-weight:700; color:#047857; margin-top:10px; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
   .view { display:none; }
@@ -124,7 +127,7 @@
 <!-- ============ 首页 ============ -->
 <div id="view-home" class="view active">
   <section class="hero">
-    <div class="tag">免费开源 · 无订阅 · AI 密钥由你自己提供</div>
+    <div class="tag">免费开源 · 无订阅 · AI 密钥需自备</div>
     <h1>说一句话，帮你<span>打出来、改写、翻译</span>或朗读。</h1>
     <p>FewType 把三大日常场景放进一个轻量 Windows 应用：说话代替打字、让电子书用自然人声朗读、把长稿子变成语音文件。免费开源——你自己连接所选的 AI 服务，无订阅、不捆绑密钥。</p>
     <div>
@@ -144,7 +147,7 @@
           <p class="lead">任意窗口按全局热键（Ctrl+Win 或双击 Ctrl），开口就说，文字落在光标所在处。</p>
           <ul>
             <li>聊天、和 AI 对话时想说得快——不用逐字敲</li>
-            <li>在意回复读起来的感觉——选一个写作风格，上屏前自动改写</li>
+            <li>在意回复读起来的感觉——口吻自己定，AI 按你的提示词上屏前改写</li>
             <li>说一种语言、出另一种语言——翻译直接落进文本框</li>
           </ul>
           <span class="go">查看详情 →</span>
@@ -156,7 +159,7 @@
           <ul>
             <li>要自然的人声，拒绝机器音</li>
             <li>长时间专注看字眼睛累——视觉和听觉一起用</li>
-            <li>通勤、做家务、眼睛被占用——碎片时间也能听书</li>
+            <li>做家务、眼睛被占用——碎片时间也能听书</li>
           </ul>
           <span class="go">查看详情 →</span>
         </div>
@@ -175,23 +178,18 @@
     </div>
   </section>
 
-  <div class="scene-cards wrap">
-    <div class="scene-card" onclick="showView('voice')">
-      <div class="emoji">🎙️</div>
-      <h3>语音打字</h3>
-      <span class="go">查看详情 →</span>
+  <section class="themes">
+    <div class="wrap">
+      <h2 class="themes-title">四套内置主题</h2>
+      <p class="themes-sub">苔绿暗夜、霜白、暮蓝、余烬——挑一个合你工作氛围的。</p>
+      <div class="theme-grid">
+        <div class="theme-item"><img src="assets/theme1-1.png" alt="苔绿暗夜主题——语音输入界面"><div class="tname">苔绿暗夜</div></div>
+        <div class="theme-item"><img src="assets/theme2-1.png" alt="霜白主题——电子书朗读界面"><div class="tname">霜白</div></div>
+        <div class="theme-item"><img src="assets/theme3-1.png" alt="暮蓝主题——长文本转语音界面"><div class="tname">暮蓝</div></div>
+        <div class="theme-item"><img src="assets/theme4-1.png" alt="余烬主题——设置界面"><div class="tname">余烬</div></div>
+      </div>
     </div>
-    <div class="scene-card" onclick="showView('ebook')">
-      <div class="emoji">📖</div>
-      <h3>电子书朗读</h3>
-      <span class="go">查看详情 →</span>
-    </div>
-    <div class="scene-card" onclick="showView('tts')">
-      <div class="emoji">🎧</div>
-      <h3>长文本转音频</h3>
-      <span class="go">查看详情 →</span>
-    </div>
-  </div>
+  </section>
 
   <section class="section" id="download">
     <div class="wrap">
@@ -238,7 +236,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← 返回首页</button>
     <h1>语音打字——说话代替打字</h1>
-    <p class="lead">在任意应用里按全局热键、开口说话，文字就落在光标所在处。不止于听写——FewType 还能在文字上屏前，按你选的写作风格改写、或翻译成另一种语言。</p>
+    <p class="lead">在任意应用里按全局热键、开口说话，文字就落在光标所在处。不止于听写——FewType 还能在文字上屏前，按你自定义的口吻改写（内置风格示范可作起点），或翻译成另一种语言。</p>
   </div>
 
   <div class="feat">
@@ -254,23 +252,23 @@
       <h3>🌍 说一种语言，输出另一种</h3>
       <p>用中文说，得到英语、西班牙语、法语、德语、日语或韩语直接进输入框。翻译直达屏幕，不需要再开第二个窗口。</p>
     </div>
-    <div class="demo"><img src="assets/demo-translation.gif" alt="FewType 语音翻译为西班牙语"></div>
+    <div class="demo"><img src="assets/demo-translation-zh.gif" alt="FewType 语音翻译为西班牙语"></div>
   </div>
 
   <div class="feat">
     <div class="txt">
-      <h3>✍️ 写作风格，重塑你的表达</h3>
-      <p>选一个风格——"Karwai Wong"（王家卫）把普通句子变成电影感独白，"Formal"（正式）把零散口述整理成带编号的专业文档。声音是你的，文字由你定调。</p>
+      <h3>✍️ 口吻完全自定义</h3>
+      <p>告诉 FewType 你想要的声音，或让 AI 帮你生成提示词：幽默、冷感、文学感，随你定义。"Karwai Wong"（王家卫）把普通句子变成电影感独白，"Formal"（正式）把零散口述整理成编号文档——它们只是内置示范，真正的控制权在你手里，改写在上屏前完成。</p>
     </div>
-    <div class="demo"><img src="assets/demo-style.gif" alt="FewType 写作风格演示"></div>
+    <div class="demo"><img src="assets/demo-style-zh.gif" alt="FewType 写作风格演示"></div>
   </div>
 
   <div class="feat rev">
     <div class="txt">
       <h3>📄 零散口述 → 正式文档</h3>
-      <p>一口气说好几件事，Formal 风格会自动把它们整理成编号条目——一句随口的道歉，变成一份可直接使用的正式说明。</p>
+      <p>一口气说好几件事，内置的 Formal 风格会自动把它们整理成编号条目——一句随口的道歉，变成一份可直接使用的正式说明。</p>
     </div>
-    <div class="demo"><img src="assets/demo-formal.gif" alt="FewType 正式风格演示"></div>
+    <div class="demo"><img src="assets/demo-formal-zh.gif" alt="FewType 正式风格演示"></div>
   </div>
 
   <div class="steps">
@@ -282,13 +280,13 @@
         <div class="provider-tags">
           <span>Groq — 速度快、有免费额度、全球可用</span>
           <span>火山引擎 — 中国大陆用户首选</span>
-          <span>硅基流动 — 中国大陆用户首选</span>
+          <span>硅基流动 — 国内可用</span>
         </div>
       </li>
       <li><b>把 key 粘贴到设置里</b>——第一次按热键时，应用会自动弹出 Provider 配置窗口。</li>
       <li><b>按热键开口说话。</b> 听写、翻译、风格化从这一刻起全部可用。</li>
     </ol>
-    <div class="tip">💡 翻译和风格化会用到同一家 Provider 的 LLM key——设置弹窗会明确告诉你填在哪一栏。无需搭建服务器，不用碰任何配置文件。</div>
+    <div class="tip">💡 翻译和风格化会用到同一家 Provider 的 LLM key——设置弹窗会明确告诉你填在哪一栏。无需搭建服务器，不用碰任何配置文件。<br>⏱️ 免费额度与速率：各家都有免费额度和每分钟调用次数上限——比如 Groq 的速率限制，个人日常使用一般够用；国内的火山引擎免费额度也比较充裕。</div>
   </div>
 
   <div class="page-cta">
@@ -317,7 +315,7 @@
   <div class="feat rev">
     <div class="txt">
       <h3>👀 让眼睛歇一歇</h3>
-      <p>长时间专注看书，眼睛很快就累。通勤、做家务、任何眼睛忙不过来的碎片时间，用耳朵接着读。</p>
+      <p>长时间专注看书，眼睛很快就累。做家务、任何眼睛忙不过来的碎片时间，用耳朵接着读。</p>
     </div>
     <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType 电子书朗读界面"></div>
   </div>

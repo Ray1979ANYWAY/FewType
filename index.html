@@ -57,13 +57,6 @@
   .btn { display:inline-block; background:linear-gradient(135deg,#10B981,#059669); color:#FFFFFF; font-weight:700; text-decoration:none; padding:13px 30px; border-radius:10px; font-size:15px; margin:6px; box-shadow:0 4px 14px rgba(16,185,129,0.28); cursor:pointer; border:none; }
   .btn.ghost { background:#FFFFFF; color:#047857; border:1px solid rgba(14,159,110,0.4); box-shadow:none; }
   .btn:hover { filter:brightness(1.05); }
-  .scene-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; padding:8px 0 44px; }
-  .scene-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
-  .scene-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,0.09); border-color:rgba(14,159,110,0.4); }
-  .scene-card .emoji { font-size:28px; margin-bottom:10px; }
-  .scene-card h3 { color:#047857; font-size:17px; margin-bottom:6px; }
-  .scene-card p { color:#5E6E64; font-size:13.5px; }
-  .scene-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
   .section { padding:48px 24px; border-top:1px solid rgba(0,0,0,0.06); }
   .section h2 { font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:#16241D; }
   .section .sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:0 auto 30px; }
@@ -84,7 +77,8 @@
   .who-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
   .who-sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:6px auto 26px; }
   .who-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-  .who-card { flex:1 1 280px; min-width:0; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .who-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
+  .who-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,0.09); border-color:rgba(14,159,110,0.4); }
   .who-card .emoji { font-size:26px; margin-bottom:8px; }
   .who-card h3 { color:#047857; font-size:16px; margin-bottom:4px; }
   .who-card .lead { color:#8A9A90; font-size:13px; margin-bottom:10px; }
@@ -92,6 +86,15 @@
   .who-card li { font-size:13.5px; color:#2E3D34; padding:5px 0 5px 20px; position:relative; }
   .who-card li::before { content:"✓"; position:absolute; left:0; color:#10B981; font-weight:700; }
   .who-card .go { display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:#059669; }
+  .themes { padding:8px 24px 46px; }
+  .themes-title { font-size:24px; font-weight:800; text-align:center; color:#16241D; }
+  .themes-sub { text-align:center; color:#8A9A90; font-size:14px; margin:6px auto 26px; }
+  .theme-grid { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .theme-item { flex:1 1 200px; min-width:0; max-width:280px; position:relative; z-index:1; }
+  .theme-item:hover { z-index:10; }
+  .theme-item img { width:100%; height:auto; border-radius:12px; border:1px solid rgba(0,0,0,0.12); box-shadow:0 4px 16px rgba(0,0,0,0.10); display:block; transition:transform .25s ease, box-shadow .25s ease; cursor:zoom-in; }
+  .theme-item:hover img { transform:scale(3); box-shadow:0 24px 60px rgba(0,0,0,0.32); }
+  .theme-item .tname { text-align:center; font-size:13.5px; font-weight:700; color:#047857; margin-top:10px; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
   /* ===== 场景详情页 ===== */
@@ -163,7 +166,7 @@
           <p class="lead">Press a global hotkey anywhere, speak, and your words land where your cursor is.</p>
           <ul>
             <li>Chat and talk to AI faster — no more typing it all out</li>
-            <li>You care how your replies sound — pick a writing style, rewritten before it lands</li>
+            <li>You care how your replies sound — define your own tone, AI rewrites before it lands</li>
             <li>Speak one language, output another — translation straight into the text box</li>
           </ul>
           <span class="go">Explore →</span>
@@ -175,7 +178,7 @@
           <ul>
             <li>You want a human-sounding voice and refuse robotic text-to-speech</li>
             <li>Long focused reading tires your eyes — pair your eyes with your ears</li>
-            <li>Commute, chores, eyes busy — read with your ears in the fragments of the day</li>
+            <li>Chores, eyes busy — read with your ears in the fragments of the day</li>
           </ul>
           <span class="go">Explore →</span>
         </div>
@@ -194,23 +197,18 @@
     </div>
   </section>
 
-  <div class="scene-cards wrap">
-    <div class="scene-card" onclick="showView('voice')">
-      <div class="emoji">🎙️</div>
-      <h3>Voice Typing</h3>
-      <span class="go">Explore →</span>
+  <section class="themes">
+    <div class="wrap">
+      <h2 class="themes-title">Four built-in themes</h2>
+      <p class="themes-sub">Moss night, frost white, midnight blue, or ember — pick the mood that fits your workspace.</p>
+      <div class="theme-grid">
+        <div class="theme-item"><img src="assets/theme1.png" alt="Moss theme — voice input screen"><div class="tname">Moss Night</div></div>
+        <div class="theme-item"><img src="assets/theme2.png" alt="Frost theme — ebook reading screen"><div class="tname">Frost</div></div>
+        <div class="theme-item"><img src="assets/theme3.png" alt="Midnight theme — long-text TTS screen"><div class="tname">Midnight</div></div>
+        <div class="theme-item"><img src="assets/theme4.png" alt="Ember theme — settings screen"><div class="tname">Ember</div></div>
+      </div>
     </div>
-    <div class="scene-card" onclick="showView('ebook')">
-      <div class="emoji">📖</div>
-      <h3>Ebook Reading</h3>
-      <span class="go">Explore →</span>
-    </div>
-    <div class="scene-card" onclick="showView('tts')">
-      <div class="emoji">🎧</div>
-      <h3>Long-Text TTS</h3>
-      <span class="go">Explore →</span>
-    </div>
-  </div>
+  </section>
 
   <section class="section" id="download">
     <div class="wrap">
@@ -257,7 +255,7 @@
   <div class="page-head">
     <button class="back" onclick="showView('home')">← Back to Home</button>
     <h1>Voice Typing — talk instead of typing</h1>
-    <p class="lead">Press a global hotkey in any app, speak, and your words land exactly where your cursor is. Beyond plain dictation, FewType can rewrite your words in a chosen writing style and translate them into another language before they hit the screen.</p>
+    <p class="lead">Press a global hotkey in any app, speak, and your words land exactly where your cursor is. Beyond plain dictation, FewType can rewrite your words in a tone you define — with built-in style examples to start from — and translate them into another language before they hit the screen.</p>
   </div>
 
   <div class="feat">
@@ -278,8 +276,8 @@
 
   <div class="feat">
     <div class="txt">
-      <h3>✍️ Writing styles that reshape your words</h3>
-      <p>Pick a style — e.g. "Karwai Wong" turns an ordinary sentence into a cinematic monologue, "Formal" turns scattered notes into a numbered, professional document. Your voice, your words, your chosen tone.</p>
+      <h3>✍️ Your tone, fully custom</h3>
+      <p>Describe the voice you want, or let AI write the prompt for you — funny, deadpan, literary, whatever fits. "Karwai Wong" (a cinematic monologue) and "Formal" (numbered, professional) are built-in demos to show what's possible. The tone is yours, and it's applied before your words land.</p>
     </div>
     <div class="demo"><img src="assets/demo-style.gif" alt="FewType writing style demo"></div>
   </div>
@@ -287,7 +285,7 @@
   <div class="feat rev">
     <div class="txt">
       <h3>📄 Messy notes → clean documents</h3>
-      <p>Speak several things at once and the Formal style structures them into numbered points — a sloppy thought becomes a document-ready paragraph.</p>
+      <p>Speak several things at once and the built-in Formal style structures them into numbered points — a sloppy thought becomes a document-ready paragraph.</p>
     </div>
     <div class="demo"><img src="assets/demo-formal.gif" alt="FewType formal style demo"></div>
   </div>
@@ -301,13 +299,13 @@
         <div class="provider-tags">
           <span>Groq — fast, free tier, works worldwide</span>
           <span>Volcengine (火山引擎) — best for mainland China</span>
-          <span>SiliconFlow (硅基流动) — best for mainland China</span>
+          <span>SiliconFlow (硅基流动) — domestic, free tier</span>
         </div>
       </li>
       <li><b>Paste the key in Settings</b> — the app opens the provider dialog automatically the first time you press the hotkey.</li>
       <li><b>Press the hotkey and talk.</b> Dictation, translation and styles all work from that moment on.</li>
     </ol>
-    <div class="tip">💡 Translation and style features use an LLM key from the same provider — the settings dialog will point you to the exact field. No server setup, no configuration file to touch.</div>
+    <div class="tip">💡 Translation and style features use an LLM key from the same provider — the settings dialog will point you to the exact field. No server setup, no configuration file to touch.<br>⏱️ Free tiers &amp; rate limits: every provider caps requests per minute (Groq's limit is plenty for personal use), and Volcengine also offers a generous free quota.</div>
   </div>
 
   <div class="page-cta">
@@ -336,7 +334,7 @@
   <div class="feat rev">
     <div class="txt">
       <h3>👀 Give your eyes a break</h3>
-      <p>Long focused reading tires the eyes fast. Read with your ears during commutes, chores, or any moment your eyes are busy elsewhere.</p>
+      <p>Long focused reading tires the eyes fast. Read with your ears during chores, or any moment your eyes are busy elsewhere.</p>
     </div>
     <div class="demo"><img src="assets/demo-reading-still.png" alt="FewType ebook reader interface"></div>
   </div>
