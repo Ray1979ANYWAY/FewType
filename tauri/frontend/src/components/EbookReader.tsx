@@ -10,10 +10,12 @@ import { Card, CardTitle, Btn, StatusDot } from "./ui";
 import { useI18n } from "../i18n";
 
 export default function EbookReader() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [online, setOnline] = useState<boolean | null>(null);
 
-  const PLATFORMS = [t("ebook.platform_google"), t("ebook.platform_koodo")];
+  const PLATFORMS = lang === "zh-CN"
+    ? [t("ebook.platform_google"), t("ebook.platform_koodo"), t("ebook.platform_wechat")]
+    : [t("ebook.platform_google"), t("ebook.platform_koodo")];
 
   const GUIDE = [
     t("ebook.guide_1"),
@@ -54,13 +56,7 @@ export default function EbookReader() {
                   : t("ebook.load")}
             </span>
           </div>
-          <Btn
-            variant="ghost"
-            onClick={() => {
-              // Tauri 壳内打开 chrome://extensions（生产环境由 Tauri 处理）
-              window.open("chrome://extensions", "_blank");
-            }}
-          >
+          <Btn variant="ghost">
             <Puzzle size={13} />
             {t("ebook.btn")}
           </Btn>

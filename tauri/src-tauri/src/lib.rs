@@ -132,6 +132,38 @@ fn spawn_backend(app: &tauri::App) {
 /// 更新安装前结束后端 sidecar（前端在 download() 完成后、install() 之前调用）。
 /// NSIS 要覆盖 fewtype-backend.exe，进程仍存活会弹「无法打开要写入的文件」中止更新；
 /// 主进程 process::exit(0) 不会自动回收 sidecar，必须显式调用本命令。
+/// 在 Chrome 中打开 chrome://extensions/（Tauri shell 对 chrome:// scheme 支持不好，直接调系统）。
+#[tauri::command]
+fn open_chrome_extensions() {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        let candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            &format!(r"{}\Google\Chrome\Application\chrome.exe", std::env::var("LOCALAPPDATA").unwrap_or_default()),
+        ];
+        for p in &candidates {
+            if std::path::Path::new(p).exists() {
+                let _ = std::process::Command::new(p)
+                    .args(["--new-window", "chrome://extensions/"])
+                    .creation_flags(0x08000000)
+                    .spawn();
+                return;
+            }
+        }
+        // fallback：让系统默认浏览器处理
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", "", "chrome://extensions/"])
+            .creation_flags(0x08000000)
+            .spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("xdg-open").arg("chrome://extensions/").status();
+    }
+}
+
 #[tauri::command]
 fn kill_backend(app: AppHandle) {
     if let Some(state) = app.try_state::<BackendProcess>() {
@@ -220,7 +252,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         // 更新安装完成后重启应用（@tauri-apps/plugin-process 的 relaunch）
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![kill_backend])
+        .invoke_handler(tauri::generate_handler![kill_backend, open_chrome_extensions])
         .setup(|app| {
             spawn_backend(app);
             setup_tray(app)?;

@@ -216,7 +216,7 @@ export default function VoiceInput({
             <kbd className="rounded-lg border border-border bg-input px-2.5 py-1 text-[12.65px] font-bold text-accent2">
               {hotkeyText === "double_ctrl" ? t("voice.double_ctrl") : hotkeyText}
             </kbd>
-            <span className="text-[13.8px] text-mid">
+            <span className="text-[13.8px] text-mid whitespace-pre-line">
               {t("voice.hold_hint")}
             </span>
           </div>
@@ -268,7 +268,7 @@ export default function VoiceInput({
               updateConfig({ stt_custom_style: v }).catch(() => {});
             }}
             placeholder={t("voice.style_placeholder")}
-            options={styles.map((s) => ({ value: s.name, label: s.name }))}
+            options={styles.map((s) => ({ value: s.name, label: s.name === "Karwai Wong" ? t("voice.style_karwai") : s.name }))}
             disabled={mode !== "custom"}
           />
           <Btn onClick={onOpenStyles}>

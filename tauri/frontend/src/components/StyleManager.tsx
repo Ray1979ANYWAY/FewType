@@ -205,7 +205,7 @@ export default function StyleManager({
                       title={s.name || t("style.unnamed")}
                       className="flex-1 truncate text-left text-[13.8px] text-text hover:text-accent2"
                     >
-                      {s.name || t("style.unnamed")}
+                      {s.name === "Karwai Wong" ? t("voice.style_karwai") : s.name || t("style.unnamed")}
                     </button>
                   )}
                   <button

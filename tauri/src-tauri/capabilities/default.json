@@ -21,6 +21,14 @@
         "identifier": "shell:allow-execute",
         "allow": [{ "name": "binaries/fewtype-backend", "sidecar": true }]
       },
+      {
+        "identifier": "shell:allow-open",
+        "allow": [
+          { "url": "https://**" },
+          { "url": "http://**" },
+          { "url": "chrome://**" }
+        ]
+      },
       "updater:default",
       "process:default",
       "process:allow-restart"

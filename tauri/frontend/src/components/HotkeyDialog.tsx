@@ -176,7 +176,7 @@ export default function HotkeyDialog({
             />
             {t("hotkey.mode_double")}
           </label>
-          <p className="mt-1 pl-6 text-[12.65px] text-muted">{t("hotkey.mode_double_note")}</p>
+          <p className="mt-1 pl-6 text-[12.65px] text-muted whitespace-pre-line">{t("hotkey.mode_double_note")}</p>
         </div>
       </div>
 

@@ -1,0 +1,98 @@
+﻿tauri.cmd :         Info Looking up installed tauri packages to check mismatched versions...
+所在位置 行:4 字符: 1
++ & "frontend\node_modules\.bin\tauri.cmd" build 2>&1 | Out-File "D:\Do ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (        Info Lo...hed versions...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+     Running
+ beforeBuildCommand `npm --prefix D:/Documents/FewType/tauri/frontend run build`
+
+
+> fewtype-frontend@3.1.21 build
+> tsc -b && vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 1608 modules transformed.
+rendering chunks...
+[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin vite:reporter] 
+(!) D:/Documents/FewType/tauri/frontend/node_modules/@tauri-apps/api/dpi.js is dynamically imported by D:/Documents/Few
+Type/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/lib/window.ts but also statically imported by 
+D:/Documents/FewType/tauri/frontend/node_modules/@tauri-apps/api/webview.js, D:/Documents/FewType/tauri/frontend/node_m
+odules/@tauri-apps/api/window.js, D:/Documents/FewType/tauri/frontend/src/components/HudOverlay.tsx, dynamic import wil
+l not move module into another chunk.
+[39m
+
+[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin vite:reporter] 
+(!) D:/Documents/FewType/tauri/frontend/node_modules/@tauri-apps/api/window.js is dynamically imported by D:/Documents/
+FewType/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/fronten
+d/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/App.tsx, D:/Doc
+uments/FewType/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/App.tsx, D:/Documents/FewType/tauri/
+frontend/src/App.tsx, D:/Documents/FewType/tauri/frontend/src/lib/window.ts but also statically imported by D:/Document
+s/FewType/tauri/frontend/node_modules/@tauri-apps/api/webview.js, D:/Documents/FewType/tauri/frontend/node_modules/@tau
+ri-apps/api/webviewWindow.js, D:/Documents/FewType/tauri/frontend/src/components/HudOverlay.tsx, dynamic import will no
+t move module into another chunk.
+[39m
+
+computing gzip size...
+[2mdist/[22m[32mindex.html                        [39m[1m[2m  0.54 kB[22m[1m[22m[2m │ gzip:  0.33 kB[22m
+[2mdist/[22m[35massets/index-CxlsbY3M.css         [39m[1m[2m 38.74 kB[22m[1m[22m[2m │ gzip:  7.58 kB[22m
+[2mdist/[22m[36massets/index-GrJdNoWP.js          [39m[1m[2m  1.05 kB[22m[1m[22m[2m │ gzip:  0.49 kB[22m
+[2mdist/[22m[36massets/index-KaxE0Muc.js          [39m[1m[2m  2.20 kB[22m[1m[22m[2m │ gzip:  0.81 kB[22m
+[2mdist/[22m[36massets/webviewWindow-AWeQIndz.js  [39m[1m[2m  4.78 kB[22m[1m[22m[2m │ gzip:  1.41 kB[22m
+[2mdist/[22m[36massets/index-B6SiGsJY.js          [39m[1m[2m277.53 kB[22m[1m[22m[2m │ gzip: 87.01 kB[22m
+[32m✓ built in 3.85s[39m
+   Compiling
+ fewtype v3.1.21 (D:\Documents\FewType\tauri\src-tauri)
+
+warning
+: field `0` is never read
+  --> src\lib.rs:32:19
+   |
+32 | struct TrayHandle(TrayIcon);
+   |        ---------- ^^^^^^^^
+   |        |
+   |        field in this struct
+
+   
+|
+   
+= help
+: consider removing this field
+   
+= note
+: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+
+
+warning
+: linker stdout: 正在创建库 D:\Documents\FewType\tauri\src-tauri\target\release\deps\fewtype_lib.dll.lib 和对象 D:\Documents\Fe
+wType\tauri\src-tauri\target\release\deps\fewtype_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+
+warning
+: `fewtype` (lib) generated 2 warnings
+
+    Finished
+ `release` profile [optimized] target(s) in 1m 20s
+
+       Built
+ application at: D:\Documents\FewType\tauri\src-tauri\target\release\fewtype.exe
+
+        Info
+ Patching D:\Documents\FewType\tauri\src-tauri\target\release\fewtype.exe with bundle type information: nsis
+
+        Info
+ Target: x64
+
+     Running
+ makensis to produce D:\Documents\FewType\tauri\src-tauri\target\release\bundle\nsis\FewType_3.1.21_x64-setup.exe
+
+    Finished
+ 1 bundle at:
+        D:\Documents\FewType\tauri\src-tauri\target\release\bundle\nsis\FewType_3.1.21_x64-setup.exe
+
+

@@ -1,7 +1,7 @@
-﻿[package]
+[package]
 name = "fewtype"
-version = "3.1.23"
-description = "FewType 鐠囶參鐓舵径鍕倞楠炲啿褰?
+version = "3.1.24"
+description = "FewType 语音处理平台"
 edition = "2021"
 
 [build-dependencies]
