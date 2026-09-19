@@ -83,7 +83,8 @@
   .warn b { color:#16241D; }
   .note { color:#8A9A90; font-size:12.5px; margin-top:18px; text-align:center; }
   .who { padding:8px 24px 46px; }
-  .who-title { font-size:26px; font-weight:800; text-align:center; background:linear-gradient(90deg,#F59E0B 0%,#EA7A16 48%,#FBBF24 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.12)); }
+  .who-title { font-size:28px; font-weight:800; text-align:center; color:#16241D; }
+  .who-title .gold { background:linear-gradient(90deg,#F59E0B 0%,#EA7A16 48%,#FBBF24 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.12)); }
   .who-sub { text-align:center; color:#8A9A90; font-size:14px; max-width:620px; margin:6px auto 26px; }
   .who-cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
   .who-card { flex:1 1 280px; min-width:0; cursor:pointer; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:16px; padding:20px 22px; box-shadow:0 2px 10px rgba(0,0,0,0.04); transition:all .18s; text-align:left; }
@@ -179,7 +180,7 @@
 
   <section class="who">
     <div class="wrap">
-      <h2 class="who-title">Who is FewType for?</h2>
+      <h2 class="who-title">Who is <span class="gold">FewType</span> for?</h2>
       <p class="who-sub">Three scenarios, three kinds of people — you'll probably recognize yourself in at least one.</p>
       <div class="who-cards">
         <div class="who-card" onclick="showView('voice')" style="cursor:pointer;">
