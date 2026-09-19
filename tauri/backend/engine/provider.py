@@ -48,7 +48,7 @@ PROVIDERS: dict[str, PlatformDef] = {
         signup_url="https://console.groq.com/keys",
         default_asr="whisper-large-v3-turbo",
         default_llm="openai/gpt-oss-120b",
-        llm_pinned=("openai/gpt-oss-120b", "groq/compound", "qwen/qwen3.8-27b"),
+        llm_pinned=("openai/gpt-oss-120b", "qwen/qwen3.8-27b"),
         recommended=True,
         proxy_hint=True,
     ),
@@ -421,7 +421,11 @@ class Provider:
     ) -> str:
         """max_tokens：默认不传（让平台用模型默认输出上限）。Groq 免费档按
         OTPM（输出 token/分钟）预留容量，不传时按模型最大输出上限计算，一次请求
-        就超限（429 "Request too large for model"）——STT 等短输出场景应显式传小值。"""
+        就超限（429 "Request too large for model"）——STT 等短输出场景应显式传小值。
+        注意：不传 thinking 参数——所有模型保持平台默认思考模式。曾尝试对 deepseek
+        系传 thinking.type=disabled 提速，但发现 doubao-seed-evolving 等深度思考模型
+        在思考被禁用时会过度遵循同音纠错前缀的 "Do NOT rephrase" 强约束而返回原文，
+        针对性禁用难以覆盖未来新增模型，为稳定性一律放开。"""
         if not self.llm_key:
             raise ProviderError("未填写 LLM API Key（火山平台请在配置中填入方舟 Key）")
         payload = {

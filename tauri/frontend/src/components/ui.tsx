@@ -139,6 +139,8 @@ export function EditableSelect({
   title = "",
   editable = true,
   menuAlign = "left",
+  placement = "bottom",
+  placeholder = "",
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -149,6 +151,8 @@ export function EditableSelect({
   title?: string;
   editable?: boolean;
   menuAlign?: "left" | "right";
+  placement?: "top" | "bottom";
+  placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -183,6 +187,7 @@ export function EditableSelect({
         value={displayValue}
         disabled={disabled}
         title={title}
+        placeholder={placeholder}
         onChange={(e) => {
           // 非编辑模式（editable=false）忽略键盘输入，仅保留点击聚焦打开菜单
           if (editable) onChange(e.target.value);
@@ -204,7 +209,7 @@ export function EditableSelect({
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open ? (
-        <div className={`absolute top-full z-50 mt-1 min-w-full w-max max-h-44 ${menuAlign === "right" ? "right-0" : "left-0"} overflow-y-auto rounded-lg border border-border bg-card py-1 shadow-2xl`}>
+        <div className={`absolute z-50 ${placement === "top" ? "bottom-full mb-1" : "top-full mt-1"} min-w-full w-max max-h-64 ${menuAlign === "right" ? "right-0" : "left-0"} overflow-y-auto rounded-lg border border-border bg-card py-1 shadow-2xl`}>
           {options.map((o) => (
             <button
               key={o.value}

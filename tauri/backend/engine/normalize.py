@@ -29,6 +29,27 @@ _PERCENT_RE = re.compile(
 _FIXED_WORDS = ('十四五',)
 _FIXED_SUFFIX = ('而立', '不惑', '知天命', '花甲', '古稀', '耄耋')
 
+# 时间语境保护："X点YY分"（一点零七分 = 1:07）里"点"是时间分隔符，不是小数点。
+# 必须在 _PERCENT_RE 之后跑：避免把"百分之三点五"（3.5%）误当时间。
+# 边界：正常小数后紧跟"分"字（如评分"三点五分"=3.5分）会被按时间转换——
+# 但时间念法（三点零七分/三点四十一分）远多于评分场景，取舍为修时间。
+_TIME_CN_RE = re.compile(
+    r'([零〇一二三四五六七八九十百千万亿两]+)点'
+    r'([零〇一二三四五六七八九十百千万亿两]+)(?=分)'
+)
+
+
+def _fix_cn_time(m: re.Match) -> str:
+    """时间"X点YY分" → "X点YY"阿拉伯形式：小时按数词转，分钟含十百千用数词转（四十一→41），
+    否则逐位转并保留前导零（零七→07）。"""
+    h = format_big(cn2num(m.group(1)))
+    mm = m.group(2)
+    if any(u in mm for u in '十百千'):
+        s = format_big(cn2num(mm))
+    else:
+        s = ''.join(str(_CN_DIGITS[c]) for c in mm)
+    return f"{h}点{s}"
+
 
 def cn2num(cn: str) -> float:
     """中文数字串 → 数值（支持 十百千万亿 位权、点 小数、逐位念法）。"""
@@ -93,6 +114,9 @@ def _convert_cn_numbers(text: str) -> str:
     # 1) 百分之X → X%（允许单字：百分之百 → 100%）
     text = _PERCENT_RE.sub(
         lambda m: f"{format_big(cn2num(m.group(1)))}%", text)
+
+    # 1.5) 时间"X点YY分"先转（避免被第 2 步当小数误伤：一点零七分 → 1点07分）
+    text = _TIME_CN_RE.sub(_fix_cn_time, text)
 
     # 2) 普通数词（防误伤过滤）
     def _sub(m: re.Match) -> str:

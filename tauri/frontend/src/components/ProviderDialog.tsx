@@ -23,7 +23,7 @@ import {
   sanitizeApiKey,
   ProviderPayload,
 } from "../api";
-import { Modal, Select, ComboInput, Btn } from "./ui";
+import { Modal, Select, EditableSelect, Btn } from "./ui";
 import { useI18n } from "../i18n";
 
 interface PlatformDef {
@@ -45,7 +45,7 @@ const PLATFORMS: Record<string, PlatformDef> = {
     base_url: "https://api.groq.com/openai/v1",
     default_asr: "whisper-large-v3-turbo",
     default_llm: "openai/gpt-oss-120b",
-    llm_pinned: ["openai/gpt-oss-120b", "groq/compound", "qwen/qwen3.8-27b"],
+    llm_pinned: ["openai/gpt-oss-120b", "qwen/qwen3.8-27b"],
     needs_proxy: true,
     custom: false,
   },
@@ -188,6 +188,18 @@ export default function ProviderDialog({
         setPlatform(initFields.platform);
         setFields(initFields);
         applyPlatformDefaults(initFields.platform, initFields);
+        // 自动抓取模型列表填满下拉（有 key 才抓；失败静默——保持默认/pinned/历史选项，不打扰）
+        if (savedKeys.api_key || savedKeys.llm_key) {
+          autoFetchModels({
+            platform: initFields.platform,
+            api_key: savedKeys.api_key || undefined,
+            llm_key: savedKeys.llm_key || undefined,
+            asr_model: initFields.asr,
+            llm_model: initFields.llm,
+            base_url: initFields.url,
+            llm_base_url: initFields.llm_url,
+          }, initFields.platform);
+        }
       })
       .catch((e) => setMsg(t("provider.msg_load_failed", { msg: (e as Error).message })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -292,6 +304,23 @@ export default function ProviderDialog({
     base_url: fields.url || "",
     llm_base_url: fields.llm_url || "",
   });
+
+  // 自动抓取模型列表（打开面板时静默执行；失败不提示，保留默认/pinned/历史选项）
+  const autoFetchModels = async (payload: ProviderPayload, plat: string) => {
+    try {
+      const res = await providerModels(payload);
+      if (!res.ok) return;
+      if (plat === "volcengine") {
+        setAsrOptions(Array.from(new Set([payload.asr_model, ...(res.asr ?? VOLC_ASR_IDS)])));
+      } else {
+        setAsrOptions(Array.from(new Set([payload.asr_model, ...(res.asr ?? [])])));
+      }
+      const pinned = PLATFORMS[plat]?.llm_pinned ?? [];
+      setLlmOptions(Array.from(new Set([payload.llm_model, ...pinned, ...(res.llm ?? [])])));
+    } catch {
+      // 静默：抓不到就保持现有选项
+    }
+  };
 
   const handleFetch = async () => {
     setBusy(true);
@@ -469,11 +498,11 @@ export default function ProviderDialog({
         </div>
         <div>
           <label className={lblCls}>{t("provider.asr_model")}</label>
-          <ComboInput
+          <EditableSelect
             value={fields.asr}
             onChange={(v) => set("asr", v)}
             placeholder={t("provider.asr_model_placeholder")}
-            options={asrOptions}
+            options={Array.from(new Set([fields.asr, ...asrOptions])).map((o) => ({ value: o, label: o }))}
             className="w-full"
           />
         </div>
@@ -510,12 +539,13 @@ export default function ProviderDialog({
         ) : null}
         <div>
           <label className={lblCls}>{t("provider.llm_model")}</label>
-          <ComboInput
+          <EditableSelect
             value={fields.llm}
             onChange={(v) => set("llm", v)}
             placeholder={t("provider.llm_model_placeholder")}
-            options={llmOptions}
+            options={Array.from(new Set([fields.llm, ...llmOptions])).map((o) => ({ value: o, label: o }))}
             className="w-full"
+            placement="top"
           />
         </div>
       </div>

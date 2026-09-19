@@ -316,13 +316,16 @@ async def provider_test(req: ProviderRequest):
 
 @app.post("/api/provider/models")
 async def provider_models(req: ProviderRequest):
-    """抓取并分类模型列表（ASR / LLM）。火山 ASR 无列表接口，返回内置资源 ID。"""
+    """抓取并分类模型列表（ASR / LLM）。火山 ASR 无列表接口，返回内置资源 ID；
+    LLM 走 OpenAI 兼容 /models 抓全量（方舟同样支持，下拉需要完整模型列表）。"""
     try:
         from provider import VOLC_ASR_IDS
         prov = _provider_from_req(req)
         platform = (req.platform or (load_config().get("provider") or {}).get("platform", "groq"))
         if platform == "volcengine":
-            return {"ok": True, "asr": list(VOLC_ASR_IDS), "llm": []}
+            # 火山 ASR 用内置资源 ID；LLM 全量从 /models 抓取
+            _, llm_list = await asyncio.to_thread(prov.fetch_models_split)
+            return {"ok": True, "asr": list(VOLC_ASR_IDS), "llm": llm_list}
         asr_list, llm_list = await asyncio.to_thread(prov.fetch_models_split)
         return {"ok": True, "asr": asr_list, "llm": llm_list}
     except Exception as e:  # noqa: BLE001
