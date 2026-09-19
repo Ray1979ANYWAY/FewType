@@ -526,7 +526,7 @@ const dicts: Record<Lang, Record<string, string>> = {
     "voice.hint": "Press the hotkey in any text box and speak — it turns into text",
     "voice.no_mic": "Microphone required",
     "voice.no_mic_title": "No microphone detected. Plug one in and try again",
-    "voice.hold_hint": "Hold the second press to talk, release to send",
+    "voice.hold_hint": "Hold the second press to talk,\nrelease to send",
     "voice.online": "Service online",
     "voice.offline": "Service offline",
     "voice.restart": "Restart service",
