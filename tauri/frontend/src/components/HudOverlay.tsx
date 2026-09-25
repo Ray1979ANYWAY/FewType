@@ -209,6 +209,13 @@ export default function HudOverlay() {
     const win = winRef.current;
     if (!win) return;
     win.show().catch(() => {});
+    // 重新置顶：Windows 上 show/hide 循环或其它置顶程序抢 z-order 后，
+    // WS_EX_TOPMOST 可能被系统清掉，HUD 会被压在其它窗口下面。
+    // 必须 show 后立即重设，并延迟再设一次，确保 z-order 抢回来。
+    win.setAlwaysOnTop(true).catch(() => {});
+    setTimeout(() => {
+      win.setAlwaysOnTop(true).catch(() => {});
+    }, 120);
     // 窗口显示后重新贴底定位：创建时窗口 hidden，初始化 setPosition 可能被系统忽略，
     // 导致窗口停在默认居中位置（"面板没贴任务栏"的根因）
     const wa = waRef.current;
