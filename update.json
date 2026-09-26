@@ -1,11 +1,11 @@
 {
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakNQN3o3LzFZRGdRL3gzRGY3SHEwVXlrUWRUVHdxYU16Y0ZnRGswTGdWSkl5M0FXR2ExYzQ4czRZMGlDQXVnL21tekpkV042cm5vaFV5aWI3UWtWMUE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjQzMDU0CWZpbGU6RmV3VHlwZV8zLjEuMjBfeDY0LXNldHVwLmV4ZQpZVXRucUphNWFiVFMramVGM2Q1NU43L2lBRGFkWHBHb3pOU0hqWC9NVS9LSnRWQ2F5T1dSMTlHdHlkWFVKbXh3MGR4dzdRSzlXVEN6WTlQL1JRYTNCQT09Cg==",
-                                             "url":  "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.20/FewType_3.1.20_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakltSGxkQ0VVSXBRS1BRU1pJeVBmcDZsOFo2UmNEcjAzY2hlTzFQTWl5MlFqUEliZFpYNkttWjNXTVlrUWY0NktRVmVJOURXdGprVTZQNDJBNnpMZFFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNDU1OTY4CWZpbGU6RmV3VHlwZV8zLjEuMjVfeDY0LXNldHVwLmV4ZQpOOUMxUUh0M3V2MWtyUUt2NXpvYmNoQzVlVlNETTR2RUdEQ3RPU2hyNEZDUWRqRmNJbVAzeXk2TE9RZWVETi9NS0luMDJYaXRmRVZqSmZoL25aaGZDQT09Cg==",
+                                             "url":  "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.25/FewType_3.1.25_x64-setup.exe"
                                          }
                   },
-    "pub_date":  "2026-09-17T11:04:52Z",
-    "version":  "3.1.20",
-    "notes":  "FewType 3.1.20: same-language dictation skips LLM translation \u0026 confirmation panel; extension: zh-Hans/zh-Hant voice auto-match, 2.25x/2.5x playback speed, popup race fix."
+    "pub_date":  "2026-09-26T20:55:00Z",
+    "version":  "3.1.25",
+    "notes":  "FewType 3.1.25: fix HUD status capsule not appearing in packaged builds (tauri:// protocol strips #hash; HUD now routes via ?view=hud)."
 }

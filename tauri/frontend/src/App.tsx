@@ -245,7 +245,7 @@ export default function App() {
         const existing = await WebviewWindow.getByLabel("hud");
         if (existing || cancelled) return;
         await new WebviewWindow("hud", {
-          url: "/#hud",
+          url: "/?view=hud",
           title: "FewType HUD",
           width: 500,
           height: 64,
