@@ -256,6 +256,12 @@ pub fn run() {
         .setup(|app| {
             spawn_backend(app);
             setup_tray(app)?;
+            // 开机自启（自启快捷方式带 --silent）时静默驻留托盘，不弹主界面；
+            // 手动启动（无参数）则显示主窗口。托盘图标点击/菜单随时可唤出。
+            let silent = std::env::args().any(|a| a == "--silent");
+            if !silent {
+                show_main_window(app.handle());
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
