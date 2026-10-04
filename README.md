@@ -4,6 +4,8 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 # 🎙️ FewType — Voice Typing, Long-text TTS & Translation Desktop Assistant
 
+🌐 **Official Website: [fewtype.pages.dev](https://fewtype.pages.dev)**
+
 Voice typing (STT), ebook reading, long-text TTS and translation in one free Windows desktop assistant — rebuilt with Tauri. A companion browser extension adds high-quality TTS playback to web e-book readers (Google Play Books & Koodo Reader).
 
 ### ✨ Key Features
