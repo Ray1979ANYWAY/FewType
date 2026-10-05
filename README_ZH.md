@@ -4,7 +4,7 @@ Languages: [English](README.md) | [简体中文](README_ZH.md) | [繁體中文](
 
 # 🎙️ FewType — 语音打字、长文转语音与翻译桌面助手
 
-🌐 **官方网站：[fewtype.pages.dev](https://fewtype.pages.dev)**
+🌐 **官方网站：[项目官网](https://fewtype.pages.dev)**
 
 一个免费的 Windows 桌面助手，集语音打字（STT）、长文本转语音（TTS）、翻译与电子书朗读于一体——基于 Tauri 重构。配套浏览器扩展为网页电子书阅读器（Google Play Books 与 Koodo Reader）提供高质量 TTS 朗读。
 
