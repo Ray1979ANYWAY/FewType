@@ -130,6 +130,23 @@
   .theme-item:hover { transform:translateY(-6px); }
   .theme-item:hover img { box-shadow:0 16px 32px rgba(4,120,87,0.15), 0 4px 12px rgba(0,0,0,0.08); border-color:rgba(14,159,110,0.4); }
   .theme-item .tname { text-align:center; font-size:13.5px; font-weight:700; color:#047857; margin-top:10px; }
+  .quickfacts { padding:8px 24px 42px; }
+  .quickfacts h2 { font-size:15px; font-weight:800; text-align:center; color:#16241D; margin-bottom:18px; letter-spacing:-0.2px; }
+  .qf-grid { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .qf-item { flex:1 1 150px; min-width:0; max-width:230px; background:#FFFFFF; border:1px solid rgba(14,159,110,0.18); border-radius:12px; padding:14px 16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .qf-item .k { font-size:11px; font-weight:700; color:#8A9A90; text-transform:uppercase; letter-spacing:.6px; }
+  .qf-item .v { font-size:13.5px; font-weight:700; color:#16241D; margin-top:5px; line-height:1.45; }
+  .home-faq { padding:40px 24px 46px; }
+  .home-faq .wrap { max-width:820px; }
+  .home-faq h2 { font-size:24px; font-weight:800; text-align:center; color:#16241D; margin-bottom:20px; }
+  .faq-mini { background:#FFFFFF; border:1px solid rgba(14,159,110,0.16); border-radius:12px; margin-bottom:10px; overflow:hidden; box-shadow:0 1px 5px rgba(0,0,0,0.03); }
+  .faq-mini summary { cursor:pointer; padding:14px 18px; font-size:14.5px; font-weight:700; color:#16241D; list-style:none; display:flex; align-items:center; gap:10px; }
+  .faq-mini summary::-webkit-details-marker { display:none; }
+  .faq-mini summary::before { content:"Q"; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#10B981,#059669); color:#fff; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .faq-mini .a { padding:0 18px 14px 48px; color:#2E3D34; font-size:13.5px; line-height:1.7; }
+  .faq-more { text-align:center; margin-top:18px; font-size:14px; }
+  .faq-more a { color:#047857; font-weight:700; text-decoration:none; }
+  .faq-more a:hover { text-decoration:underline; }
   footer { border-top:1px solid rgba(0,0,0,0.06); padding:26px 24px; text-align:center; color:#8A9A90; font-size:13px; }
   footer a { color:#5E6E64; }
   .view { display:none; }
@@ -203,6 +220,19 @@
     </div>
   </section>
 
+  <section class="quickfacts">
+    <div class="wrap">
+      <h2>FewType 一览</h2>
+      <div class="qf-grid">
+        <div class="qf-item"><div class="k">价格</div><div class="v">免费 · 开源 (MIT)</div></div>
+        <div class="qf-item"><div class="k">平台</div><div class="v">Windows 10/11 x64</div></div>
+        <div class="qf-item"><div class="k">AI 密钥</div><div class="v">自带——Groq · 火山引擎 · 硅基流动</div></div>
+        <div class="qf-item"><div class="k">三大场景</div><div class="v">语音打字 · 电子书朗读 · 长文本转语音</div></div>
+        <div class="qf-item"><div class="k">隐私</div><div class="v">密钥与数据只留在本机</div></div>
+      </div>
+    </div>
+  </section>
+
   <section class="who">
     <div class="wrap">
       <h2 class="who-title"><span class="gold">FewType</span> 适合谁？</h2>
@@ -264,6 +294,17 @@
         </div>
       </div>
       <p class="note">全部版本：<a href="https://github.com/Ray1979ANYWAY/FewType/releases" style="color:#047857;">github.com/Ray1979ANYWAY/FewType/releases</a> · <a href="https://github.com/Ray1979ANYWAY/FewType/issues" style="color:#047857;">反馈问题</a> · 免费开源 (MIT)</p>
+    </div>
+  </section>
+
+  <section class="home-faq">
+    <div class="wrap">
+      <h2>常见问题速答</h2>
+      <details class="faq-mini"><summary>FewType 真的免费吗？</summary><div class="a">是的——免费且开源（MIT），无订阅、不捆绑 AI 密钥。你自己连接所选的 AI 服务，这正是应用保持免费的原因。</div></details>
+      <details class="faq-mini"><summary>开始使用需要准备什么？</summary><div class="a">Windows 10/11 x64 电脑，加一个内置服务商（Groq、火山引擎或硅基流动）的 API 密钥。内置指南从下载到第一次语音打字大约两分钟。</div></details>
+      <details class="faq-mini"><summary>说话时能翻译或改写吗？</summary><div class="a">可以。用一种语言说话，文字以另一种语言上屏；或套用完全自定义的文风——王家卫风格和规范记录是内置示例。全部在上屏前完成。</div></details>
+      <details class="faq-mini"><summary>能朗读哪些电子书？</summary><div class="a">Google Play 图书、Koodo Reader 和微信读书，通过浏览器扩展以自然神经语音朗读。</div></details>
+      <div class="faq-more"><a href="faq-zh.html">查看完整常见问题 →</a></div>
     </div>
   </section>
 
@@ -438,7 +479,7 @@
 </div>
 
 <footer>
-  FewType — 语音打字 · AI 文风 · 电子书朗读 · 长文本转语音，一个开源应用 · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="index.html">English</a>
+  FewType — 语音打字 · AI 文风 · 电子书朗读 · 长文本转语音，一个开源应用 · <a href="https://github.com/Ray1979ANYWAY/FewType" target="_blank" rel="noopener">GitHub</a> · <a href="faq-zh.html">常见问题</a> · <a href="index.html">English</a>
 </footer>
 
 <script>
