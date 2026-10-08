@@ -1,0 +1,24 @@
+name: Ping IndexNow on website deploy
+
+"on":
+  push:
+    branches:
+      - gh-pages
+
+jobs:
+  ping-indexnow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare Pages build
+        run: sleep 120
+
+      - name: Ping IndexNow (EN + ZH)
+        run: |
+          curl -sS -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d '{
+              "host": "fewtype.pages.dev",
+              "key": "9346fbd5a68844a9af42e393ee1c4ad8",
+              "keyLocation": "https://fewtype.pages.dev/9346fbd5a68844a9af42e393ee1c4ad8.txt",
+              "urlList": ["https://fewtype.pages.dev/", "https://fewtype.pages.dev/zh"]
+            }' -w "\nIndexNow HTTP %{http_code}\n"
