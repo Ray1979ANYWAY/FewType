@@ -20,5 +20,5 @@ jobs:
               "host": "fewtype.pages.dev",
               "key": "9346fbd5a68844a9af42e393ee1c4ad8",
               "keyLocation": "https://fewtype.pages.dev/9346fbd5a68844a9af42e393ee1c4ad8.txt",
-              "urlList": ["https://fewtype.pages.dev/", "https://fewtype.pages.dev/zh"]
+              "urlList": ["https://fewtype.pages.dev/", "https://fewtype.pages.dev/zh", "https://fewtype.pages.dev/faq.html", "https://fewtype.pages.dev/faq-zh.html"]
             }' -w "\nIndexNow HTTP %{http_code}\n"
