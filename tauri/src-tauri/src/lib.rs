@@ -96,7 +96,47 @@ fn dev_backend_command() -> (String, Vec<String>) {
     )
 }
 
-fn spawn_backend(app: &tauri::App) {
+/// 回收后端子进程句柄（PyInstaller onefile 需 taskkill /T 杀整棵进程树）
+fn kill_child(child: BackendChild) {
+    match child {
+        BackendChild::Std(mut c) => {
+            let _ = c.kill();
+            let _ = c.wait();
+        }
+        BackendChild::Sidecar(c) => {
+            let pid = c.pid();
+            let _ = std::process::Command::new("taskkill")
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .status();
+        }
+    }
+}
+
+/// 探测后端 5010 是否可连接（TCP 握手成功即认为 uvicorn 存活）
+fn backend_alive() -> bool {
+    use std::net::TcpStream;
+    TcpStream::connect_timeout(
+        &"127.0.0.1:5010".parse().unwrap(),
+        std::time::Duration::from_millis(1500),
+    )
+    .is_ok()
+}
+
+/// 拉起后端（dev=python / prod=sidecar）。已有存活后端则跳过；
+/// 残留句柄先回收再拉起。返回是否（重新）拉起成功。
+fn spawn_backend(app: &AppHandle) -> bool {
+    // 后端本就存活则不动（watchdog 探测失败才走到这里，双保险）
+    if backend_alive() {
+        return true;
+    }
+    // 回收旧的 BackendChild 句柄（进程可能已死）
+    if let Some(state) = app.try_state::<BackendProcess>() {
+        if let Ok(mut guard) = state.0.lock() {
+            if let Some(old) = guard.take() {
+                kill_child(old);
+            }
+        }
+    }
     let child = if tauri::is_dev() {
         // 开发：直接跑仓库里的 main.py
         let (prog, args) = dev_backend_command();
@@ -126,7 +166,33 @@ fn spawn_backend(app: &tauri::App) {
 
     if let Some(child) = child {
         app.manage(BackendProcess(Mutex::new(Some(child))));
+        eprintln!("[fewtype] 后端已拉起");
+        true
+    } else {
+        false
     }
+}
+
+/// 后端保活 watchdog：每 15 秒探测 5010，不可达且距上次拉起超过 30 秒
+/// （冷却防抖，避免后端启动中重复拉起）则自动重启 sidecar。
+/// 解决「静置/睡眠后后端进程死亡、扩展一直连不上、必须重启程序才恢复」的问题。
+fn start_backend_watchdog(app: AppHandle) {
+    std::thread::spawn(move || {
+        use std::time::{Duration, Instant};
+        let mut last_spawn = Instant::now() - Duration::from_secs(31);
+        loop {
+            std::thread::sleep(Duration::from_secs(15));
+            if backend_alive() {
+                continue;
+            }
+            if last_spawn.elapsed() < Duration::from_secs(30) {
+                continue; // 冷却：后端尚在启动/拉起中
+            }
+            eprintln!("[fewtype] watchdog: 5010 不可达，尝试重新拉起后端");
+            last_spawn = Instant::now();
+            spawn_backend(&app);
+        }
+    });
 }
 
 /// 更新安装前结束后端 sidecar（前端在 download() 完成后、install() 之前调用）。
@@ -169,21 +235,7 @@ fn kill_backend(app: AppHandle) {
     if let Some(state) = app.try_state::<BackendProcess>() {
         if let Ok(mut guard) = state.0.lock() {
             if let Some(child) = guard.take() {
-                match child {
-                    BackendChild::Std(mut c) => {
-                        let _ = c.kill();
-                        let _ = c.wait();
-                    }
-                    BackendChild::Sidecar(c) => {
-                        // PyInstaller onefile：sidecar 引导器会解压出真正的 Python 子进程，
-                        // kill() 只杀引导器、子进程会成孤儿继续跑（表现为"退出后热键仍能录音"）。
-                        // 这里用 taskkill /T 杀整棵进程树，并阻塞等待完成后再退出主程序。
-                        let pid = c.pid();
-                        let _ = std::process::Command::new("taskkill")
-                            .args(["/PID", &pid.to_string(), "/T", "/F"])
-                            .status();
-                    }
-                }
+                kill_child(child);
             }
         }
     }
@@ -254,7 +306,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![kill_backend, open_chrome_extensions])
         .setup(|app| {
-            spawn_backend(app);
+            spawn_backend(app.handle());
+            start_backend_watchdog(app.handle().clone());
             setup_tray(app)?;
             // 开机自启（自启快捷方式带 --silent）时静默驻留托盘，不弹主界面；
             // 手动启动（无参数）则显示主窗口。托盘图标点击/菜单随时可唤出。
