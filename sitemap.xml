@@ -18,19 +18,19 @@
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://fewtype.pages.dev/zh" />
   </url>
   <url>
-    <loc>https://fewtype.pages.dev/faq.html</loc>
+    <loc>https://fewtype.pages.dev/faq</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://fewtype.pages.dev/faq.html" />
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://fewtype.pages.dev/faq-zh.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://fewtype.pages.dev/faq" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://fewtype.pages.dev/faq-zh" />
   </url>
   <url>
-    <loc>https://fewtype.pages.dev/faq-zh.html</loc>
+    <loc>https://fewtype.pages.dev/faq-zh</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://fewtype.pages.dev/faq.html" />
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://fewtype.pages.dev/faq-zh.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://fewtype.pages.dev/faq" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://fewtype.pages.dev/faq-zh" />
   </url>
 </urlset>
