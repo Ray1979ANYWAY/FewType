@@ -2566,3 +2566,12 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 同赛道（voice-to-text）但平台相反：Linux 离线听写、Rust、1487 stars、无 Windows 版，不构成直接竞争。
 - 最大洞见：**Linux 版不自己监听键盘**——把热键交给合成器（系统层绑定 record start/stop），应用只响应命令；Windows 对应 RegisterHotKey，但独占冲突 → 折中走保活（见 09-19 条目）。
 - 其他可借鉴：上屏回退链（wtype→dotool→clipboard；我们目前 Ctrl+V 单通道，可加"焦点恢复失败→剪贴板兜底"）、录音提示音、Modifier Key Interference 排查文档（我们踩过的 Alt/焦点坑值得写成维护文档）。
+
+## 2026-10-12 edge-tts 全局 403：微软迁移合成端点（TTS 全线失效）
+
+- **症状**：所有 TTS 合成 WSServerHandshakeError: 403，错误逐字相同（TrustedClientToken + Sec-MS-GEC-Version=1-143.0.3650.75）。
+- **根因**：2026-10 起微软弃用旧合成端点 wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1，旧客户端一律 403；Edge 155 已迁至 wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1（旧 token 仍接受，改作 Ocp-Apim-Subscription-Key 参数）。音色清单接口 speech.platform.bing.com/voices/list 仍可用（勿一并换）。
+- **排查排除项**：网络通（HTTPS 400=TLS 可达）、系统时钟一致（GEC 签名时间窗）、edge-tts 已是 PyPI/GitHub 双端最新（7.2.8, 2026-03-22）、代理环境变量为空但 TUN 接管（fake-IP 198.18.0.x）。
+- **修复**：edge-tts 上游 PR #491（open，作者 jonata）改 constants.py WSS_URL + drm.py 日期解析（strptime 受 locale 影响，改 parsedate_to_datetime）。补丁已存 	auri/backend/patches/edge-tts-msedgeservices.patch，**改库后必须重跑 build_backend.py 重打包 sidecar**。
+- **社区信号**：10-10 有人报 #490，10-12 出 PR #491——遇到"全网同一错误"先查 upstream issues/PR，比排查本地快。
+- **踩坑**：dev 模式后端用源码 Python 跑（FEWTYPE_PYTHON 或默认 Python310），与打包环境同依赖；Python310 曾缺 fastapi 等整套依赖导致 dev 后端起不来。

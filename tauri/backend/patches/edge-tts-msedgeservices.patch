@@ -1,0 +1,58 @@
+diff --git a/edge_tts/constants.py b/edge_tts/constants.py
+--- a/edge_tts/constants.py
++++ b/edge_tts/constants.py
+@@ -3,7 +3,14 @@
+ BASE_URL = "speech.platform.bing.com/consumer/speech/synthesize/readaloud"
+ TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
+ 
+-WSS_URL = f"wss://{BASE_URL}/edge/v1?TrustedClientToken={TRUSTED_CLIENT_TOKEN}"
++# Since October 2026 the legacy host refuses speech synthesis with a 403.
++# Microsoft Edge 155 synthesizes through api.msedgeservices.com, which also
++# accepts the legacy token, given as Ocp-Apim-Subscription-Key. The voice
++# list is still served by the legacy host.
++WSS_URL = (
++    "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1"
++    f"?Ocp-Apim-Subscription-Key={TRUSTED_CLIENT_TOKEN}"
++)
+ VOICE_LIST = f"https://{BASE_URL}/voices/list?trustedclienttoken={TRUSTED_CLIENT_TOKEN}"
+ 
+ DEFAULT_VOICE = "en-US-EmmaMultilingualNeural"
+diff --git a/edge_tts/drm.py b/edge_tts/drm.py
+--- a/edge_tts/drm.py
++++ b/edge_tts/drm.py
+@@ -6,6 +6,7 @@
+ import secrets
+ from datetime import datetime as dt
+ from datetime import timezone as tz
++from email.utils import parsedate_to_datetime
+ from typing import Dict, Optional
+ 
+ import aiohttp
+@@ -56,6 +57,9 @@ def parse_rfc2616_date(date: str) -> Optional[float]:
+         Parses an RFC 2616 date string into a Unix timestamp.
+ 
+         This function parses an RFC 2616 date string into a Unix timestamp.
++        The day and month names are always English, so they are not read
++        with strptime, whose %a and %b follow the locale.
+ 
+         Args:
+             date (str): RFC 2616 date string to parse.
+@@ -64,13 +68,12 @@ def parse_rfc2616_date(date: str) -> Optional[float]:
+             Optional[float]: Unix timestamp of the parsed date string, or None if parsing failed.
+         """
+         try:
+-            return (
+-                dt.strptime(date, "%a, %d %b %Y %H:%M:%S %Z")
+-                .replace(tzinfo=tz.utc)
+-                .timestamp()
+-            )
+-        except ValueError:
++            parsed = parsedate_to_datetime(date)
++        except (TypeError, ValueError, IndexError):
+             return None
++        if parsed.tzinfo is None:
++            parsed = parsed.replace(tzinfo=tz.utc)
++        return parsed.timestamp()
+ 
+     @staticmethod
+     def handle_client_response_error(e: aiohttp.ClientResponseError) -> None:
