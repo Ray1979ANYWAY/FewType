@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.6"
+APP_VERSION = "2.0.7"
 APP_NAME = "FewType"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/FewType"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
@@ -2600,13 +2600,20 @@ def run_gui(test_hook=None):
         root.after(100, _restart_app)
 
     def _restart_app():
-        """重启当前程序（exe 或 py 模式均适用）。"""
+        """重启当前程序（exe 或 py 模式均适用）。
+
+        注意：PyInstaller 打包后 sys.executable 是 exe 路径，且 sys.argv[0]
+        同样被设置成 exe 路径——直接 [sys.executable] + sys.argv 会把 exe
+        路径重复拼进参数，导致递归启动、命令行堆叠多个 exe 路径。
+        因此只取 argv[1:] 的真实参数，并过滤掉误传入的 exe 路径。
+        """
         try:
             root.destroy()
         except Exception:
             pass
         import subprocess
-        subprocess.Popen([sys.executable] + sys.argv)
+        args = [a for a in sys.argv[1:] if not a.lower().endswith(".exe")]
+        subprocess.Popen([sys.executable] + args)
 
     auto_var = tk.BooleanVar(value=bool(cfg.get("autostart")))
 
@@ -5745,7 +5752,7 @@ def acquire_single_instance_mutex() -> bool:
 
 # ================================================================ 更新检查（方案 A：提醒 + 引导下载）
 def _version_key(v):
-    """'2.0.6' → (2,0,6)；非数字段按 0，用于版本比较。"""
+    """'2.0.7' → (2,0,7)；非数字段按 0，用于版本比较。"""
     parts = []
     for p in str(v).split("."):
         try:
