@@ -96,7 +96,7 @@ REQUIRED_PKGS = ["edge-tts", "flask", "flask-cors", "lameenc"]
 MIN_PY = (3, 10)
 
 KO_FI_URL = "https://ko-fi.com/rayhu"
-APP_VERSION = "2.0.8"
+APP_VERSION = "2.0.9"
 APP_NAME = "FewType"
 GITHUB_URL = "https://github.com/Ray1979ANYWAY/FewType"
 # Ko-fi 咖啡杯图标（浅蓝圆角底 + 白杯 + 橙心），20x20 PNG base64，
