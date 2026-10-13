@@ -1,11 +1,11 @@
 {
-    "platforms":  {
-                      "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakdoNGRlK3oxZ3BzNmN4MFllbklXb1VjTk1sY29DcTZKU1JoYmtNenJpbVRGejg4c291WWdHWXI2MDZUaTZ5Rno4Q0RIeWRJL2t4akxiQ2FyZmhOd2dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjQ1Mzc5CWZpbGU6RmV3VHlwZV8zLjEuMjZfeDY0LXNldHVwLmV4ZQpiU2hHeHErdjRMeVJXQ1pQTmNvSFJvT2MyUjFHWlhvRDUyYXBaOHE0WUNQanRLUlVSTU5kWGlMZ3puMlIvbEI1ZWRCUENBeFFheXE1aSsvQnMyOHNCQT09Cg==",
-                                             "url":  "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.26/FewType_3.1.26_x64-setup.exe"
-                                         }
-                  },
-    "notes":  "FewType 3.1.26: silent autostart keeps to tray (--silent), manual launch shows main window, tray icon brings it up.",
-    "pub_date":  "2026-09-29T01:30:48Z",
-    "version":  "3.1.26"
+  "version": "3.1.30",
+  "notes": "FewType 3.1.30: Play Books/Koodo list items now read aloud (extension 1.4.1); backend keepalive watchdog since 3.1.29.",
+  "pub_date": "2026-10-13T12:56:17+08:00",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakhRdVFIZjJNREJOUGZ6WFZrL01ZUGNsdDk3S1FQU205R2FUMWF5RWVRSnhHdGVTVmdJbTNvTDVJNytqeDdTSnJTdE1sNzRQc3BIZGVLODBrK2I2d3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxODY3Mzc3CWZpbGU6RmV3VHlwZV8zLjEuMzBfeDY0LXNldHVwLmV4ZQo3cUxJcmRjejZUNUl2azdVeWIwOG8vbUtYcktEVGlHWGQvRUxYdmNnNjBHb0k2d1hVNjdma3kzYUJnYVZjUUtoWjRBaUsycjRFbXNHd3pzOFZyR2FCdz09Cg==",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.30/FewType_3.1.30_x64-setup.exe"
+    }
+  }
 }
