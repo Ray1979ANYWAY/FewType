@@ -2631,7 +2631,14 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 
 ---
 
-## 2026-10-13 补记：PyInstaller onefile 孤儿进程（测试残留假象）
+## 2026-10-13 补记：update.json 漏维护导致"检查更新"失效一个多月
+
+- **症状**：用户 3.1.29 点"检查更新"永远提示无更新；3.1.30 发布后仍未推送。
+- **根因**：updater 端点指向仓库根 `update.json`（tauri.conf.json `plugins.updater.endpoints` → raw.githubusercontent.com/master/update.json），而该文件停在 **3.1.26**（version/signature/url 全是 3.1.26）——check() 拉到的版本比当前还低，判定无更新。3.1.27~3.1.29 三次发布全部漏跑此步骤。
+- **修复**：`keys\fewtype.key` 签名新 setup → 重写 update.json（repo 根 + dist）→ 上传 release 资产 → push master。签名命令：
+  `node tauri.js signer sign -f keys/fewtype.key <setup>`（需 TAURI_SIGNING_PRIVATE_KEY_PATH/PASSWORD 环境变量）。
+- **固化**：发布脚本 `scripts\release\updater_publish.py <版本>` 一条命令完成签名+写+传+push；HANDOFF 发布清单已把 update.json 列为强制步骤。
+- **验证方式**：`curl https://raw.githubusercontent.com/Ray1979ANYWAY/FewType/master/update.json` 的 version 必须等于新版本。
 
 - **现象**：测试 onefile 单 exe 时 Stop-Process 杀进程后，任务管理器仍见 Python 子进程存活、"退出后仍在记录"。
 - **根因**：onefile 模式 exe = 引导器 + 内嵌 Python 子进程；Stop-Process 只杀引导器，Python 子进程成**孤儿**继续运行——不是"退出后还记录"，是根本没退干净。

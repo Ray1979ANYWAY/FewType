@@ -42,14 +42,26 @@ FewType = **Windows 语音助手**（语音打字 STT / 电子书朗读 TTS / �
 
 ---
 
-## 3. 发布流程（版本 X.Y.Z）— checklist
+## 3. 发布流程（版本 X.Y.Z）— checklist（缺任何一步都不算发布完成）
 
-1. **版本号 5 处同步**：主界面左下角 / update.json / 前端 package / 后端 / 官网链接（硬编码，需手动更新）
+> **硬规矩：update.json 是发布流程的强制步骤，不是可选项。**
+> 历史教训（2026-10-13）：3.1.27 ~ 3.1.29 三次发布漏跑 update.json，文件停在 3.1.26 → 已装用户点"检查更新"永远说"无更新"，直到 3.1.30 修复。
+
+1. **版本号 6 处同步**（缺一不可）：
+   - 主界面左下角：`tauri/frontend/src/lib/version.ts`
+   - 前端 package：`tauri/frontend/package.json`
+   - Tauri 配置/构建：`tauri/src-tauri/tauri.conf.json`、`tauri/src-tauri/Cargo.toml`、`tauri/src-tauri/Cargo.lock`
+   - 官网链接（index.html / zh.html 各若干处，硬编码）
+   - **update.json（repo 根 + dist/）— 由发布脚本自动写**
+   - 扩展 `FewType-extension/manifest.json`（如有扩展改动，两条线都要）
 2. **前后端版本号必须一致**（历史多次出错，用户很在意）
-3. 打包：NSIS 安装版 + portable zip；签名（见 processing.md 记录的正确签名写法）
-4. GitHub Release 发布 + 上传资产 + 更新 update.json
-5. 官网 index.html/zh.html 下载链接指向最新 release
-6. push gh-pages → **IndexNow 自动 ping（GitHub Actions 已配好，无需手动）**
+3. 打包：NSIS 安装版 + portable zip（prep 脚本换 exe + 扩展）；TK 线另行 build_onedir + pack_tk_zip
+4. GitHub Release 创建 + 上传资产（setup / portable / TK zip）
+5. **【强制】签名 + update.json**：
+   `python scripts\release\updater_publish.py <版本号>`
+   （自动：签名 setup → 写 update.json 到 repo 根 + dist → 上传 release 资产 → commit + push master）
+   完成后必须 curl 验证远端 raw 的 version 已是新版本。
+6. 官网 index.html/zh.html 版本号与下载链接指向最新 release → push gh-pages → **IndexNow 自动 ping（GitHub Actions 已配好，无需手动）**
 7. **发布前让用户试用**（用户偏好：试用通过才发布）
 
 ---
