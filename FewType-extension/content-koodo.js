@@ -25,7 +25,8 @@
   }
 
   const IFRAME_SELECTOR = "iframe#kookit-iframe";
-  const SELECTOR = "p, h1, h2, h3, h4, h5, h6";
+  // li 必须纳入：Koodo 渲染的有序/无序列表项在 <li> 里，只认 <p> 会整条漏提取
+  const SELECTOR = "p, li, h1, h2, h3, h4, h5, h6";
 
   // DOM 结构诊断：输出当前 kookit-iframe 的数量 / id 和 iframe body 的文本概况。
   // 用于定位"高亮索引章节 ≠ 朗读/选中章节"的根因——可能是多 iframe（content 只
@@ -63,6 +64,28 @@
     const tag = el.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)) {
       result.push({ type: "heading", level: Number(tag[1]), text });
+      return true;
+    }
+
+    if (tag === "li") {
+      // 列表项：序号由浏览器 ::marker 伪元素渲染、不在 textContent 里，
+      // 手动补上，否则朗读时编号被跳过；书内自带序号则不重复加。
+      let prefix = "";
+      const parent = el.parentElement;
+      if (parent) {
+        const pt = parent.tagName.toLowerCase();
+        if (pt === "ol") {
+          const siblings = Array.from(parent.children).filter((c) => c.tagName.toLowerCase() === "li");
+          const idx = siblings.indexOf(el);
+          if (idx >= 0 && !/^\d+[\.、．]\s*/.test(text)) {
+            const start = parseInt(parent.getAttribute("start") || "1", 10);
+            prefix = String(start + idx) + ". ";
+          }
+        } else if (pt === "ul" && !/^[•·\-]\s*/.test(text)) {
+          prefix = "• ";
+        }
+      }
+      result.push({ type: "body", text: prefix + text });
       return true;
     }
 

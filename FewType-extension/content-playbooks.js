@@ -25,7 +25,9 @@
   // 不同书用的渲染引擎不一样（观察到至少两套：一套段落带 "scribe_body" 之类的 class，
   // 一套段落只有 "ocean-sliced-element" 属性、没有语义 class，标题用原生 <h1>~<h6>）。
   // 靠记 class 名字没法跨书复用，改成认标签本身：正文终归是 <p>，标题终归是 <h1>~<h6> 或整段加粗。
-  const SELECTOR = "p, h1, h2, h3, h4, h5, h6";
+  // li 必须纳入：Play Books 的书里有序列表（<ol><li>）的列表项正文被放在 <li> 里，
+  // 如果只认 <p>，整条列表会被漏提取（朗读时"1. 2. 3. 4."整段跳过）。
+  const SELECTOR = "p, li, h1, h2, h3, h4, h5, h6";
 
   // 中文/英文的句子和段落，几乎必然以这类"收尾符号"结束。如果一段提取出来的文字结尾不是
   // 这些符号，大概率是被硬切了（mergeSplitFragments 会把这类碎片合并），
@@ -47,6 +49,29 @@
     if (/^h[1-6]$/.test(tag)) {
       // 原生语义化标题标签（比如 <h3>第1节</h3>）
       result.push({ type: "heading", level: Number(tag[1]), text });
+      return;
+    }
+
+    if (tag === "li") {
+      // 有序/无序列表项：Play Books 渲染列表时序号由浏览器 ::marker 伪元素生成，
+      // DOM 的 textContent 里拿不到"1."，需要手动补上，否则朗读时编号会被跳过。
+      // 书内文本如果已经自带"1. "（个别书直接把序号写进内容），就不重复加。
+      let prefix = "";
+      const parent = el.parentElement;
+      if (parent) {
+        const pt = parent.tagName.toLowerCase();
+        if (pt === "ol") {
+          const siblings = Array.from(parent.children).filter((c) => c.tagName.toLowerCase() === "li");
+          const idx = siblings.indexOf(el);
+          if (idx >= 0 && !/^\d+[\.、．]\s*/.test(text)) {
+            const start = parseInt(parent.getAttribute("start") || "1", 10);
+            prefix = String(start + idx) + ". ";
+          }
+        } else if (pt === "ul" && !/^[•·\-]\s*/.test(text)) {
+          prefix = "• ";
+        }
+      }
+      result.push({ type: "body", text: prefix + text });
       return;
     }
 
