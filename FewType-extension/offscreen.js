@@ -53,10 +53,15 @@ async function fetchChunk(text, voice) {
   if (!base) throw new Error("本地桥接服务未启动");
   const controller = new AbortController();
   activeAbortControllers.push(controller);
-  // 超时用 abort(reason) 传一个普通 Error：这样 fetch reject 的是这个 Error 而不是
-  // AbortError，fetchChunkWithRetry 会把它当成普通失败走重试；如果直接 abort() 无参
-  // 数，fetch reject 成 AbortError，会被当作"主动取消"直接放弃，不重试。
-  const timeout = setTimeout(() => controller.abort(new Error("synthesize timeout")), FETCH_TIMEOUT_MS);
+  // 超时用 abort() 无参（所有 Chrome 都可靠触发 fetch reject）；
+  // 用 timedOut 标志区分"超时"与"主动取消（abortAllPending）"：
+  // 超时按普通失败走重试，主动取消不重试。
+  // 注意：abort(reason) 带参在部分 Chrome 版本不会让 fetch reject，造成永久挂起。
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, FETCH_TIMEOUT_MS);
   return fetch(base + "/speak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -73,6 +78,11 @@ async function fetchChunk(text, voice) {
     })
     .catch((e) => {
       clearTimeout(timeout);
+      if (e && e.name === "AbortError" && timedOut) {
+        const err = new Error("synthesize timeout");
+        err.name = "TimeoutError";
+        throw err;
+      }
       throw e;
     });
 }
