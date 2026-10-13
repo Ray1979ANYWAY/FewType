@@ -1,11 +1,11 @@
 {
-  "version": "3.1.30",
-  "notes": "FewType 3.1.30: Play Books/Koodo list items now read aloud (extension 1.4.1); backend keepalive watchdog since 3.1.29.",
-  "pub_date": "2026-10-13T12:56:17+08:00",
+  "version": "3.1.31",
+  "notes": "FewType 3.1.31: chunking keeps thousands separators (58,348) intact for all ebook platforms; extension 1.4.2.",
+  "pub_date": "2026-10-13T20:50:28+08:00",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvakhRdVFIZjJNREJOUGZ6WFZrL01ZUGNsdDk3S1FQU205R2FUMWF5RWVRSnhHdGVTVmdJbTNvTDVJNytqeDdTSnJTdE1sNzRQc3BIZGVLODBrK2I2d3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxODY3Mzc3CWZpbGU6RmV3VHlwZV8zLjEuMzBfeDY0LXNldHVwLmV4ZQo3cUxJcmRjejZUNUl2azdVeWIwOG8vbUtYcktEVGlHWGQvRUxYdmNnNjBHb0k2d1hVNjdma3kzYUJnYVZjUUtoWjRBaUsycjRFbXNHd3pzOFZyR2FCdz09Cg==",
-      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.30/FewType_3.1.30_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRai9nZUhWVzZvak9QemRLV2dmbk1sQUxyTk1kQ3hzYVJaMVpsUStRdGt0Y01HOXcvREhmalo4V2F4em5Wd2lBZUw1b1RBL0xxTXlESWFzRnU4bVpBaHE1SUdUWE1ZcmdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxODk1ODI4CWZpbGU6RmV3VHlwZV8zLjEuMzFfeDY0LXNldHVwLmV4ZQpTQUdoTGFDZi9LU3lyTUlTbEpSbCtTV3Y0R1hxUHpyQWhxMlRlbzVBL0FEWVk0TkpXK3pSVXl4cnZJYlhwWnh1bStCWTIxRTVFb2xuVW5HWDhVMkFEdz09Cg==",
+      "url": "https://github.com/Ray1979ANYWAY/FewType/releases/download/v3.1.31/FewType_3.1.31_x64-setup.exe"
     }
   }
 }
