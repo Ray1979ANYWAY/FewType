@@ -2575,3 +2575,64 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - **修复**：edge-tts 上游 PR #491（open，作者 jonata）改 constants.py WSS_URL + drm.py 日期解析（strptime 受 locale 影响，改 parsedate_to_datetime）。补丁已存 	auri/backend/patches/edge-tts-msedgeservices.patch，**改库后必须重跑 build_backend.py 重打包 sidecar**。
 - **社区信号**：10-10 有人报 #490，10-12 出 PR #491——遇到"全网同一错误"先查 upstream issues/PR，比排查本地快。
 - **踩坑**：dev 模式后端用源码 Python 跑（FEWTYPE_PYTHON 或默认 Python310），与打包环境同依赖；Python310 曾缺 fastapi 等整套依赖导致 dev 后端起不来。
+
+---
+
+## 2026-10-13 双线发布 v3.1.30 / v2.0.8：列表项(li)跳过修复 + 扩展 1.4.1 双线同步
+
+### 背景
+
+用户反馈 Play Books 朗读时书中有序列表（"1. 中美洲世界 / 2. 安地斯世界 / 3. 澳洲世界 / 4. 大洋洲世界"）被**整条跳过**不朗读。
+
+### 根因（两个层面叠加）
+
+1. `content-playbooks.js` / `content-koodo.js` 的 `SELECTOR = "p, h1..h6"` **不含 `li`** —— `<ol><li>` 列表项根本没被提取。
+2. 即使提取，浏览器渲染的列表序号由 CSS `::marker` 伪元素生成，DOM `textContent` 里拿不到 "1."——需手动补序号。
+
+### 修改（扩展 1.4.1）
+
+- 两文件 `SELECTOR` 改为 `"p, li, h1..h6"`；`pushParagraph` 增加 `li` 分支：
+  - `<ol>` 按 `start` 属性 + 同级 index 补 `"N. "`；`<ul>` 补 `"• "`；
+  - 书内文本已自带 `^\d+[.、．]` 或 `^[•·-]` 序号则不重复加（防双序号）。
+- manifest.json 1.4.0 → 1.4.1。
+
+### 双线同步（扩展共享一份）
+
+- 两边扩展文件清单经哈希比对**完全一致**；6 个内容不同文件里，`content-playbooks/koodo.js` 是本次修复，其余 4 个（bridge-url/offscreen/popup）Tauri 版更新且 bridge-url 为 5010→5005 双向自适应，**对 TK 完全适用** → 整份拷贝替换 TK 扩展即可，无需 TK 特化。
+- Tauri 主程序 3.1.29→3.1.30（5 处版本文件 + Cargo.lock）；TK 主程序 `launcher.py` APP_VERSION 2.0.7→2.0.8。
+- 产物：Tauri setup + portable（扩展 1.4.1 已内置）、TK `FewType-2.0.8-tk-win64.zip`（32.4MB，扁平结构）。官网只同步 portable（TK 版不加官网链接，用户多次明确）。
+
+### 验证
+
+- 扩展两文件 `node --check` 通过；zip 内 manifest 均确认 1.4.1；双 release（v3.1.30 / v2.0.8）资产上传成功；三个分支（master / tkinter-legacy / gh-pages）全部 push。
+
+### 残留风险
+
+- `::marker` 序号补全依赖"书内文本不自带序号"的启发式判断；若某书在 li 文本前自带其他前缀（如章节编号），可能双序号——待真实书库反馈。
+- TK 线 rcedit 图标步骤因 `tools/fix_exe_icon.py` 缺失只告警跳过，`--icon` 参数已生效，图标无实质影响。
+
+---
+
+## 2026-10-13 补记：3.1.29 后端保活 watchdog（静置/睡眠后断连）
+
+- **症状**：程序运行中静置/睡眠一段时间后，扩展弹 "Can't reach the local VoxEcho bridge"；重启程序即恢复。
+- **根因**：程序启动时只在 setup 阶段 spawn 一次 sidecar 后端，**此后无任何保活**；睡眠/系统休眠可能使 sidecar 进程被杀或假死。
+- **修复（3.1.29）**：lib.rs 加后端保活 watchdog——每 15~30 秒探测 `127.0.0.1:5010/health`，发现后端死了自动重新拉起 sidecar，断连窗口控制在几十秒内；重启日志记录死因。
+- **残留**：睡眠唤醒瞬间（几十秒窗口）仍可能短暂断连；watchdog 只能治"死了重启"，不能治"假死未死"。
+
+---
+
+## 2026-10-13 补记：3.1.27 打包缺 fastapi → sidecar 体积异常（Failed to fetch 根因）
+
+- **症状**：3.1.27 安装版启动即报 "Failed to fetch"，本地后端起不来。
+- **根因**：`build_backend.py` 的 PyInstaller `--hidden-import` 清单**漏了 fastapi**（及连带依赖），sidecar 产物只有 ~11.1MB（正常 ~25.7MB）；打包时没报错，运行才暴露。
+- **修改（3.1.28 起）**：hidden-import 补全 fastapi/uvicorn 等整套依赖，重打包 sidecar 至正常体积。
+- **教训**：**PyInstaller sidecar 打包后必须核对产物体积**（体积明显偏小 = 缺依赖的高概率信号），且打包机与 dev 机必须同一依赖环境（见 10-12 dev 依赖条目）。
+
+---
+
+## 2026-10-13 补记：PyInstaller onefile 孤儿进程（测试残留假象）
+
+- **现象**：测试 onefile 单 exe 时 Stop-Process 杀进程后，任务管理器仍见 Python 子进程存活、"退出后仍在记录"。
+- **根因**：onefile 模式 exe = 引导器 + 内嵌 Python 子进程；Stop-Process 只杀引导器，Python 子进程成**孤儿**继续运行——不是"退出后还记录"，是根本没退干净。
+- **对策**：程序退出时主动自杀子进程链（或统一走 onedir 模式）；排查"进程没退"类问题时先区分引导器/子进程，别把孤儿进程当程序行为。
