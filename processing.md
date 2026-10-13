@@ -2538,3 +2538,12 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - 坑记录：主目录改名时同盘 Move-Item 逐项移动可绕过根目录目录句柄锁；移动后必须修 .git/config core.worktree 与主 worktree 指针（见 Tauri 主线记录）。
 - 历史发布产物（do_release*.py / gen_release.py / release_payload.json）不追溯改名，仍含 VoxEcho 字样，下次发版前更新文案。
 - 2026-09-16 追加：TK worktree 目录同步更名 VoxEcho-tk -> FewType-tk（含主 .git/worktrees 元数据、两端指针文件）；do_release.py / gen_release.py 的 release_payload 路径同步更新。
+
+---
+
+## 2026-10-13 v2.0.8：扩展双线同步至 1.4.1（列表项不朗读修复）
+
+- 扩展整份拷贝自 Tauri 主线（文件清单哈希比对一致；bridge-url 双向自适应 5010/5005，对 TK 适用），manifest 1.4.0 -> 1.4.1。
+- 修复内容：Play Books / Koodo 提取器 SELECTOR 纳入 `li`，ol 补 `N. `、ul 补 `• ` 序号（书内自带不重复加）——详见 Tauri 主线 processing.md 2026-10-13 条目。
+- APP_VERSION 2.0.7 -> 2.0.8（launcher.py）。打包产物 FewType-2.0.8-tk-win64.zip（32.4MB，扁平结构）。
+- 发布 v2.0.8 release（保留 tag 策略同前；Release 页只留最新 + 2.0 线）。
