@@ -73,6 +73,10 @@ export function chunkTextByWords(text) {
           i++; // 小数点不算分隔符
           continue;
         }
+        if (chars[i] === "," && isAsciiDigit(chars[i + 1])) {
+          i++; // 数字之间的半角逗号（千位分隔符，如 58,348）不算标点，并入数字串
+          continue;
+        }
         break;
       }
       unitsSinceStart++;
