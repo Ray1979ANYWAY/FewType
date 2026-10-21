@@ -377,7 +377,8 @@ function pausePlayback() {
 }
 
 function resumePlayback() {
-  player.play();
+  // play() 可能被紧接着的 pause()/load()（停止/重开竞态）中断，AbortError 属预期，吞掉避免未捕获拒绝
+  player.play().catch(() => {});
 }
 
 function setRate(rate) {

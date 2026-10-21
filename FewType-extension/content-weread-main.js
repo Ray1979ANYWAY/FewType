@@ -350,6 +350,41 @@
       window.postMessage({ source: SOURCE, type: "debug-info", result: { sortDebug: debugSort } }, "*");
     } catch (e) {}
 
+    // ===== 剔除小字号脚注号：仅 1~2 位孤立数字串；3 位及以上长数字串整体保留 =====
+    // 只剔除 1~2 位、且整串字号 ≤ 正文基准(bodySizeForTitle)85% 的孤立阿拉伯数字串；
+    // 3 位及以上长数字串(年份/金额/编号)即便用小一号字渲染也整体保留，避免被拆碎误删。
+    // 按"小字号/正文字号"档位切换断串，避免脚注号与紧邻的正文数字并成一串被整体保留。
+    // 方括号非数字，保留不删。源头过滤 charIndex，标题检测/fullText/高亮同源，索引一致。
+    const FN_SMALL_RATIO = 0.85;
+    if (bodySizeForTitle > 0) {
+      const keep = [];
+      let run = [];
+      let runSmall = false;
+      const flushRun = function () {
+        if (run.length === 0) return;
+        const isShort = run.length <= 2;
+        if (!(isShort && runSmall)) {
+          for (let k = 0; k < run.length; k++) keep.push(run[k]);
+        }
+        run = [];
+      };
+      for (let i = 0; i < charIndex.length; i++) {
+        const c = charIndex[i];
+        const isDigit = !c.isVirtual && c.canvasIdx !== -1 && /^\d$/.test(c.ch);
+        if (isDigit) {
+          const small = c.size <= bodySizeForTitle * FN_SMALL_RATIO;
+          if (run.length > 0 && runSmall !== small) flushRun();
+          runSmall = small;
+          run.push(c);
+        } else {
+          flushRun();
+          keep.push(c);
+        }
+      }
+      flushRun();
+      charIndex = keep;
+    }
+
     // 按行检测标题：如果某行字体明显比下一行大（>20%），视为标题行，在末尾插入句号，
     // 使 chunking 在标题后分段，朗读时有停顿。在 charIndex 里插入虚拟字符保持索引一致。
     const charIndexWithTitles = [];
