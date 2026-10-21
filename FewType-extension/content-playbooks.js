@@ -34,11 +34,32 @@
   // 或者是口号式短段落（pushParagraph 里识别为 heading）。
   const TERMINAL_PUNCTUATION = /[。！？…—」』）)\]"'".!?;:''"]$/;
 
+  // 脚注锚剔除：段落里的脚注号（纯数字 1~3 位或 [n]）不朗读，避免和下一段开头数字粘连
+  // （"1" + "5美元" → "15美元"）。判定规则统一在共享 footnote.js：内容门槛 +
+  // sub/sup 标签 / va 偏移 / 小字号≤85% 三选一。
+  function stripSmallSuperscriptDigits(el) {
+    const skip = window.__fewtypeFn.collectAnchors(el, window);
+    if (skip.size === 0) return el.textContent;
+    const out = [];
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walk.nextNode())) {
+      let anc = node.parentElement;
+      let drop = false;
+      while (anc && anc !== el) {
+        if (skip.has(anc)) { drop = true; break; }
+        anc = anc.parentElement;
+      }
+      if (!drop) out.push(node.textContent);
+    }
+    return out.join("");
+  }
+
   function pushParagraph(result, seen, el) {
     if (seen.has(el)) return;
     seen.add(el);
 
-    const text = el.textContent.replace(/\s+/g, " ").trim();
+    const text = stripSmallSuperscriptDigits(el).replace(/\s+/g, " ").trim();
     if (!text) return;
     // 按内容过滤"分页延续箭头"，不依赖具体 class 名字（scribe_custom-N 这种编号是每本书动态分配的，
     // 换书之后同一个编号可能对应完全不同的样式，写死排除某个 class 会有把正文误删的风险）。

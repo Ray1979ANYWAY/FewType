@@ -54,11 +54,39 @@
   const TERMINAL_PUNCTUATION = /[。！？…—」』）)\]"'".!?;:''"]$/;
   const SHORT_LINE_MAX = 20;
 
+  // 脚注角标收集：判定规则统一在共享 footnote.js（内容门槛 + 标签/偏移/小字号三选一）。
+  function collectFootnoteAnchors(el) {
+    const win = el.ownerDocument.defaultView;
+    return window.__fewtypeFn.collectAnchors(el, win);
+  }
+
+  function nodeInsideSkip(tn, skip, root) {
+    let anc = tn.parentElement;
+    while (anc && anc !== root) {
+      if (skip.has(anc)) return true;
+      anc = anc.parentElement;
+    }
+    return false;
+  }
+
+  function stripFootnoteAnchorText(el) {
+    const skip = collectFootnoteAnchors(el);
+    if (skip.size === 0) return el.textContent;
+    const out = [];
+    const walker = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (nodeInsideSkip(node, skip, el)) continue;
+      out.push(node.textContent);
+    }
+    return out.join("");
+  }
+
   function pushParagraph(result, seen, el) {
     if (seen.has(el)) return false;
     seen.add(el);
 
-    const text = el.textContent.replace(/\s+/g, " ").trim();
+    const text = stripFootnoteAnchorText(el).replace(/\s+/g, " ").trim();
     if (!text) return false;
 
     const tag = el.tagName.toLowerCase();
@@ -394,10 +422,14 @@
   // 归一化过程中产生的空格映射到"它对应的原始空白字符位置"（而不是前一字符），
   // 这样按 map 重建 Range 时空格能被正确覆盖，不会在高亮区域内缺漏空格。
   function normalizeElementText(doc, el) {
+    const skip = collectFootnoteAnchors(el);
     const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
     const nodes = [];
     let node;
-    while ((node = walker.nextNode())) nodes.push(node);
+    while ((node = walker.nextNode())) {
+      if (nodeInsideSkip(node, skip, el)) continue;
+      nodes.push(node);
+    }
     let norm = "";
     const map = [];
     let pendingSpace = false;
