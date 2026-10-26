@@ -34,6 +34,11 @@ const MAX_CONSECUTIVE_FAILURES = 5;
 const FETCH_TIMEOUT_MS = 30000;
 let consecutiveFailures = 0;
 
+function hasSpeakableContent(text) {
+  if (!text || typeof text !== "string") return false;
+  return /\p{L}|\p{N}/u.test(text);
+}
+
 function abortAllPending() {
   activeAbortControllers.forEach((c) => c.abort());
   activeAbortControllers = [];
@@ -48,6 +53,9 @@ function ensureBridgeModule() {
 }
 
 async function fetchChunk(text, voice) {
+  if (typeof text === "string" && !hasSpeakableContent(text)) {
+    throw new Error("文本无任何可读字符");
+  }
   const { voxResolveBridgeUrl } = await ensureBridgeModule();
   const base = await voxResolveBridgeUrl();
   if (!base) throw new Error("本地桥接服务未启动");
@@ -113,8 +121,9 @@ function ensurePrefetched() {
   const start = currentIndex + 1;
   const end = Math.min(currentIndex + PREFETCH_WINDOW, chunks.length - 1);
   for (let i = start; i <= end; i++) {
-    // pause 对象不需要预取（不调用 TTS 合成）
+    // pause 对象和纯符号无发音内容不需要预取（不调用 TTS 合成）
     if (typeof chunks[i] === "object" && chunks[i] && chunks[i].type === "pause") continue;
+    if (typeof chunks[i] === "string" && !hasSpeakableContent(chunks[i])) continue;
     if (!pending.has(i)) {
       pending.set(
         i,
@@ -200,6 +209,16 @@ async function doAdvanceAndPlay(mySession) {
     if (currentIndex === 0) {
       chrome.runtime.sendMessage({ type: "AUDIO_STARTED" });
     }
+    ensurePrefetched();
+    advanceAndPlay(sessionId);
+    return;
+  }
+
+  // 纯符号无发音内容（如遗留的装饰符号 ◎、***、—— 等）：不调用 TTS，直接跳过并前进
+  if (typeof nextChunk === "string" && !hasSpeakableContent(nextChunk)) {
+    diagLog(`chunk[${nextIndex}] 为纯符号无发音内容，跳过 TTS 直接推进: ${nextChunk}`);
+    currentIndex = nextIndex;
+    consecutiveFailures = 0;
     ensurePrefetched();
     advanceAndPlay(sessionId);
     return;

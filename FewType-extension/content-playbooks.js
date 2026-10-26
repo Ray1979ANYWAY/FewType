@@ -22,6 +22,46 @@
     safeSendMessage({ type: "DIAG_LOG", source: "content", message, data });
   }
 
+  // 子 frame 视口相交判定：Play Books 会在 DOM 里长期保留历史章节与预加载章节的 iframe。
+  // 这些 iframe 虽然存在，但在顶层窗口中处于不可见状态（display:none/opacity:0/滑出视口）。
+  // 必须通过 IntersectionObserver 确认其相交比例，非当前可见的 iframe 绝不参与提取、高亮或翻页响应！
+  let isFrameIntersecting = true;
+
+  if (window.top !== window) {
+    isFrameIntersecting = false; // 子 frame 初始待定，由 IntersectionObserver 确认真实可见性
+    try {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const was = isFrameIntersecting;
+            isFrameIntersecting = entry.isIntersecting && entry.intersectionRatio > 0.01;
+            diagLog("iframe 视口相交状态更新", {
+              isIntersecting: entry.isIntersecting,
+              ratio: Number(entry.intersectionRatio.toFixed(3)),
+              visible: isFrameIntersecting,
+            });
+            if (!was && isFrameIntersecting) {
+              reportIfChanged();
+            }
+          }
+        },
+        { threshold: [0, 0.01, 0.1] }
+      );
+      io.observe(document.documentElement);
+    } catch (e) {
+      isFrameIntersecting = true;
+    }
+  }
+
+  function isFrameCurrentlyVisible() {
+    if (window.top === window) return true;
+    if (!isFrameIntersecting) return false;
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    const h = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (w < 50 || h < 50) return false;
+    return true;
+  }
+
   // 不同书用的渲染引擎不一样（观察到至少两套：一套段落带 "scribe_body" 之类的 class，
   // 一套段落只有 "ocean-sliced-element" 属性、没有语义 class，标题用原生 <h1>~<h6>）。
   // 靠记 class 名字没法跨书复用，改成认标签本身：正文终归是 <p>，标题终归是 <h1>~<h6> 或整段加粗。
@@ -33,6 +73,7 @@
   // 这些符号，大概率是被硬切了（mergeSplitFragments 会把这类碎片合并），
   // 或者是口号式短段落（pushParagraph 里识别为 heading）。
   const TERMINAL_PUNCTUATION = /[。！？…—」』）)\]"'".!?;:''"]$/;
+  const SPEAKABLE_RE = /\p{L}|\p{N}/u;
 
   // 脚注锚剔除：段落里的脚注号（纯数字 1~3 位或 [n]）不朗读，避免和下一段开头数字粘连
   // （"1" + "5美元" → "15美元"）。判定规则统一在共享 footnote.js：内容门槛 +
@@ -60,7 +101,7 @@
     seen.add(el);
 
     const text = stripSmallSuperscriptDigits(el).replace(/\s+/g, " ").trim();
-    if (!text) return;
+    if (!text || !SPEAKABLE_RE.test(text)) return;
     // 按内容过滤"分页延续箭头"，不依赖具体 class 名字（scribe_custom-N 这种编号是每本书动态分配的，
     // 换书之后同一个编号可能对应完全不同的样式，写死排除某个 class 会有把正文误删的风险）。
     if (/^[↓↑→←]+$/.test(text)) return;
@@ -142,6 +183,29 @@
     return merged;
   }
 
+  // 检查元素是否真正位于当前视口（屏幕）可见范围内。
+  // Play Books 横向翻页排版中，同一个章节内滑出左侧的已读页（rect.right <= 20）
+  // 以及尚未滑入右侧的预载页（rect.left >= viewW - 20）均在此处被彻底排除！
+  function isElementVisibleInViewport(el) {
+    if (!el || !(el instanceof Element)) return false;
+    const style = window.getComputedStyle(el);
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      parseFloat(style.opacity || "1") < 0.2
+    ) {
+      return false;
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 30 || rect.height < 30) return false;
+
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
+    const inHorizontal = rect.right > 20 && rect.left < viewW - 20;
+    const inVertical = rect.bottom > 20 && rect.top < viewH - 20;
+    return inHorizontal && inVertical;
+  }
+
   // 找出当前"真正可见、激活状态"的页面容器——这份逻辑同时给正文提取
   // (extractCurrentPageText) 和高亮定位 (findRangesForText) 用，保证两者看到的
   // DOM 范围完全一致：提取到什么内容，就应该能在同样的范围里找到并高亮它。
@@ -150,18 +214,43 @@
   // 期间可能同时存在正在淡出的旧版本，用 computed opacity 过滤，只保留真正
   // 可见（opacity > 0.5）的那一份。
   function getActiveRenderedPageScopes() {
+    if (!isFrameCurrentlyVisible()) {
+      return [];
+    }
+
+    const allReaderPages = document.querySelectorAll("reader-page");
     const shownPages = document.querySelectorAll("reader-page.shown");
-    const scopeNodes = shownPages.length > 0 ? Array.from(shownPages) : [document];
+
+    // 若页面内存在 reader-page 元素，说明是 Play Books 标准分页结构；
+    // 只有带有 .shown class 的才是当前真正展示给用户的那一页。
+    // 如果存在 reader-page 但没有一个带 .shown，说明本 frame 处于后台预加载状态，尚未翻到前台，不应提前提取！
+    if (allReaderPages.length > 0 && shownPages.length === 0) {
+      return [];
+    }
+
+    const scopeNodes =
+      shownPages.length > 0
+        ? Array.from(shownPages)
+        : document.body
+        ? [document.body]
+        : [];
 
     const activeScopes = [];
     scopeNodes.forEach((scope) => {
+      if (!scope) return;
       const renderedPages = scope.querySelectorAll("reader-rendered-page");
-      let activeRenderedPages = Array.from(renderedPages).filter((rp) => {
-        const opacity = parseFloat(getComputedStyle(rp).opacity || "1");
-        return opacity > 0.5;
-      });
-      if (activeRenderedPages.length === 0) activeRenderedPages = [scope]; // 兜底
-      activeScopes.push(...activeRenderedPages);
+      if (renderedPages.length > 0) {
+        // 同一 reader-page 内可能存在翻页过渡中正在淡出的旧页，只保留 opacity > 0.5 的当前可见页
+        const visiblePages = Array.from(renderedPages).filter((rp) => {
+          return isElementVisibleInViewport(rp);
+        });
+        activeScopes.push(...visiblePages);
+      } else {
+        // 没有 reader-rendered-page 子容器时，以 scope 自身为范围（若自身可见）
+        if (isElementVisibleInViewport(scope)) {
+          activeScopes.push(scope);
+        }
+      }
     });
     return activeScopes;
   }
@@ -452,12 +541,47 @@
     // 直到新页写稳才正式上报，旧页中间态在 content 内部被吸收，不进入播放队列。
     // 网络好、一次抽全时只多等这一个静默窗；弱网分批时只在"还在写"期间等待，不凭空空等。
 
+    // 获取本页面/frame 在视口中的水平物理位置（左叶通常在 0~450，右叶通常在 550~1200）
+    function getFrameVisualLeft() {
+      // 1. 从 window.frameElement（子 iframe）获取在父视口中的位置
+      try {
+        if (window.frameElement && window.frameElement.getBoundingClientRect) {
+          const r = window.frameElement.getBoundingClientRect();
+          if (r.width > 0 || r.height > 0) return Math.max(0, Math.round(r.left));
+        }
+      } catch (e) {}
+
+      // 2. 从当前可见 activeRenderedPages 获取页面容器位置（由于已通过 isElementVisibleInViewport 过滤，必定为在屏可见页）
+      try {
+        const active = getActiveRenderedPageScopes();
+        if (active.length > 0 && active[0].getBoundingClientRect) {
+          const r = active[0].getBoundingClientRect();
+          return Math.max(0, Math.round(r.left));
+        }
+      } catch (e) {}
+
+      // 3. 从页面内第一个正文元素（<p> 等）获取视口水平坐标
+      try {
+        const active = getActiveRenderedPageScopes();
+        for (const rp of active) {
+          const firstEl = rp.querySelector(SELECTOR);
+          if (firstEl && firstEl.getBoundingClientRect) {
+            return Math.max(0, Math.round(firstEl.getBoundingClientRect().left));
+          }
+        }
+      } catch (e) {}
+
+      return 0;
+    }
+
     // 真正发 PAGE_TEXT_UPDATED：内容没变化不重复发。抽成独立函数供正常路径与稳定上报共用。
     function doReport(data, serialized) {
       if (serialized === window.__lastReportedText) return;
       window.__lastReportedText = serialized;
 
-      diagLog(`提取到 ${data.length} 段，正式上报`, {
+      const pageLeft = getFrameVisualLeft();
+      diagLog(`提取到 ${data.length} 段，正式上报 (pageLeft=${pageLeft})`, {
+        pageLeft,
         preview: data.slice(0, 3).map((d) => (d.text || "").slice(0, 15)),
       });
 
@@ -465,10 +589,14 @@
         type: "PAGE_TEXT_UPDATED",
         url: location.href,
         data,
+        pageLeft,
       });
     }
 
     function reportIfChanged() {
+      if (!isFrameCurrentlyVisible()) {
+        return;
+      }
       const data = extractCurrentPageText();
 
       if (!data) {
@@ -921,8 +1049,9 @@
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "PLAYBOOKS_GET_START_INDEX") {
-      // 顶层 play.google.com frame 没有正文，不回应，让真正有正文的 iframe 回答
+      // 顶层 play.google.com frame 没有正文，不回应，让真正有正文且可见的 iframe 回答
       if (!window.__hasEverMatched) return;
+      if (!isFrameCurrentlyVisible()) return;
       // 优先：用户用鼠标选中了一段文字，就从选中文字的第一个字开始朗读；
       // 没有有效选中（或选中的起点不在正文里）再回退到"视口内第一个完整句子"。
       const selectionResult = findSelectionStartIndex();
@@ -933,6 +1062,31 @@
       sendResponse(result);
       return true;
     }
+    if (message.type === "PB_GET_VISIBLE_IFRAMES") {
+      // 只有顶层 frame（play.google.com）处理此消息，获取子 iframe 的视觉水平位置
+      if (window.top !== window) return;
+      const iframes = Array.from(document.querySelectorAll("iframe"));
+      const visible = [];
+      for (const iframe of iframes) {
+        const src = iframe.src || iframe.getAttribute("src") || "";
+        if (!src || src.startsWith("about:") || src.startsWith("javascript:")) continue;
+        const rect = iframe.getBoundingClientRect();
+        const style = window.getComputedStyle(iframe);
+        if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity || "1") < 0.1) {
+          continue;
+        }
+        if (rect.width > 50 && rect.height > 50 && rect.right > 0 && rect.left < window.innerWidth) {
+          visible.push({ src, left: rect.left, top: rect.top });
+        }
+      }
+      visible.sort((a, b) => a.left - b.left);
+      diagLog("顶层 frame 回应可见 iframe 查询", {
+        count: visible.length,
+        visible: visible.map((v) => ({ left: Math.round(v.left), src: v.src.slice(0, 50) })),
+      });
+      sendResponse({ ok: true, iframes: visible });
+      return true;
+    }
     if (message.type === "PB_START_READING" || message.type === "PB_STOP_READING") {
       // 朗读停止/重新开始时停掉空页周期上报：emptyPageTimer 只在提取到正文时
       // 自己停，朗读停止后残留实例会继续上报旧页面指纹，在下一次朗读开始时被
@@ -941,6 +1095,7 @@
       stopEmptyPageReport();
     }
     if (message.type === "TURN_PAGE") {
+      if (!isFrameCurrentlyVisible()) return;
       const now = Date.now();
       // 去重：chrome.tabs.sendMessage 会广播给这个标签页里的所有 frame（顶层页面 +
       // 所有 iframe），观察到同一次翻页请求会收到好几条"TURN_PAGE"日志，如果这是因为
@@ -979,6 +1134,7 @@
       }
     }
     if (message.type === "HIGHLIGHT_CHUNK") {
+      if (!isFrameCurrentlyVisible()) return;
       highlightChunk(message.text);
     }
   });

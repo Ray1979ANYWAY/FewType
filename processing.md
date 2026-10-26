@@ -2643,3 +2643,414 @@ onefile 模式虽然只有一个 exe 方便分发，但在 Windows 上经常遇�
 - **现象**：测试 onefile 单 exe 时 Stop-Process 杀进程后，任务管理器仍见 Python 子进程存活、"退出后仍在记录"。
 - **根因**：onefile 模式 exe = 引导器 + 内嵌 Python 子进程；Stop-Process 只杀引导器，Python 子进程成**孤儿**继续运行——不是"退出后还记录"，是根本没退干净。
 - **对策**：程序退出时主动自杀子进程链（或统一走 onedir 模式）；排查"进程没退"类问题时先区分引导器/子进程，别把孤儿进程当程序行为。
+
+---
+
+## 2026-10-26【未解决·待接手】Play Books 跨章翻页：迟到章节扉页被"块数缩水"误杀 / 队尾淹没且顺序颠倒
+
+> 状态：**未解决**，等待另一名开发者接手诊断。本轮已试两版方案均失败，当前工作区留有失败方案的未提交改动（见"已尝试"第 2 版）。**接手前先读完全部条目，不要在未理解时序前改缩水分支。**
+
+### 一、症状（用户原话 + 客观现象）
+
+- 在 Google Play Books（`play.google.com/books/reader`）双叶视图里自然翻页、且正好跨章节时：翻页后语音**直接从右侧预加载叶的正文开头接着念**（例：`持。」祖克柏承諾，臉書將帶領重建這些社群…`），跳过了夹在中间的**章节扉页短页**（例：左叶 `第二部政治挑戰 / 資訊科技和生物科技的融合… / 想要解決這項科技挑戰… / 於是全球合作難如登天。`），整页扉页一个字都没念。
+- 不是每次都发生，仅在"先到达的是正文叶、章节扉页晚几百毫秒到"的竞态下出现；弱网 / 渲染慢时概率更高。
+- Koodo（整章先提取完，无翻页时序问题）和微信读书（单页）**均无此问题，不要改这两个平台**。
+
+### 二、物理页面与期望听觉顺序（关键，别搞反）
+
+- 本次案例：书页 106 = 章节扉页「第二部政治挑戰」（左叶，短）；书页 107 = 第 5 堂课「社群」正文（祖克柏宣言，右叶）。
+- **正确听觉顺序 = 扉页 106 → 正文 107**。
+- 但 PB 会**预加载相邻叶**，107 正文叶先进入 active 集合被采集上报，106 扉页晚到。系统把先到的 107 当"新页接续"，迟到的 106 被丢弃或排到队尾 → 顺序反 + 被淹没。
+
+### 三、相关代码与数据流（文件均在 `FewType-extension/`）
+
+链路：content 采集 → `PAGE_TEXT_UPDATED` → background 路由 → `syncAndSendDelta` 算 delta → `OFFSCREEN_PLAY`/`OFFSCREEN_APPEND` → `offscreen.js` 线性队列播放。
+
+- `content-playbooks.js`
+  - `getActiveRenderedPageScopes()`：收集所有 `reader-page.shown` 内 `opacity>0.5` 的 `reader-rendered-page`，按 DOM 文档序合并（稳定后左叶在前、右叶在后，顺序天然正确）。
+  - `extractCurrentPageText()` / `extractWithElements()`：从 active 叶抽段落。
+  - `reportIfChanged()`：pending 期只存 `__settleData` 不发；与翻页前快照相同的"旧页中间态"丢弃。
+  - `MutationObserver`：`__pageTurnPending` 期走 `TURN_SETTLE_SILENCE_MS=200ms` 静默窗；非 pending 走 `EXTRACT_DEBOUNCE_MS=700ms` 防抖。收到 `TURN_PAGE` 置 pending、记旧快照。
+  - manifest `content_scripts` 为 `all_frames: true`（**多 frame，见失败方案 A**）。
+- `background-playbooks.js`
+  - `handlePlaybooksMessage` 的 `PAGE_TEXT_UPDATED` 路由：
+    - 翻页接续分支：`state.isReading && state.waitingForNextPage && state.tabId===tabId` → 立即 `waitingForNextPage=false`、清零 sentChunkCount/snapshot、`appendLatestForTab(..., true)`（overrideAlready=0）→ 发 `OFFSCREEN_APPEND`。**第一个到达的片段就在这里被接续关闭 waiting。**
+    - 同页追加分支：`isReading && !isPaused && !waitingForNextPage` → `appendLatestForTab()` 走 `syncAndSendDelta`。
+  - `syncAndSendDelta()`：`computeFullChunksForTab` 整页重算 → 缩水分支 `!usingOverride && chunks.length < already`（原保护：防虚拟滚动/懒加载导致的渲染抖动循环：缩水→对齐失败→归零重发→恢复→再失败→重复播）→ 对齐校验（前 already 项须与 `sentChunksSnapshot` 逐项一致，否则 already=0 整页重发）→ `useFreshPlay`? `OFFSCREEN_PLAY` : `OFFSCREEN_APPEND`。
+  - `computeFullChunksForTab()`：每次从 `getLatestForTab`（`saveLatestForTab` 覆盖式存最新上报，**不累积**）整页重算。
+  - 翻页触发：offscreen `AUDIO_ENDED` → 后台 `triggerPageTurnAndWait()` → 向 content 发 `TURN_PAGE`。
+- `offscreen.js`
+  - `chunks` 线性数组；`OFFSCREEN_APPEND` = `chunks.concat(newChunks)` 接队尾，`ranDry` 才 `shouldResume`；`OFFSCREEN_PLAY` 先 `stopPlayback()`（**`chunks=[]` 清空、currentIndex=-1、abortAllPending**）再 `playChunkList` 重开。
+  - 注意：同页追加路径即使对齐失败归零，发的仍是 `OFFSCREEN_APPEND`（不清队列）；只有 `useFreshPlay=true`（手动开始/灾难重连）才发 `OFFSCREEN_PLAY` 清队列。
+
+### 四、证据时间线（诊断日志 `tts-diag-log-2026-10-26T09-54-25-463Z.txt`，经扩展诊断面板导出到 Downloads）
+
+1. `17:53:52.847` 划选起读 5 块（第 4 堂末"…大家一起合作做些什麼？"），`OFFSCREEN_PLAY`。
+2. `17:54:15.406` chunk[4] ended，队列耗尽 → `AUDIO_ENDED` → 后台触发 `TURN_PAGE`。
+3. `17:54:15.533` **先上报祖克柏 10 段**（107 正文叶）→ 走翻页接续分支 → `OFFSCREEN_APPEND` 10 块，`waiting=false`。
+4. `17:54:15.809` **迟到上报扉页 4 段**（106）→ 走同页追加分支 → `chunks=4 < already=10` 进缩水分支。
+5. （第 2 版方案下）15.811 判定"与已发不重叠"放行，15.812 `OFFSCREEN_APPEND` 4 块到队尾；`ranDry=false`，`chunksLenBefore=15`。
+6. 队列实际顺序 = `初始5 + 祖克柏10 + 扉页4`，扉页排到祖克柏之后、且埋在后续不断 append 的内容里，用户等不到 → 主观"扉页没念"。
+
+### 五、已尝试方案（均失败，含当前未提交改动）
+
+**方案 A：前端最小收集窗（content-playbooks.js，已回退，工作区无残留）**
+- 思路：pending 期首份新内容到达后，至少等 450ms 凑满再上报，给迟到叶并入第一批。
+- 失败：`all_frames:true` 多 frame，祖克柏那批从**绕过 pending 的另一条 frame 路径**直接上报接续；单 frame 的 `__pageTurnPending`/`__firstSettleAt` 变量不跨 frame，拦不住。日志里三行收集窗标记都出现了，仍漏。**证明前端等齐在多 frame 下不可靠。**
+
+**方案 B：后台内容重叠比对，放行迟到新页到队尾（background-playbooks.js，当前工作区未提交，已证伪）**
+- 改动：新增模块级 `isSubsetOfAlready(chunks, snapshot)`（每块切 5 字滑窗，≥60% 窗口命中已发全文算该块已存在，≥70% 块已存在判为子集）；缩水分支里 `!isSubsetOfAlready` 时 `OFFSCREEN_APPEND` 放行迟到页，不改 sentChunkCount/snapshot。
+- 失败：比对确实触发、扉页也进了队列，但**队尾 = 顺序颠倒（祖克柏在前、扉页在后）+ 被后续 append 淹没**，用户依然听不到。只解决"进不进队列"，没解决"排在哪、顺序对不对"。
+- **接手建议：此 hunk（`isSubsetOfAlready` 函数 + 缩水分支放行块）可先 `git checkout` 回退，或在其基础上重新设计，勿直接保留。**
+
+### 六、核心矛盾（待解）
+
+1. 翻页接续"第一个到达即关闭 waiting"的假设，与 PB 预加载导致的"正文叶先到、扉页晚到"时序冲突。
+2. `OFFSCREEN_APPEND` 只能接队尾，无法把迟到片段插到"当前播放点之前 / 正确位置"；线性队列 + 持续流式追加下，迟到短页必然被埋。
+3. 缩水分支 `chunks.length < already` 本是防虚拟滚动抖动循环的保护，不能简单删掉（删了会回到"同一页重复播三轮"的旧 bug）。
+4. `saveLatestForTab` 覆盖式存最新上报、`computeFullChunksForTab` 整页重算的单调模型，与"翻页周期内多个独立片段先后到达"不兼容。
+
+### 七、待评估方向（仅供参考，未实现）
+
+- **后台翻页收集窗**（倾向）：waiting 收到第一份不立即关闭，在后台（所有 frame 消息的唯一汇聚点，无前端跨 frame 问题）开短窗（600–800ms，内容持续到达则顺延）攒齐窗内片段，稳定后按 DOM 顺序一次性接续；到点不齐也先接续兜底防漏。需解决：窗长与弱网迟到的平衡、窗内多片段如何按物理页序合并、窗满后走 PLAY 还是 APPEND。
+- 备选：让 content 在"左右叶都 active（opacity>0.5）"后再上报（前端判断叶齐全），但需验证多 frame 下能否拿到完整 active 集合。
+- 需回答：扉页这类短章节标题页，是否值得进队列、还是可作为标题停顿（pause chunk）处理。
+
+### 八、硬约束 / 勿破坏
+
+- 只动 Play Books 链路（`background-playbooks.js` / `content-playbooks.js`），Koodo、微信读书逻辑不动。
+- 保留缩水分支对"真·同页渲染抖动/子集"的忽略能力，不得引入重复播整页的回归。
+- 不破坏 `sentChunksSnapshot` 对齐校验、carryoverText/`currentPageCarryoverPrefix` 续接前缀、空页/书尾判断。
+- 本问题与任务#6（划选起读第二块后高亮偏一位）无关，勿混改。
+
+### 九、复现与验证
+
+- 硬重载扩展（`chrome://extensions` 重新加载 + 重开 PB 标签），读到章节末尾自然翻页、跨章处观察；开诊断面板导出 `tts-diag-log-*.txt`，重点看翻页后 `走翻页接续分支` / `走同页追加分支` / `块数` / `OFFSCREEN_APPEND` 的先后与 `chunksLenBefore`。
+- 验收：跨章翻页后先听到扉页「第二部政治挑戰…」再进祖克柏正文，且无重复播、无抖动循环。
+
+---
+
+## 2026-10-26 Play Books 跨章翻页扉页被跳过——基于 pageLeft 独立存储与双叶收集窗口彻底修复
+
+### 诊断现场还原（结合真实运行日志）
+在上一版运行日志中：
+1. `18:37:06.106` 触发 `TURN_PAGE`。
+2. `18:37:06.243`（135ms 后）右叶正文（Page 107）先到达。
+   - 旧代码向顶层查询 iframe 数量，顶层仅有 1 个阅读器主容器 iframe（`count: 1`），误判为"1/1 已全部到齐"，在仅仅 135ms 时就瞬间提前关闭了 `waitingForNextPage` 并开播正文！
+3. `18:37:06.543`（300ms 后）左叶扉页（Page 106）姗姗来迟。
+   - 此时 `waitingForNextPage` 已被提前关闭，左叶走入非翻页同页追加分支；
+   - 且旧代码以 `url` 为 storage key，两叶 URL 相同导致互冲覆盖；
+   - 左叶 4 块与已发送的右叶 10 块比对，触发缩水保护 `4 < 10`，被直接丢弃！
+
+### 彻底修复方案
+
+#### 1. 前端（`content-playbooks.js`）物理位置自报告（`pageLeft`）
+- 新增 `getFrameVisualLeft()`：通过 `window.frameElement`、`reader-page` 容器或正文首个 `<p>` 元素测量其在屏幕视口中的绝对水平物理坐标 `left`；
+- 左叶页面自然位于屏幕左侧（`pageLeft < 500`，如 0~200px）；
+- 右叶页面自然位于屏幕右侧（`pageLeft >= 500`，如 700~1000px）；
+- `PAGE_TEXT_UPDATED` 随带 `pageLeft` 物理水平坐标上报后台。
+
+#### 2. 后台（`background-playbooks.js`）双叶独立存储（`makeFrameKey`）
+- Frame 存储 key 采用 `f_${frameId}_${side}`（根据 `pageLeft` 区分 `L` 与 `R`），彻底杜绝因两叶 URL 相同导致的相互覆盖；
+- `getMergedDataForTab` 严格依照 `pageLeft` 升序排序：左叶（`L`）100% 确保排在右叶（`R`）之前，天然保证扉页先播、正文后播。
+
+#### 3. 翻页收集双叶防抖等待（`validEntries.length >= 2`）
+- 翻页等待期（`waitingForNextPage`）首个片段（右叶）到达后，绝不提前以 `1/1` 关闭 waiting，而是开启收集窗等待潜在的双叶另一侧；
+- 收到有效双叶片段（`left` 与 `right` 齐备）时，**立即取消计时器并开播**；既不漏掉迟到页，又零额外卡顿！
+
+---
+
+## 2026-10-26 深度诊断：修复 frameId 累积与 pageLeft 符号颠倒导致的时序混乱（"全乱了"）
+
+### 背景与真实日志还原（18:41:45 ~ 18:43:44）
+在前一版改动实测中，用户反馈"症状依旧"、"全乱了"、"最新的时序全都乱了"。通过分析导出的完整诊断日志，发现了两个极其致命的根因：
+
+1. **`frameId` 动态暴增导致历史旧帧无限累积**：
+   - Play Books 在用户每次翻页、切章或渲染时，都会销毁旧 iframe 并创建新 iframe，`frameId` 随之不断递增（如日志中先后出现的 `237, 241, 243, 249, 251, 257, 259, 264, 267, 269, 275`）。
+   - 旧代码采用 `f_${frameId}_${side}` 作为 key 存储在 `framesObj` 字典中，从未剔除已销毁的旧 frameId！
+   - 结果：用户翻了两次页，后台 storage 里堆积了 8 个历史 iframe（`f_251_L`, `f_259_L`, `f_264_L`, `f_269_L`, `f_275_L`, `f_249_L`, `f_257_L`, `f_267_L`）。
+   - `getMergedDataForTab` 把 8 个页面的段落一起并入，算出了整整 **86 块的大杂烩**！
+   - 触发了 `对齐校验失败！already=64 归零整页重发`，播放器在 5 页之前的内容和当前页之间不断重算、整页重发，时序完全崩溃。
+
+2. **Play Books 双栏布局中 `pageLeft` 实际符号与预期相反**：
+   - 旧代码假设：左叶 `pageLeft < 500`（如 168px），右叶 `pageLeft >= 500`（如 700px），并按照 `a.pageLeft - b.pageLeft` 升序排列。
+   - **日志真实现象**：Play Books 阅读器内部采用横向 CSS Column 布局与负偏移 translateX。
+     - 左叶（Page 106 扉页）：`pageLeft = 168`（正数）
+     - 右叶（Page 107 正文）：`pageLeft = -696`（负数！）
+   - 如果按数值升序排：`-696 < 168`，右叶（-696）反而排在左叶（168）前面！
+
+3. **content-playbooks.js 中的类型报错**：
+   - `Uncaught TypeError: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'`
+   - 根因：`getActiveRenderedPageScopes` 中未匹配到 `.shown` 时 fallback 给了 `[document]`，而 `document` 是 `Document` 节点而非 `Element`，传给 `getComputedStyle` 抛出未捕获异常，导致部分 frame 提交流程中断。
+
+---
+
+### 彻底根治方案
+
+#### 1. 严格 2 槽位双叶存储模型（`tabSpread_${tabId} = { left: null, right: null }`）
+彻底废弃基于动态 `frameId` 的多帧字典，改用恒定且唯一的双叶槽位模型：
+```javascript
+// background-playbooks.js
+async function saveSpreadLeafForTab(tabId, message) {
+  const result = await chrome.storage.session.get(spreadKey(tabId));
+  const spread = result[spreadKey(tabId)] || { left: null, right: null };
+
+  // Play Books 中左叶 pageLeft >= 0（如 168px），右叶受横向翻页偏移影响 pageLeft < 0（如 -696px）
+  const side = typeof message.pageLeft === "number" && message.pageLeft < 0 ? "right" : "left";
+
+  spread[side] = {
+    url: message.url || "",
+    data: message.data || [],
+    pageLeft: message.pageLeft || 0,
+    updatedAt: Date.now(),
+  };
+
+  await chrome.storage.session.set({
+    [spreadKey(tabId)]: spread,
+    [textKey(tabId)]: { url: message.url || "", data: message.data || [], updatedAt: Date.now() },
+  });
+  return { side, spread };
+}
+```
+- **物理上杜绝累积**：无论 Play Books 之后生成多少个 frameId，存储空间中始终只有 `left` 与 `right` 两个槽位，新页永远安全覆盖同侧旧页，彻底杜绝 86 块、历史页倒灌的大杂烩问题。
+- **翻页重置**：`triggerPageTurnAndWait` 与 `stopReading` 时调用 `clearTabSpread(tabId)`，双槽位瞬时归零。
+
+#### 2. 确定性视觉合并序（左叶必在先，右叶必在后）
+不再依赖浮动的数值排序，直接以左右语义确定顺序：
+```javascript
+async function getMergedDataForTab(tabId) {
+  const result = await chrome.storage.session.get(spreadKey(tabId));
+  const spread = result[spreadKey(tabId)];
+  if (!spread) return ...;
+
+  const leftData = spread.left && Array.isArray(spread.left.data) ? spread.left.data : [];
+  const rightData = spread.right && Array.isArray(spread.right.data) ? spread.right.data : [];
+
+  return [...leftData, ...rightData];
+}
+```
+- 100% 确定左叶（Page 106 扉页「第二部政治挑戰」）排在最前，右叶（Page 107 正文「持。」祖克柏承諾…」）排在后面。
+- 单页模式下仅有一侧有数据，自然输出该单侧内容，兼容单页/双叶视图。
+
+#### 3. 动态收集窗口（`hasLeft && hasRight` 立即开播，850ms 窗口兜底）
+- 翻页后右叶先到（`hasLeft=false, hasRight=true`），开启 850ms 收集窗，不急于关闭 waiting；
+- 当左叶扉页在 300~790ms 内到达后，检测到 `hasLeft && hasRight` 均就绪，**立刻取消计时器，调用 `flushPageTurnBuffer` 合并开播**；
+- 若经过 850ms 仍未见第二叶（单页视图或章节末尾单叶），计时器到期自动 flush 当前收集到的内容，自然兜底。
+
+#### 4. 前端类型防御（`content-playbooks.js`）
+- `getActiveRenderedPageScopes` 中的 fallback 改为 `document.body ? [document.body] : []`；
+- 所有 `getComputedStyle` 调用前均严格检查 `scope instanceof Element`，彻底杜绝类型报错。
+
+---
+
+## 2026-10-26 根本突破：揭秘 Play Books 横向翻页 translateX 负偏移与后台隐藏 iframe 导致跳回章首的根因
+
+### 现象与诊断（结合 18:53 ~ 18:56 真实日志与截图）
+在用户反馈的案例中（Page 105「成也科技，敗也科技」）：
+- 播放完 Page 105 后，语音突然开始朗读「人類擁有了土地、動物、植物和工具之後…」（第 4 堂課「平等」Page 97 的正文），并且阅读器屏幕**瞬间跳回了第 4 堂課开头的 Page 96**！
+
+#### 惊人真相与根因链条：
+1. **`pageLeft = -696` 根本不是当前屏幕右叶，而是横向滑出屏幕左侧的「已读旧页」！**
+   - Play Books 的多页/双栏排版采用横向滑动容器（`transform: translateX(-696px)`）。
+   - 当从 Page 96/97 翻到 Page 105 时：
+     - Page 97 的容器被平移到左侧屏幕外：`rect.left = -696, rect.right = -96`；
+     - 当前可见的 Page 105 平移到了屏幕正中：`rect.left = 168`。
+   - 但旧版 `getActiveRenderedPageScopes()` 仅检查了 `opacity > 0.5`，**完全没有检查 `getBoundingClientRect()` 是否在当前视口内**！
+   - 结果：滑出左侧屏幕外的 Page 97（「的問題吧！」）依然被当作有效内容抽取了出来，并测量出 `left = -696`！
+   - 后台逻辑误将 `pageLeft < 0`（-696）当作“双叶右侧正文”，导致 Page 105 与 Page 97 被强行拼成了同一个双叶！
+
+2. **后台预加载/已销毁 iframe 的幽灵上报**：
+   - Play Books 会在 DOM 里长期保留历史章节与预载章节的 `<iframe>`（display:none / opacity:0 / 离屏）。
+   - 因为 `all_frames: true`，这些幽灵 iframe 仍在后台运行 content script 并向后台上报段落；
+   - 导致 Page 105（章末单叶，右侧本应空白）的 `spread.right` 槽位被幽灵 iframe 持续填入 Page 97 的旧段落！
+
+3. **高亮引起阅读器视口跳跃回章首**：
+   - 当朗读到 Page 97 的第 8 块时，后台广播 `HIGHLIGHT_CHUNK`。
+   - 幽灵 iframe 匹配到高亮并执行 DOM 操作/获取焦点，导致 Google Play Books 捕获到该 iframe 的活跃事件，自动将阅读器滚回了第 4 堂課的 Page 96！
+
+---
+
+### 彻底根治方案
+
+#### 1. 前端严格视口几何过滤（`isElementVisibleInViewport`）
+在 `content-playbooks.js` 中新增 `isElementVisibleInViewport(el)`：
+```javascript
+function isElementVisibleInViewport(el) {
+  if (!el || !(el instanceof Element)) return false;
+  const style = window.getComputedStyle(el);
+  if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity || "1") < 0.2) {
+    return false;
+  }
+  const rect = el.getBoundingClientRect();
+  if (rect.width < 30 || rect.height < 30) return false;
+  // 必须真正落在屏幕可见视口内，彻底排除滑出左侧的已读页（right <= 20）和未进入的预载页（left >= innerWidth - 20）
+  const inHorizontal = rect.right > 20 && rect.left < window.innerWidth - 20;
+  const inVertical = rect.bottom > 20 && rect.top < window.innerHeight - 20;
+  return inHorizontal && inVertical;
+}
+```
+- `getActiveRenderedPageScopes` 严格过滤所有 `reader-rendered-page`：任何滑出视口外的旧页瞬间被剔除，绝不抽取、绝不上报。
+
+#### 2. 子 iframe 视口相交判定（`IntersectionObserver`）
+- 在子 iframe 中通过 `IntersectionObserver` 监控 `document.documentElement`：
+- 若 iframe 处于不可见状态（`!entry.isIntersecting || entry.intersectionRatio < 0.01`），`isFrameCurrentlyVisible()` 返回 false；
+- 彻底封死不可见 iframe 的文本上报（`reportIfChanged`）、空页上报、起点查询（`PLAYBOOKS_GET_START_INDEX`）、翻页按键（`TURN_PAGE`）和高亮（`HIGHLIGHT_CHUNK`）。
+
+#### 3. 后台双叶时效性校验（`SPREAD_MAX_GAP_MS = 2500ms`）
+- 在 `background-playbooks.js` 的 `getMergedDataForTab` 中：
+- 若 `left` 与 `right` 槽位的时间戳差距超过 2.5 秒（即一侧是历史残留，当前页为章末单叶无右叶），自动将陈旧的一侧丢弃并清空槽位，绝不跨时间串联。
+- 真正双叶跨页的左叶与右叶通常在 300ms 左右先后到达（小于 2500ms），正常合并无误。
+
+
+
+
+---
+
+## 2026-10-26 根本突破：揭秘 Koodo Reader 跨章标题与正文同名错位匹配导致多栏排版视觉连翻两页的根因与彻底修复
+
+### 现象与诊断（结合 19:08 真实时序日志）
+在从上一章末尾翻入新章节时（以「三 炎凉世态」为例）：
+- 新章开头结构：
+  - Chunk 0：「三 炎凉世态」（h1 章节标题）
+  - Chunk 1：「中国的日夜」（h2 副标题/篇名）
+  - Chunk 2：「去年秋冬之交我天天去买菜…」（正文段落）
+- **现象**：朗读语音完全正常，正按顺序朗读「三 炎凉世态」->「中国的日夜」->「去年秋冬之交我天天去买菜…」，但阅读器视觉上连续向后翻了两页（屏幕直接跳到第 5~6 页），导致眼睛看到的内容比语音超前两页。
+
+#### 根因链条：
+1. **标题与正文在搜索索引中被人为割裂**：
+   - 旧版 `buildHighlightIndex(doc)` 试图“复刻提取侧的分类”，将正文段落拼入 `combined`，而将所有标题单独保存在 `headings` 数组中。
+   - 这导致开头的标题「三 炎凉世态」和「中国的日夜」根本不在 `combined` 字符串中！
+2. **`findRangesForText` 优先搜索 `combined` 产生错位命中**：
+   - 当朗读到 Chunk 1「中国的日夜」时，搜索函数首先在 `combined` 中寻找。
+   - 标题虽然在第 1 页最上方，但因未进入 `combined` 而无法直接在起始位置命中；而巧合的是，在该章节正文 2799 字符之后（视觉排版落在第 3~4 页），正文中再次出现了短语「中国的日夜」！
+   - `combined.indexOf("中国的日夜", 0)` 直接命中了第 2799 处的正文字符，将高亮标注打在了视觉第 3~4 页。
+3. **视口溢出检测与 800ms 递归级联翻页**：
+   - 高亮被打在第 3~4 页，`classifyHighlight` 测得高亮全在视口右侧外，计算出 `overflowRatio = 1.00`。
+   - `ensureHighlightVisible` 判定溢出，触发单次翻页（翻至第 3 页）。
+   - 旧版在 800ms 冷却回调中包含了 `checkAgain` 递归重试：
+     ```javascript
+     setTimeout(() => {
+       isTurningPage = false;
+       if (currentDoc) {
+         const checkAgain = classifyHighlight(currentDoc);
+         if (!checkAgain.anyVisible || checkAgain.overflowRatio >= OVERFLOW_TURN_RATIO) {
+           ensureHighlightVisible(currentDoc);
+         }
+       }
+     }, 800);
+     ```
+   - 翻到第 3 页后，由于高亮位于第 4 页，视口内仍然没有高亮或继续溢出，`checkAgain` 再次触发翻页，直翻到第 5 页！
+   - 与此同时，朗读音频正在播放 Page 1 顶部的 Chunk 2（「去年秋冬之交我天天去买菜…」），形成“语音在 Page 1，眼睛在 Page 5”的严重视觉超前。
+
+---
+
+### 彻底根治方案
+
+#### 1. 全 DOM 文档流统一索引（`buildHighlightIndex`）
+彻底废除 heading / body 分裂逻辑，将所有匹配 `SELECTOR`（`p, li, h1, h2, h3, h4, h5, h6`）的元素严格按 DOM 原生文档流顺序拼接进 `combined` 和 `charMap`：
+```javascript
+function buildHighlightIndex(doc) {
+  const seen = new Set();
+  const pieces = [];
+  doc.body.querySelectorAll(SELECTOR).forEach((el) => {
+    if (seen.has(el)) return;
+    seen.add(el);
+    const { norm, map } = normalizeElementText(doc, el);
+    if (!norm) return;
+    pieces.push({ norm, map });
+  });
+  let combined = "";
+  const charMap = [];
+  for (const piece of pieces) {
+    for (let k = 0; k < piece.norm.length; k++) {
+      charMap.push(piece.map[k]);
+    }
+    combined += piece.norm;
+  }
+  return {
+    combined,
+    charMap,
+    bodyLen: doc.body.textContent.replace(/\s+/g, " ").trim().length,
+  };
+}
+```
+- Chunk 0「三 炎凉世态」位于 index 0，Chunk 1「中国的日夜」位于 index 6，Chunk 2 紧随其后。
+- `lastEndChar` 从 0 -> 6 -> 11 单向递增推进，Chunk 1 100% 精确命中 Page 1 顶部的标题，绝不可能跨越近 3000 字跳跃到正文同名词句。
+
+#### 2. 移除冷却期内的级联自动翻页
+单个 Chunk 至多触发单次翻页，移除 800ms 回调内的递归 `checkAgain`：
+```javascript
+if (overflowRatio >= OVERFLOW_TURN_RATIO) {
+  diagLog(`高亮溢出视口，执行翻页 overflow=${overflowRatio.toFixed(2)}`);
+  isTurningPage = true;
+  simulateNextPageKey();
+
+  // 留出 800ms 冷却时间（兼容翻页动画与网络延迟），期间拒绝任何翻页指令
+  // 单个 Chunk 至多触发单次翻页，禁止在冷却回调内自动递归连翻两页（避免排版动画未稳态时视觉超前）
+  setTimeout(() => {
+    isTurningPage = false;
+  }, 800);
+}
+```
+- 排版动画完成后，视口位置稳定，下一 Chunk 的到来会驱动下一次正常的单步翻页，杜绝任何递归连翻。
+
+
+---
+
+## 2026-10-26 根本突破：揭秘篇末装饰分隔符（如 ◎）导致 TTS HTTP 500 卡死不翻页的根因与四层纵深防御
+
+### 现象与诊断（结合 19:23 真实日志与截图）
+在《公寓生活记趣》末尾朗读完最后一句「这就是我们的不甚彻底的道德观念。」后，阅读器不再翻页，整机停滞。而在其他普通章节中翻页正常。
+
+#### 惊人真相与根因链条：
+1. **排版中的纯符号装饰元素被误当成正文/标题提取**：
+   - 在第 60 页右侧末尾，作者/排版者放置了一个装饰性分节符号「◎」（U+25CE）。
+   - 旧版 `pushParagraph` 仅判断了 `if (!text)`。因为 `"◎"` 长度为 1（<= 20）且无末尾句号标点，被误判为 `heading` 抽取进了 `data`！
+2. **纯符号 Chunk 送入 TTS 触发 HTTP 500**：
+   - `background-koodo.js` 将其打包为独立块 `chunk[1] = "◎"`。
+   - 随后的日志直接暴露了真凶：
+     ```
+     [19:23:08.915] [offscreen] chunk[0] ended 触发（。这就是我们的不甚彻底的道德观念。）
+     [19:23:13.154] [offscreen] chunk[1] 合成失败 2/4: HTTP 500
+     ```
+   - 微软 Edge-TTS / 认知服务在接收到纯装饰符号（不含任何汉字、拉丁字母、数字或拼音）时，无法生成音频数据流，服务端直接断开/返回异常（`WSServerHandshakeError: 200`），后端抛出 `HTTP 500`！
+3. **播放队列彻底卡死，翻页指令永远无法到达**：
+   - `offscreen.js` 收到 500 后执行指数退避重试（1.5s, 3s, 4.5s, 6s），连续 4 次失败后又触发 `consecutiveFailures` 循环，整体卡死达数分钟！
+   - 与此同时，真正位于第 61 页的篇名 Chunk 2「二 女性风景」和「炎樱语录」被死死卡在队列后方，**无法播放、无法广播 `HIGHLIGHT_CHUNK`，因此高亮永远落不到第 61 页，翻页逻辑自然永远无法被触发**！
+   - 用户看到的视觉表象就是“念完这一页，没有翻页”。
+
+---
+
+### 四层纵深防御治理方案
+
+#### 1. 第一层：DOM 提取源头过滤（`content-koodo.js` / `content-playbooks.js`）
+利用现代标准 Unicode Property Escape（`/\p{L}|\p{N}/u`），判定文本是否包含至少一个真实语言字符（中日韩汉字、假名、谚文、全半角英文字母、阿拉伯数字）：
+```javascript
+const SPEAKABLE_RE = /\p{L}|\p{N}/u;
+
+function pushParagraph(result, seen, el) {
+  if (seen.has(el)) return false;
+  seen.add(el);
+  const text = stripFootnoteAnchorText(el).replace(/\s+/g, " ").trim();
+  // 纯符号/装饰线/章节分隔符（如 ◎、◆、***、—— 等无任何可读字符），直接过滤
+  if (!text || !SPEAKABLE_RE.test(text)) return false;
+  ...
+}
+```
+并在 `buildHighlightIndex(doc)` 中完全同步该过滤条件，保持提取侧 `data` 与搜索索引 `combined` 100% 对称。
+
+#### 2. 第二层：分块规范核心（`chunking.js`）
+导出统一的判定工具函数：
+```javascript
+export function hasSpeakableContent(text) {
+  if (!text || typeof text !== "string") return false;
+  return /\p{L}|\p{N}/u.test(text);
+}
+```
+
+#### 3. 第三层：后台分发中枢净化（`background-koodo.js` / `background-playbooks.js`）
+在 `buildChunksFromChapterData` 中，所有 heading 与切块片段均经 `hasSpeakableContent` 过滤，确保送往 offscreen 的队列中绝不存在任何无发音纯符号块。
+
+#### 4. 第四层：播放执行层弹性兜底（`offscreen.js`）
+在 `doAdvanceAndPlay` 与 `ensurePrefetched` 中设立兜底防线：
+即便偶有未过滤的纯符号 Chunk 进入播放器，播放器也会立刻识别并记录 `diagLog`，直接毫秒级前进到下一真实文本段落，绝不向 TTS 发起无效网络请求，彻底终结 HTTP 500 重试卡死。

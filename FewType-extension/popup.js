@@ -522,22 +522,30 @@ function sortVoicesForGroup(langKey, voices) {
   });
 }
 
-// 音色显示名：保留国家/地区后缀并带上性别前缀。例：en-GB-SoniaNeural(Female) → "Female · Sonia (en-GB)"、es-MX-DaliaNeural(Female) → "Femenina · Dalia (es-MX)"
-function voiceDisplayName(v) {
+// 性别：返回 'male' | 'female' | ''（后端 gender 为微软原始 Female/Male）
+function genderOf(v) {
+  const g = String(v.gender || "").toLowerCase();
+  return g === "female" ? "female" : g === "male" ? "male" : "";
+}
+// 音色名（不含性别符号）：Name (locale)
+function voiceNameText(v) {
   const s = v.shortName || "";
   const m = s.match(/^([a-z]{2,3}(?:-[A-Za-z]{2})?)-(.*)$/);
   if (!m) return s;
   const locale = m[1];
-  let name = m[2].replace(
+  const name = m[2].replace(
     /(MultilingualNeural|NeuralMultilingual|Neural|Online|Turbo|HD|Gaming|Pro)$/i,
     ""
   );
-  const g = String(v.gender || "").toLowerCase();
-  // 性别用彩色 emoji 符号前缀：♂️男(蓝) / ♀️女(粉)。原生 select 的 option 无法用 CSS
-  // 给单项上色，emoji 由系统按彩色字形渲染，省去 Female/Male 文字占位。
-  const genderIcon = g === "female" ? "♀️" : g === "male" ? "♂️" : "";
-  const base = name ? `${name} (${locale})` : s;
-  return genderIcon ? `${genderIcon} ${base}` : base;
+  return name ? `${name} (${locale})` : s;
+}
+// 隐藏原生 select 的 option 文本（可见层为自定义下拉另行渲染，这里仅兜底）。
+// 符号用纯文本 ♂/♀，颜色由自定义层 CSS 上色，不走 emoji。
+function voiceDisplayName(v) {
+  const g = genderOf(v);
+  const icon = g === "female" ? "♀" : g === "male" ? "♂" : "";
+  const base = voiceNameText(v);
+  return icon ? `${icon} ${base}` : base;
 }
 
 // 语言分组键：中文按简/繁细分（简体=zh-CN/SG 等，繁体=zh-TW/HK/MO），其余按主语言
@@ -615,9 +623,75 @@ function fillVoiceSelect() {
   for (const v of sortedVoices) {
     const opt = document.createElement("option");
     opt.value = v.shortName;
+    // 性别与展示名存 dataset，供自定义下拉层渲染并分别上色
+    opt.dataset.gender = genderOf(v);
+    opt.dataset.label = voiceNameText(v);
     opt.textContent = voiceDisplayName(v);
     sel.appendChild(opt);
   }
+  syncVoiceCustomUI(true);
+}
+
+// ---- 音色自定义下拉（原生 select 隐藏作值容器，可见层自行渲染以便给性别符号上蓝/粉色）----
+function genderIconHtml(g) {
+  if (g === "female") return '<span class="g-icon g-female">♀</span>';
+  if (g === "male") return '<span class="g-icon g-male">♂</span>';
+  return '<span class="g-icon"></span>';
+}
+function buildVoiceMenu() {
+  const sel = document.getElementById("voice");
+  const menu = document.getElementById("voiceMenu");
+  if (!sel || !menu) return;
+  menu.innerHTML = "";
+  for (const opt of sel.options) {
+    const item = document.createElement("div");
+    item.className = "voice-option";
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", String(opt.value === sel.value));
+    item.dataset.value = opt.value;
+    item.innerHTML =
+      genderIconHtml(opt.dataset.gender) +
+      `<span class="g-name">${opt.dataset.label || opt.textContent}</span>`;
+    item.addEventListener("click", () => {
+      sel.value = opt.value;
+      sel.dispatchEvent(new Event("change"));
+      syncVoiceCustomUI(true); // 重建菜单刷新选中高亮并刷新闭合按钮
+      closeVoiceMenu();
+    });
+    menu.appendChild(item);
+  }
+}
+function refreshVoiceTrigger() {
+  const sel = document.getElementById("voice");
+  const label = document.getElementById("voiceTriggerLabel");
+  if (!sel || !label) return;
+  const opt = [...sel.options].find((o) => o.value === sel.value);
+  if (!opt) {
+    label.innerHTML = "";
+    return;
+  }
+  label.innerHTML =
+    genderIconHtml(opt.dataset.gender) +
+    `<span class="g-name">${opt.dataset.label || opt.textContent}</span>`;
+}
+// rebuild=true 重建菜单（语言切换/重填后）；否则只刷新闭合按钮显示
+function syncVoiceCustomUI(rebuild) {
+  if (rebuild) buildVoiceMenu();
+  refreshVoiceTrigger();
+}
+function openVoiceMenu() {
+  const menu = document.getElementById("voiceMenu");
+  const trigger = document.getElementById("voiceTrigger");
+  if (!menu || !trigger) return;
+  menu.hidden = false;
+  trigger.setAttribute("aria-expanded", "true");
+}
+function closeVoiceMenu() {
+  const menu = document.getElementById("voiceMenu");
+  const trigger = document.getElementById("voiceTrigger");
+  if (!menu || !trigger) return;
+  menu.hidden = true;
+  trigger.setAttribute("aria-expanded", "false");
 }
 
 // 默认语言：浏览器语言命中则选中它；未命中用英语兜底
@@ -759,6 +833,7 @@ function applyUiLanguage() {
     fillVoiceSelect();
     if (prevVoice && [...voiceSel.options].some((o) => o.value === prevVoice)) {
       voiceSel.value = prevVoice;
+      syncVoiceCustomUI(false);
     }
     updateBridgeNotice(voicesOnline); // 重渲染后按真实在线状态重显提示
   }
@@ -821,6 +896,7 @@ function autoMatchVoiceToPageLang(text) {
     const sorted = sortVoicesForGroup(langKey, group.voices);
     voiceSel.value = sorted[0] ? sorted[0].shortName : group.voices[0].shortName;
     chrome.storage.local.set({ [LAST_VOICE_KEY]: voiceSel.value });
+    syncVoiceCustomUI(false);
   }
 }
 
@@ -946,6 +1022,7 @@ function restoreLastSelection() {
     }
     if (result[LAST_VOICE_KEY] && [...voiceSel.options].some((o) => o.value === result[LAST_VOICE_KEY])) {
       voiceSel.value = result[LAST_VOICE_KEY];
+      syncVoiceCustomUI(false);
     }
   });
 }
@@ -974,6 +1051,18 @@ document.getElementById("lang").addEventListener("change", (e) => {
 document.getElementById("voice").addEventListener("change", (e) => {
   userTouchedSelection = true;
   chrome.storage.local.set({ [LAST_VOICE_KEY]: e.target.value });
+});
+
+// 自定义音色下拉开合：点触发钮切换，点外部/Esc 关闭
+document.getElementById("voiceTrigger").addEventListener("click", () => {
+  const menu = document.getElementById("voiceMenu");
+  if (menu.hidden) openVoiceMenu(); else closeVoiceMenu();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest || !e.target.closest("#voiceDd")) closeVoiceMenu();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeVoiceMenu();
 });
 
 document.getElementById("rate").addEventListener("change", (e) => {

@@ -54,6 +54,11 @@
   const TERMINAL_PUNCTUATION = /[。！？…—」』）)\]"'".!?;:''"]$/;
   const SHORT_LINE_MAX = 20;
 
+  // 可读字符判断：判断一段文本中是否包含至少一个中日韩汉字/假名/谚文、英文字母或阿拉伯数字。
+  // 纯符号/装饰线/章节分隔符（如 ◎、◆、***、——、··· 等无任何发音字符）不作为可朗读内容提取，
+  // 避免送往 TTS 引发 HTTP 500 合成崩溃并阻塞后续章节朗读与翻页。
+  const SPEAKABLE_RE = /\p{L}|\p{N}/u;
+
   // 脚注角标收集：判定规则统一在共享 footnote.js（内容门槛 + 标签/偏移/小字号三选一）。
   function collectFootnoteAnchors(el) {
     const win = el.ownerDocument.defaultView;
@@ -87,7 +92,7 @@
     seen.add(el);
 
     const text = stripFootnoteAnchorText(el).replace(/\s+/g, " ").trim();
-    if (!text) return false;
+    if (!text || !SPEAKABLE_RE.test(text)) return false;
 
     const tag = el.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)) {
@@ -402,13 +407,12 @@
 
   // ---- 高亮定位状态（方案A：单向推进 + 修对称性）----
   // searchIndex 与提取侧（pushParagraph + buildChunksFromChapterData）完全同规则构建：
-  // body 段文本归一化后连续拼接（段落间不插空格），heading 段单独记录。这样 chunk
-  // （来自 body 拼接串）必然是这个索引串的精确子串，完整匹配接近 100%，不再依赖
-  // 容错缩短去碰运气。lastEndChar 记录上次 chunk 在索引串里的结束位置，下次从它
-  // 之后开始找——保证高亮严格单向推进，即使文本重复也不会跳回前面（韩文高亮
-  // 跳回前面的根因就是"全文 indexOf 命中前面重复处"）。
+  // 所有 SELECTOR（正文与标题）按真实 DOM 顺序统一连续拼接（段落间不插空格）。
+  // chunk 必然是这个索引串的精确子串，完整匹配接近 100%，不再依赖容错缩短去碰运气。
+  // lastEndChar 记录上次 chunk 在索引串里的结束位置，下次从它之后开始找——
+  // 保证高亮严格单向推进，即使正文与标题同名或文本重复也不会跳回前面或跳到后面。
   let highlightIndexDoc = null;
-  let highlightIndex = null; // { combined, charMap, headings: [{norm,map}] }
+  let highlightIndex = null; // { combined, charMap, bodyLen }
   let lastEndChar = -1;
 
   function resetHighlightState() {
@@ -460,26 +464,21 @@
     return { norm, map };
   }
 
-  // 构建搜索索引：复刻提取侧的 body/heading 分类（与 pushParagraph 同规则）
+  // 构建搜索索引：将所有 SELECTOR 元素按真实 DOM 顺序统一编排到 combined
+  // （heading 与 body 统一按文档流顺序拼接，保证严格单向推进，避免 heading 被跳过或与正文同名短语错位匹配）
   function buildHighlightIndex(doc) {
     const seen = new Set();
-    const bodyPieces = [];
-    const headings = [];
+    const pieces = [];
     doc.body.querySelectorAll(SELECTOR).forEach((el) => {
       if (seen.has(el)) return;
       seen.add(el);
       const { norm, map } = normalizeElementText(doc, el);
-      if (!norm) return;
-      const tag = el.tagName.toLowerCase();
-      const isHeading =
-        /^h[1-6]$/.test(tag) ||
-        (!TERMINAL_PUNCTUATION.test(norm) && Array.from(norm).length <= SHORT_LINE_MAX);
-      if (isHeading) headings.push({ norm, map });
-      else bodyPieces.push({ norm, map });
+      if (!norm || !SPEAKABLE_RE.test(norm)) return;
+      pieces.push({ norm, map });
     });
     let combined = "";
     const charMap = [];
-    for (const piece of bodyPieces) {
+    for (const piece of pieces) {
       for (let k = 0; k < piece.norm.length; k++) {
         charMap.push(piece.map[k]);
       }
@@ -489,17 +488,15 @@
     // 定位"提取时刻 DOM ≠ 高亮时刻 DOM"是否导致未命中
     if (typeof diagLog === "function") {
       diagLog("索引构建快照", {
-        bodyCount: bodyPieces.length,
-        headingCount: headings.length,
-        bodyPreview: bodyPieces.slice(0, 12).map((p) => p.norm.slice(0, 12)),
-        headingPreview: headings.slice(0, 12).map((h) => h.norm.slice(0, 12)),
+        pieceCount: pieces.length,
+        preview: pieces.slice(0, 12).map((p) => p.norm.slice(0, 12)),
+        combinedLen: combined.length,
         dom: domStructureInfo(),
       });
     }
     return {
       combined,
       charMap,
-      headings,
       bodyLen: doc.body.textContent.replace(/\s+/g, " ").trim().length,
     };
   }
@@ -556,7 +553,7 @@
       highlightIndexDoc = doc;
       lastEndChar = -1;
     }
-    const { combined, charMap, headings } = highlightIndex;
+    const { combined, charMap } = highlightIndex;
     if (!combined) return [];
 
     // 方案A：从上次 chunk 结束位置之后开始找（单向推进，杜绝跳回前面）
@@ -580,13 +577,7 @@
       }
     }
 
-    // body 主串里找不到 → 尝试 heading 块（heading 独立，不参与 body 单向链）
     if (idx === -1) {
-      for (const h of headings) {
-        if (h.norm === fullText || fullText.startsWith(h.norm) || h.norm.startsWith(fullText)) {
-          return rangesForCharMap(doc, h.map, 0, h.norm.length);
-        }
-      }
       // 自愈兜底：单向推进（from=lastEndChar）失败时，锚点可能已被污染
       // （例如早期版本重开朗读未重置 lastEndChar），此时退回到全文 from=0
       // 再完整匹配一次。正常路径（锚点干净）不会走到这里。
@@ -609,20 +600,13 @@
         const probeFrom = combined.indexOf(probe, from); // 从锚点起
         const aroundStart = Math.max(0, from);
         const around = combined.slice(aroundStart, Math.min(combined.length, aroundStart + 140));
-        // 检查 chunk 前缀是否被搜索侧判成了 heading（不在 body 主串里）
-        let headingHit = null;
-        for (const h of headings) {
-          if (h.norm.includes(probe)) { headingHit = h.norm.slice(0, 24); break; }
-        }
         diagLog(
           "未命中诊断：前缀探针位置",
           {
             probe,
             probeIdx0,
             probeFrom,
-            headingHit, // 若非 null：chunk 前缀其实在某个 heading 里 → 分类不对称
             combinedLen: combined.length,
-            headingsCount: headings.length,
             lastEndChar,
             fullTextLen: fullText.length,
             around, // 搜索起点 from 之后约 140 字，供人工比对
@@ -816,15 +800,9 @@ function ensureHighlightVisible(doc) {
     simulateNextPageKey();
 
     // 留出 800ms 冷却时间（兼容翻页动画与网络延迟），期间拒绝任何翻页指令
+    // 单个 Chunk 至多触发单次翻页，禁止在冷却回调内自动递归连翻两页（避免排版动画未稳态时视觉超前）
     setTimeout(() => {
       isTurningPage = false;
-      // 冷却结束后重新校验一次，若高亮跨多栏仍未落入视口，再补翻一次
-      if (currentDoc) {
-        const checkAgain = classifyHighlight(currentDoc);
-        if (!checkAgain.anyVisible || checkAgain.overflowRatio >= OVERFLOW_TURN_RATIO) {
-          ensureHighlightVisible(currentDoc);
-        }
-      }
     }, 800);
   }
 }

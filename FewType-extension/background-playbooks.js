@@ -9,15 +9,114 @@ function textKey(tabId) {
   return `tabText_${tabId}`;
 }
 
-async function saveLatestForTab(tabId, url, data) {
+function spreadKey(tabId) {
+  return `tabSpread_${tabId}`;
+}
+
+async function clearTabSpread(tabId) {
+  await chrome.storage.session.remove([spreadKey(tabId), textKey(tabId)]);
+}
+
+// 保存当前双叶视图（left/right），绝不累积历史旧页
+async function saveSpreadLeafForTab(tabId, message) {
+  const result = await chrome.storage.session.get(spreadKey(tabId));
+  const spread = result[spreadKey(tabId)] || { left: null, right: null };
+
+  // 视口中左叶通常在 0~450px，右叶通常在 500~1300px
+  const side = typeof message.pageLeft === "number" && message.pageLeft >= 500 ? "right" : "left";
+
+  spread[side] = {
+    url: message.url || "",
+    data: message.data || [],
+    pageLeft: message.pageLeft || 0,
+    updatedAt: Date.now(),
+  };
+
   await chrome.storage.session.set({
-    [textKey(tabId)]: { url, data, updatedAt: Date.now() },
+    [spreadKey(tabId)]: spread,
+    [textKey(tabId)]: { url: message.url || "", data: message.data || [], updatedAt: Date.now() },
   });
+
+  return { side, spread };
+}
+
+// 合并当前双叶视图的数据：左叶（扉页）在前，右叶（正文）在后
+async function getMergedDataForTab(tabId) {
+  const result = await chrome.storage.session.get(spreadKey(tabId));
+  const spread = result[spreadKey(tabId)];
+  if (!spread) {
+    const legacy = await chrome.storage.session.get(textKey(tabId));
+    const raw = legacy[textKey(tabId)];
+    return raw && Array.isArray(raw.data) ? raw.data : [];
+  }
+
+  const left = spread.left;
+  const right = spread.right;
+
+  // 双叶时效性校验：属于同一跨页的两个页面总是在几百毫秒内先后到达。
+  // 若一侧是几秒或几分钟前的旧残留（例如上一页为双叶，当前页已翻到章末单叶、右侧为空白），
+  // 绝不能将旧页拼入当前页！只保留较新那一侧。
+  const SPREAD_MAX_GAP_MS = 2500;
+  let leftData = left && Array.isArray(left.data) ? left.data : [];
+  let rightData = right && Array.isArray(right.data) ? right.data : [];
+
+  if (left && right && leftData.length > 0 && rightData.length > 0) {
+    const gap = Math.abs(left.updatedAt - right.updatedAt);
+    if (gap > SPREAD_MAX_GAP_MS) {
+      if (left.updatedAt > right.updatedAt) {
+        logEvent("background", "双叶时间差过大，丢弃陈旧右叶", {
+          gapMs: gap,
+          leftPreview: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+          discardedRight: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+        });
+        rightData = [];
+        spread.right = null;
+        await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
+      } else {
+        logEvent("background", "双叶时间差过大，丢弃陈旧左叶", {
+          gapMs: gap,
+          rightPreview: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+          discardedLeft: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+        });
+        leftData = [];
+        spread.left = null;
+        await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
+      }
+    }
+  }
+
+  if (leftData.length === 0 && rightData.length === 0) {
+    const legacy = await chrome.storage.session.get(textKey(tabId));
+    const raw = legacy[textKey(tabId)];
+    return raw && Array.isArray(raw.data) ? raw.data : [];
+  }
+
+  logEvent(
+    "background",
+    `合并双叶数据: left=${leftData.length}段, right=${rightData.length}段`,
+    {
+      leftPreview: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+      rightPreview: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+    }
+  );
+
+  return [...leftData, ...rightData];
+}
+
+async function saveLatestForTab(tabId, url, data) {
+  return saveSpreadLeafForTab(tabId, { url, data, pageLeft: 0 });
 }
 
 async function getLatestForTab(tabId) {
+  const merged = await getMergedDataForTab(tabId);
   const result = await chrome.storage.session.get(textKey(tabId));
-  return result[textKey(tabId)] || null;
+  const raw = result[textKey(tabId)] || null;
+  if (!merged || merged.length === 0) return raw;
+  return {
+    url: raw ? raw.url : "",
+    data: merged,
+    updatedAt: raw ? raw.updatedAt : Date.now(),
+  };
 }
 
 // ---- 朗读状态 ----
@@ -132,11 +231,10 @@ async function beginNewPageProcessing() {
 // 不发送给 TTS——反正也没有可读的内容，跳过不影响听感，还能避免因为它报错、
 // 影响到后面正常内容的合成和播放。
 function hasReadableContent(text) {
-  for (const ch of text) {
-    if (isCJKChar(ch) || isLatinLetter(ch) || isAsciiDigit(ch)) return true;
-  }
-  return false;
+  if (!text || typeof text !== "string") return false;
+  return /\p{L}|\p{N}/u.test(text);
 }
+
 
 async function computeFullChunksForTab(tabId) {
   const latest = await getLatestForTab(tabId);
@@ -256,6 +354,43 @@ function clearPageTurnTimeout() {
   if (pageTurnTimeoutHandle) {
     clearTimeout(pageTurnTimeoutHandle);
     pageTurnTimeoutHandle = null;
+  }
+}
+
+// ---- 翻页收集窗：等待双叶视图跨章时的两个片段（左叶扉页与右叶正文）均到齐后按视觉顺序统一接续 ----
+const PAGE_TURN_COLLECT_WINDOW_MS = 850;
+let pageTurnCollectTimer = null;
+
+function clearPageTurnCollectTimer() {
+  if (pageTurnCollectTimer) {
+    clearTimeout(pageTurnCollectTimer);
+    pageTurnCollectTimer = null;
+  }
+}
+
+async function flushPageTurnBuffer(tabId) {
+  clearPageTurnCollectTimer();
+  const state = await getReadingState();
+
+  if (!state.isReading || !state.waitingForNextPage || state.tabId !== tabId) {
+    logEvent("background", "翻页收集触发/到期，但状态已变（不再等翻页），忽略");
+    return;
+  }
+
+  logEvent("background", "翻页收集就绪，准备接续播放");
+
+  await setReadingState({
+    waitingForNextPage: false,
+    currentPageCarryoverPrefix: state.carryoverText || null,
+    carryoverText: null,
+    sentChunkCount: 0,
+    sentChunksSnapshot: [],
+    pageTurnRetryCount: 0,
+  });
+
+  const result = await appendLatestForTab(tabId, state.voice, true); // fromZero=true
+  if (!result.ok) {
+    await stopReading();
   }
 }
 
@@ -465,12 +600,14 @@ async function startReading(tabId, voice, rate) {
 
 async function stopReading() {
   clearPageTurnTimeout();
+  clearPageTurnCollectTimer();
   clearPlaybackWatchdog();
   const prev = await getReadingState();
   if (prev.tabId) {
     // 通知 content 停止空页周期上报：防止残留实例的旧页面空页上报在下次
     // 开始朗读时被误当成"当前页是空页"处理而误翻页（对齐 Koodo 的同类修复）。
     chrome.tabs.sendMessage(prev.tabId, { type: "PB_STOP_READING" }).catch(() => {});
+    await clearTabSpread(prev.tabId);
   }
   await setReadingState({ ...DEFAULT_STATE });
   chrome.runtime.sendMessage({ type: "OFFSCREEN_STOP" }).catch(() => {
@@ -502,7 +639,10 @@ const MAX_PAGE_TURN_RETRIES = 3; // 翻页等待超时后最多重试几次，�
 
 async function triggerPageTurnAndWait(tabId, isRetry = false) {
   logEvent("background", `触发 TURN_PAGE${isRetry ? "（重试）" : ""}`, { tabId });
+  // 清掉上一轮可能残留的收集窗和缓冲（重试时尤其需要，避免旧片段混入新翻页）
+  clearPageTurnCollectTimer();
   if (tabId) {
+    await clearTabSpread(tabId);
     chrome.tabs.sendMessage(tabId, { type: "TURN_PAGE" }).catch(() => {
       // 标签页可能已经关闭，忽略
     });
@@ -560,11 +700,21 @@ export function handlePlaybooksMessage(message, sender, sendResponse) {
       const tabId = sender.tab.id;
 
       if (message.data === null) {
-        logEvent("background", "PAGE_TEXT_UPDATED: data=null (空页上报)", { tabId });
-        chrome.storage.session.remove(textKey(tabId));
+        logEvent("background", "PAGE_TEXT_UPDATED: data=null (空页上报)", { tabId, url: message.url });
         (async () => {
           const state = await getReadingState();
           if (!state.isReading || state.isPaused || state.tabId !== tabId) return;
+
+          // 若在等翻页，先检查是否其他可见 frame 已有文字内容（例如左页有正文、右页为空白/插画）
+          if (state.waitingForNextPage) {
+            const merged = await getMergedDataForTab(tabId);
+            if (merged && merged.length > 0) {
+              logEvent("background", `空页上报，但当前其他 frame 存在 ${merged.length} 段文字，不作为整页空页处理`);
+              return;
+            }
+          }
+
+          await clearTabSpread(tabId);
           const fp = message.fingerprint || null;
           const last = state.emptyLastFingerprint || null;
           const sameContent =
@@ -614,35 +764,49 @@ export function handlePlaybooksMessage(message, sender, sendResponse) {
 
       logEvent("background", `PAGE_TEXT_UPDATED: 收到 ${message.data.length} 个原始段落`, {
         tabId,
+        url: message.url,
         preview: message.data.slice(0, 3).map((d) => textPreview(d.text, 15)),
       });
 
-      saveLatestForTab(tabId, message.url, message.data).then(async () => {
+      (async () => {
         const state = await getReadingState();
         if (state.emptyPageStreak) {
           await setReadingState({ emptyPageStreak: 0 }); // 拿到真内容了，空页计数清零
         }
 
-        // 正在等着翻页翻成功、且这条更新确实来自正在朗读的那个标签页 —— 自动接上朗读下一页
-        // 用 append 而不是 play：如果是提前触发翻页的，这一页尾巴的音频可能还没放完，
-        // append 只会把新内容接到队列后面，不会打断正在播放的音频。
+        // 保存本页面的段落数据（严格限制为 left 与 right 两个槽位，彻底避免 iframe 动态递增无限累积）
+        const { side, spread } = await saveSpreadLeafForTab(tabId, message);
+
+        // 翻页收集分支：等待双叶视图中两个页面（左叶扉页与右叶正文）就绪
         if (state.isReading && state.waitingForNextPage && state.tabId === tabId) {
-          logEvent("background", "走翻页接续分支 (waitingForNextPage=true)");
-          clearPageTurnTimeout();
-          // 翻页接续：把上一页的 carryoverText 接到新页第一块开头。
-          await setReadingState({
-            waitingForNextPage: false,
-            currentPageCarryoverPrefix: state.carryoverText || null,
-            carryoverText: null,
-            sentChunkCount: 0,
-            sentChunksSnapshot: [],
-            pageTurnRetryCount: 0,
+          clearPageTurnTimeout(); // 收到有效内容，停掉超时兜底
+
+          const hasLeft = spread.left && Array.isArray(spread.left.data) && spread.left.data.length > 0;
+          const hasRight = spread.right && Array.isArray(spread.right.data) && spread.right.data.length > 0;
+
+          logEvent("background", `翻页收集状态: hasLeft=${hasLeft}, hasRight=${hasRight}`, {
+            side,
+            leftCount: hasLeft ? spread.left.data.length : 0,
+            rightCount: hasRight ? spread.right.data.length : 0,
           });
-          const result = await appendLatestForTab(tabId, state.voice, true); // 从0开始
-          if (!result.ok) {
-            await stopReading();
+
+          // 若双叶视图的左叶与右叶已齐备，立即接续播放！
+          if (hasLeft && hasRight) {
+            clearPageTurnCollectTimer();
+            logEvent("background", "双叶片段全部到齐 (left & right)，立即开始接续播放");
+            await flushPageTurnBuffer(tabId);
+            return;
           }
-        } else if (
+
+          // 尚未到齐（目前仅有 1 个片段，可能为单页，也可能跨章迟到的另一页还在路上）
+          // 启动收集窗口：若在窗口内第二页到达，则立即合并开播；若超时无第二页，则按单页开播
+          clearPageTurnCollectTimer();
+          pageTurnCollectTimer = setTimeout(() => flushPageTurnBuffer(tabId), PAGE_TURN_COLLECT_WINDOW_MS);
+          return;
+        }
+
+        // 非翻页等待期（同页追加）
+        if (
           state.isReading &&
           !state.isPaused &&
           !state.waitingForNextPage &&
@@ -663,7 +827,7 @@ export function handlePlaybooksMessage(message, sender, sendResponse) {
             msgTabId: tabId,
           });
         }
-      });
+      })();
       return;
     }
 
