@@ -15,7 +15,7 @@
 //   8. 空页书尾判断：MAX_EMPTY_STALL=4，指纹无变化→停滞+1
 
 import { logEvent, textPreview } from "./diagnostics.js";
-import { chunkTextByWords, endsWithAnyPunctuation } from "./chunking.js";
+import { chunkTextByWords } from "./chunking.js";
 import { sendToOffscreen } from "./offscreen-client.js";
 
 // ---- 章节内容缓存：每个 tabId 存一份最新采集到的整章数据 ----
@@ -151,17 +151,48 @@ async function startReading(tabId, voice, rate, { fromStart = false, prefixText 
 
   const { chunks, trailing } = chunkTextByWords(fullText);
   const allChunks = chunks.slice();
-  if (trailing) allChunks.push(trailing);
 
-  if (allChunks.length === 0) {
-    return { ok: false, error: "没有可朗读的内容" };
+  // 页尾 trailing（不足30字的页尾段）三分支：翻页空挡只落在标点上，绝不劈在词/字中间。
+  //  ① 页尾正好落在切刀标点上（，,、：:；;。！？….?!—）→ 整段本页读完再翻，空挡就停在这个标点；
+  //  ② 裸字收尾、trailing 内部能找到切刀标点 → 从尾往前找最后一个标点切一刀，前半截（含标点）
+  //     并入本页跟红框连读，后半截缓存下页合并：翻页推迟、悬空尾巴变短；
+  //  ③ 整段无标点（长专有名词/外文/数字串，小概率）→ 整段扔下页缓存兜底。
+  // chunking 的30字门槛不动；缓存尾巴沿用 pendingTrailingText/prefix，单块 miss 不触发翻页。
+  const CUT_PUNCT = "，,、：:；;。！？….?!—";
+  let pendingTrailing = null;
+  if (trailing) {
+    const tChars = Array.from(trailing.trim());
+    const lastCh = tChars[tChars.length - 1];
+    if (CUT_PUNCT.includes(lastCh)) {
+      // ① 页尾落标点：整段本页读
+      allChunks.push(trailing);
+    } else {
+      // ②/③ 裸字尾：从尾往前找最后一个切刀标点
+      let cutIdx = -1;
+      for (let i = tChars.length - 1; i >= 0; i--) {
+        if (CUT_PUNCT.includes(tChars[i])) { cutIdx = i; break; }
+      }
+      if (cutIdx >= 0) {
+        // ② 切一刀：head（到标点、含标点）本页连读，tail 缓存下页
+        const head = tChars.slice(0, cutIdx + 1).join("").trim();
+        const tail = tChars.slice(cutIdx + 1).join("").trim();
+        if (head) allChunks.push(head);
+        pendingTrailing = tail || null;
+      } else {
+        // ③ 无标点：整段缓存
+        pendingTrailing = trailing;
+      }
+    }
   }
 
-  // 页尾断句：如果最后一个 chunk 不以终结标点结尾，缓存到下一页合并，
-  // 不加入当前播放队列（避免半句被单独读完后断开）。
-  let pendingTrailing = null;
-  if (allChunks.length > 1 && !endsWithAnyPunctuation(allChunks[allChunks.length - 1])) {
-    pendingTrailing = allChunks.pop();
+  // 兜底：整页只有一段且被缓存（③）时不能空队列，拉回本页读，避免丢内容
+  if (allChunks.length === 0) {
+    if (pendingTrailing) {
+      allChunks.push(pendingTrailing);
+      pendingTrailing = null;
+    } else {
+      return { ok: false, error: "没有可朗读的内容" };
+    }
   }
 
   logEvent(

@@ -34,11 +34,32 @@
   // 或者是口号式短段落（pushParagraph 里识别为 heading）。
   const TERMINAL_PUNCTUATION = /[。！？…—」』）)\]"'".!?;:''"]$/;
 
+  // 脚注锚剔除：段落里的脚注号（纯数字 1~3 位或 [n]）不朗读，避免和下一段开头数字粘连
+  // （"1" + "5美元" → "15美元"）。判定规则统一在共享 footnote.js：内容门槛 +
+  // sub/sup 标签 / va 偏移 / 小字号≤85% 三选一。
+  function stripSmallSuperscriptDigits(el) {
+    const skip = window.__fewtypeFn.collectAnchors(el, window);
+    if (skip.size === 0) return el.textContent;
+    const out = [];
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walk.nextNode())) {
+      let anc = node.parentElement;
+      let drop = false;
+      while (anc && anc !== el) {
+        if (skip.has(anc)) { drop = true; break; }
+        anc = anc.parentElement;
+      }
+      if (!drop) out.push(node.textContent);
+    }
+    return out.join("");
+  }
+
   function pushParagraph(result, seen, el) {
     if (seen.has(el)) return;
     seen.add(el);
 
-    const text = el.textContent.replace(/\s+/g, " ").trim();
+    const text = stripSmallSuperscriptDigits(el).replace(/\s+/g, " ").trim();
     if (!text) return;
     // 按内容过滤"分页延续箭头"，不依赖具体 class 名字（scribe_custom-N 这种编号是每本书动态分配的，
     // 换书之后同一个编号可能对应完全不同的样式，写死排除某个 class 会有把正文误删的风险）。
@@ -424,47 +445,67 @@
     emptyPageTimer = setInterval(fire, 1000);
   }
 
-  function reportIfChanged() {
-    const data = extractCurrentPageText();
+    // ---- 翻页等待期的"渲染稳定"静默确认 ----
+    // PB 跨页/跨章是分批异步写入 DOM 的：旧页残留与新页文本先后到达。若抽到第一批就
+    // 上报，旧页（或相邻旧叶）会先被播出去，完整新页后到只能追加、无法替换。pending 期
+    // 不抽到第一批就发，而是等 DOM 短时间内不再变化（静默）：连续渲染会不断重置静默计时，
+    // 直到新页写稳才正式上报，旧页中间态在 content 内部被吸收，不进入播放队列。
+    // 网络好、一次抽全时只多等这一个静默窗；弱网分批时只在"还在写"期间等待，不凭空空等。
 
-    if (!data) {
-      // 顶层 play.google.com 页面本来就永远匹配不到正文，不应该发送任何消息（避免用无意义的
-      // "没有正文"覆盖掉真正的正文 iframe 发来的数据）。
-      // 只有"这个 frame 之前确实成功提取过、现在突然匹配不到了"才主动上报空页——
-      // 常见场景：封面/插图/空白页，或同一个 iframe 内用 SPA 方式切换到了另一本书。
-      // 空页走周期上报（带指纹），让 background 判断翻页后内容有无变化，而不是只报一次。
-      if (window.__hasEverMatched) scheduleEmptyPageReport();
-      return;
+    // 真正发 PAGE_TEXT_UPDATED：内容没变化不重复发。抽成独立函数供正常路径与稳定上报共用。
+    function doReport(data, serialized) {
+      if (serialized === window.__lastReportedText) return;
+      window.__lastReportedText = serialized;
+
+      diagLog(`提取到 ${data.length} 段，正式上报`, {
+        preview: data.slice(0, 3).map((d) => (d.text || "").slice(0, 15)),
+      });
+
+      safeSendMessage({
+        type: "PAGE_TEXT_UPDATED",
+        url: location.href,
+        data,
+      });
     }
-    stopEmptyPageReport();
-    window.__hasEverMatched = true;
 
-    const serialized = JSON.stringify(data);
+    function reportIfChanged() {
+      const data = extractCurrentPageText();
 
-    // 翻页刚触发、还在等新页渲染完成期间：如果这次抓到的内容跟翻页前最后一次上报的
-    // 一模一样，说明这是动画中间态、新页还没真正渲染出来（旧的 reader-page 可能还
-    // 短暂留在 DOM 里、或者 opacity 判断有一瞬间的过渡态），直接丢弃，不当成"新内容"
-    // 上报给 background——否则会被误判成"这一页内容变化了"，触发一次不必要的整页重算
-    // 和对齐校验，徒增一次可能出错的机会。
-    if (window.__pageTurnPending && serialized === window.__pageTurnOldSnapshot) {
-      diagLog("提取到内容但等于翻页前快照，判定为旧页中间态，丢弃");
-      return;
+      if (!data) {
+        // 顶层 play.google.com 页面本来就永远匹配不到正文，不应该发送任何消息（避免用无意义的
+        // "没有正文"覆盖掉真正的正文 iframe 发来的数据）。
+        // 只有"这个 frame 之前确实成功提取过、现在突然匹配不到了"才主动上报空页——
+        // 常见场景：封面/插图/空白页，或同一个 iframe 内用 SPA 方式切换到了另一本书。
+        // 空页走周期上报（带指纹），让 background 判断翻页后内容有无变化，而不是只报一次。
+        if (window.__hasEverMatched) scheduleEmptyPageReport();
+        return;
+      }
+      stopEmptyPageReport();
+      window.__hasEverMatched = true;
+
+      const serialized = JSON.stringify(data);
+
+      // 翻页刚触发、还在等新页渲染完成期间：如果这次抓到的内容跟翻页前最后一次上报的
+      // 一模一样，说明这是动画中间态、新页还没真正渲染出来（旧的 reader-page 可能还
+      // 短暂留在 DOM 里、或者 opacity 判断有一瞬间的过渡态），直接丢弃，不当成"新内容"
+      // 上报给 background——否则会被误判成"这一页内容变化了"，触发一次不必要的整页重算
+      // 和对齐校验，徒增一次可能出错的机会。
+      if (window.__pageTurnPending && serialized === window.__pageTurnOldSnapshot) {
+        diagLog("提取到内容但等于翻页前快照，判定为旧页中间态，丢弃");
+        return;
+      }
+
+      // 翻页等待期：只把当前抽取结果存为稳定基准，交给 observer 的静默计时器决定何时上报，
+      // 这里不立即发，避免旧页/未渲染完的第一批进入播放队列。
+      if (window.__pageTurnPending) {
+        window.__settleData = data;
+        window.__settleSerialized = serialized;
+        return;
+      }
+
+      window.__pageTurnPending = false;
+      doReport(data, serialized);
     }
-    window.__pageTurnPending = false;
-
-    if (serialized === window.__lastReportedText) return; // 内容没变化，不重复上报
-    window.__lastReportedText = serialized;
-
-    diagLog(`提取到 ${data.length} 段，正式上报`, {
-      preview: data.slice(0, 3).map((d) => (d.text || "").slice(0, 15)),
-    });
-
-    safeSendMessage({
-      type: "PAGE_TEXT_UPDATED",
-      url: location.href,
-      data,
-    });
-  }
 
   // 模拟翻页动作：Play Books 的 DOM 里能看到 readerkeyboardnavigationhandler 这类属性，
   // 说明它支持键盘翻页。不确定这个监听器具体挂在外层 play.google.com 还是内层
@@ -920,6 +961,11 @@
       // 不在这里 clearHighlight：新页渲染后 HIGHLIGHT_CHUNK 会重试贴上；过早清掉
       // 会导致跨页那一两秒完全没有高亮。
       observer.disconnect();
+      // 清掉上一轮翻页可能残留的稳定基准/计时，避免两次翻页串味
+      clearTimeout(window.__settleTimer);
+      window.__settleTimer = null;
+      window.__settleData = null;
+      window.__settleSerialized = null;
       window.__pageTurnPending = true;
       window.__pageTurnOldSnapshot = window.__lastReportedText;
       simulateNextPageKey();
@@ -946,9 +992,25 @@
   // 拉长防抖窗口能让大部分情况在真正稳定之后才抽取一次，减少不必要的多次上报。
   const EXTRACT_DEBOUNCE_MS = 700;
 
+  // 翻页等待期（__pageTurnPending）的渲染稳定静默窗：DOM 连续写入会不断重置这个计时，
+  // 一旦短时间内不再变化即判定新页写稳、正式上报；旧页中间态在窗口内被吸收，不单独发出。
+  const TURN_SETTLE_SILENCE_MS = 200;
+
   const observer = new MutationObserver(() => {
-    clearTimeout(window.__extractDebounce);
-    window.__extractDebounce = setTimeout(reportIfChanged, EXTRACT_DEBOUNCE_MS);
+    if (window.__pageTurnPending) {
+      // 翻页等待期：先刷新稳定基准（pending 期 reportIfChanged 只存不发），再用短静默判定
+      // DOM 是否写稳；连续渲染不断重置计时，新页写稳后才正式上报，旧页中间态不单独发出。
+      reportIfChanged();
+      clearTimeout(window.__settleTimer);
+      window.__settleTimer = setTimeout(() => {
+        window.__settleTimer = null;
+        window.__pageTurnPending = false;
+        if (window.__settleData) doReport(window.__settleData, window.__settleSerialized);
+      }, TURN_SETTLE_SILENCE_MS);
+    } else {
+      clearTimeout(window.__extractDebounce);
+      window.__extractDebounce = setTimeout(reportIfChanged, EXTRACT_DEBOUNCE_MS);
+    }
   });
 
   observer.observe(document.body, {

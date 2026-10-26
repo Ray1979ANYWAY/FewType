@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_pluginName__",
-  "version": "1.4.2",
+  "version": "1.4.5",
   "description": "__MSG_pluginDesc__",
   "default_locale": "zh_CN",
   "permissions": [
@@ -30,6 +30,7 @@
       ],
       "all_frames": true,
       "js": [
+        "footnote.js",
         "content-playbooks.js"
       ],
       "run_at": "document_idle"
@@ -40,6 +41,7 @@
         "https://web.koodoreader.cn/*"
       ],
       "js": [
+        "footnote.js",
         "content-koodo.js"
       ],
       "run_at": "document_idle"
