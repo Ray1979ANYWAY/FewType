@@ -533,9 +533,11 @@ function voiceDisplayName(v) {
     ""
   );
   const g = String(v.gender || "").toLowerCase();
-  const genderWord = g === "female" ? t("genderFemale") : g === "male" ? t("genderMale") : "";
+  // 性别用彩色 emoji 符号前缀：♂️男(蓝) / ♀️女(粉)。原生 select 的 option 无法用 CSS
+  // 给单项上色，emoji 由系统按彩色字形渲染，省去 Female/Male 文字占位。
+  const genderIcon = g === "female" ? "♀️" : g === "male" ? "♂️" : "";
   const base = name ? `${name} (${locale})` : s;
-  return genderWord ? `${genderWord} · ${base}` : base;
+  return genderIcon ? `${genderIcon} ${base}` : base;
 }
 
 // 语言分组键：中文按简/繁细分（简体=zh-CN/SG 等，繁体=zh-TW/HK/MO），其余按主语言
