@@ -164,7 +164,67 @@
         line-height: 1.5;
       }
       #lang { flex: 1 1 40%; min-width: 96px; }
-      #voice { flex: 1 1 60%; min-width: 110px; }
+      /* 音色：原生 select 仅作值容器（隐藏），可见层为自定义下拉，以便给性别符号上蓝/粉色 */
+      #voice.voice-native-select {
+        position: absolute;
+        width: 1px; height: 1px;
+        opacity: 0;
+        border: 0;
+        padding: 0;
+        pointer-events: none;
+      }
+      .voice-dd { position: relative; flex: 1 1 60%; min-width: 110px; }
+      .voice-dd-trigger {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--input);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+      }
+      .voice-dd-trigger:hover { border-color: var(--accent); }
+      .voice-dd-trigger:focus { outline: none; border-color: var(--accent); }
+      .voice-dd-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .voice-dd-caret { color: var(--muted2); flex: 0 0 auto; }
+      .voice-dd-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0; right: 0;
+        max-height: 220px;
+        overflow-y: auto;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        z-index: 1000;
+        padding: 4px;
+      }
+      .voice-dd-menu[hidden] { display: none; }
+      .voice-option {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .voice-option:hover { background: var(--card2); }
+      .voice-option[aria-selected="true"] { background: var(--card2); }
+      .voice-option .g-icon { flex: 0 0 auto; width: 14px; text-align: center; font-weight: 700; }
+      .voice-option .g-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+      .g-male { color: #4E8DF0; }
+      .g-female { color: #E87CA2; }
+      /* 闭合态按钮里的符号同样上色，名字保持常规色 */
+      #voiceTriggerLabel .g-icon { margin-right: 2px; }
       .select-label {
         font-size: 12px;
         color: var(--muted);
@@ -241,7 +301,14 @@
       <label for="lang" class="select-label" data-i18n="langLabel">语言</label>
       <select id="lang" aria-label="language"></select>
       <label for="voice" class="select-label" data-i18n="voiceLabel">音色</label>
-      <select id="voice"></select>
+      <div class="voice-dd" id="voiceDd">
+        <select id="voice" class="voice-native-select" aria-label="voice"></select>
+        <button type="button" class="voice-dd-trigger" id="voiceTrigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="voice-dd-label" id="voiceTriggerLabel"></span>
+          <span class="voice-dd-caret">▾</span>
+        </button>
+        <div class="voice-dd-menu" id="voiceMenu" role="listbox" hidden></div>
+      </div>
     </div>
     <div class="refresh-hint">
       <div data-i18n="refreshHint">如果没有抓取到文本，请按 F5 刷新页面</div>

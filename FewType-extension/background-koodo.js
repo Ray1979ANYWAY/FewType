@@ -21,7 +21,7 @@
 //     这一版章节读完就正常停止朗读，不臆造自动跳章的实现）
 
 import { logEvent, textPreview } from "./diagnostics.js";
-import { chunkTextByWords } from "./chunking.js";
+import { chunkTextByWords, hasSpeakableContent } from "./chunking.js";
 import { sendToOffscreen } from "./offscreen-client.js";
 
 // ---- 章节内容缓存：每个 tabId 存一份最新提取到的整章数据 ----
@@ -122,12 +122,15 @@ function buildChunksFromChapterData(items) {
   function flushBodyBuffer() {
     if (!bodyBuffer) return;
     const { chunks: pieces, trailing } = chunkTextByWords(bodyBuffer);
-    chunks.push(...pieces);
-    if (trailing) chunks.push(trailing);
+    for (const piece of pieces) {
+      if (hasSpeakableContent(piece)) chunks.push(piece);
+    }
+    if (trailing && hasSpeakableContent(trailing)) chunks.push(trailing);
     bodyBuffer = "";
   }
 
   for (const item of items) {
+    if (!item.text || !hasSpeakableContent(item.text)) continue;
     if (item.type === "heading") {
       flushBodyBuffer();
       chunks.push(item.text);

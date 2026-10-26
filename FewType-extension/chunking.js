@@ -15,6 +15,13 @@ export function isAsciiDigit(ch) {
   return /[0-9]/.test(ch);
 }
 
+// 判断文本是否包含至少一个可发音的字符（Unicode 字母或数字，含中日韩汉字、假名、谚文、全半角英文字母与数字）。
+// 过滤纯符号/装饰线/标点块（如 ◎、◆、***、—— 等），避免发送给 TTS 引发 HTTP 500 崩溃或播放卡死。
+export function hasSpeakableContent(text) {
+  if (!text || typeof text !== "string") return false;
+  return /\p{L}|\p{N}/u.test(text);
+}
+
 // 每一块最少攒够这么多"字"再考虑切——中文对话经常三五个字一个句号，纯按标点切
 // 会把文本切得很碎；改成"先攒字数，字数够了再找标点收尾"，块的大小更均匀。
 export const MIN_CHUNK_WORDS = 30;
