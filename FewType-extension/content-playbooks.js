@@ -1056,11 +1056,23 @@
       // 没有有效选中（或选中的起点不在正文里）再回退到"视口内第一个完整句子"。
       const selectionResult = findSelectionStartIndex();
       const result = selectionResult || findVisibleStartIndex();
-      diagLog(`回应起点查询：skipPrefix 长度=${(result.skipPrefix || "").length}`, {
+      const data = extractCurrentPageText();
+      const pageLeft = getFrameVisualLeft();
+      result.data = data;
+      result.pageLeft = pageLeft;
+      result.url = location.href;
+      diagLog(`回应起点查询：skipPrefix 长度=${(result.skipPrefix || "").length}, data=${data ? data.length : 0}段, pageLeft=${pageLeft}`, {
         fromSelection: !!selectionResult,
+        pageLeft,
       });
       sendResponse(result);
       return true;
+    }
+    if (message.type === "PB_FORCE_REPORT") {
+      if (!isFrameCurrentlyVisible()) return;
+      window.__lastReportedText = null;
+      reportIfChanged();
+      return;
     }
     if (message.type === "PB_GET_VISIBLE_IFRAMES") {
       // 只有顶层 frame（play.google.com）处理此消息，获取子 iframe 的视觉水平位置

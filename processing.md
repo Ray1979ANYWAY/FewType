@@ -3054,3 +3054,169 @@ export function hasSpeakableContent(text) {
 #### 4. 第四层：播放执行层弹性兜底（`offscreen.js`）
 在 `doAdvanceAndPlay` 与 `ensurePrefetched` 中设立兜底防线：
 即便偶有未过滤的纯符号 Chunk 进入播放器，播放器也会立刻识别并记录 `diagLog`，直接毫秒级前进到下一真实文本段落，绝不向 TTS 发起无效网络请求，彻底终结 HTTP 500 重试卡死。
+
+
+---
+
+## 2026-10-27 根本突破：揭秘 Play Books 朗读翻页中途停止后再次开始误报「没有可朗读内容」的根因与彻底修复
+
+### 现象与诊断（结合用户截图《21世紀的21堂課》）
+用户在 Google Play Books 朗读前序章节时向后翻页到感兴趣的新章（第6堂課「文明」），随后点击「停止」；当再次点击「开始朗读」时，Popup 弹窗报错：
+`Failed to start: 没有可朗读的内容，先在书页里翻到有正文的一页`
+而下方段落列表却明确显示着已抓取到的 7 个段落（`7 segments • 3:32:13 PM • 第6堂課文明...`）。
+
+#### 根因链条：
+1. **`stopReading()` 错误清除了当前视口书页的数据缓存**：
+   - 旧版 `stopReading()` 在执行时无差别调用了 `await clearTabSpread(prev.tabId)`。
+   - `clearTabSpread` 会直接从 `chrome.storage.session` 中移除 `spreadKey`（双叶数据）和 `textKey`（整页数据）。
+   - 用户停止朗读时，浏览器仍然停留在当前这一页书上，并没有离开或关闭。
+2. **`content-playbooks.js` 的去重机制导致当前页不会重新自动上报**：
+   - `content-playbooks.js` 内有 `if (serialized === window.__lastReportedText) return;` 保护。
+   - 当用户停止朗读后，页面 DOM 并未发生新的变更，content 认为「当前内容与刚刚上报的一致」，不再重新发送 `PAGE_TEXT_UPDATED`。
+   - 此时 `storage` 中的数据已被 `stopReading()` 删空，而 content 又不再发新消息，导致 background 处于完全“无米下锅”的状态。
+3. **`startReading()` 读空报错**：
+   - 用户再次点击「开始朗读」，`computeFullChunksForTab(tabId)` 读取 `getLatestForTab(tabId)` 结果为 null，直接抛出 `没有可朗读的内容，先在书页里翻到有正文的一页`。
+
+---
+
+### 彻底根治方案
+
+#### 1. `stopReading()` 严禁清除当前页数据缓存
+从 `stopReading()` 中移除 `await clearTabSpread(prev.tabId)`：
+- 停止朗读仅重置播放控制状态（关闭 watchdog、取消翻页计时器、停掉空页上报），但**永久保留当前停驻页面的正文缓存**，随时供用户点击重新开播。
+- 只有在真正发生自动翻页时（`triggerPageTurnAndWait`）才清除旧页等待新页。
+
+#### 2. `PLAYBOOKS_GET_START_INDEX` 同步回传最新可见页正文（主动抓取）
+修改 `content-playbooks.js` 的起点查询响应：
+```javascript
+if (message.type === "PLAYBOOKS_GET_START_INDEX") {
+  if (!window.__hasEverMatched) return;
+  if (!isFrameCurrentlyVisible()) return;
+  const selectionResult = findSelectionStartIndex();
+  const result = selectionResult || findVisibleStartIndex();
+  // 顺带回传当前可见 iframe 内部的最新实时段落数据与视觉坐标
+  const data = extractCurrentPageText();
+  const pageLeft = getFrameVisualLeft();
+  result.data = data;
+  result.pageLeft = pageLeft;
+  result.url = location.href;
+  sendResponse(result);
+  return true;
+}
+```
+在 `background-playbooks.js` 的 `startReading()` 中：
+收到 `result` 后直接提取 `result.data` 并落库至 `saveSpreadLeafForTab`。即使 storage 之前发生异常丢失，在点击「开始朗读」的毫秒瞬间也会直接从当前可见 iframe 同步最新正文，实现双重保险。
+
+#### 3. 引入 `PB_FORCE_REPORT` 全局强制刷新
+- 在 `content-playbooks.js` 中监听 `PB_FORCE_REPORT`，重置 `window.__lastReportedText = null` 并立即触发 `reportIfChanged()`。
+- `startReading` 启动时首先广播 `PB_FORCE_REPORT`，确保双叶视图中两侧 iframe 均无视缓存历史、强制落库，杜绝任何异步脱节。
+
+
+---
+
+## 2026-10-27 英文界面泄漏中文字符与双叶时效性旧页误删的彻底修复
+
+### 1. 英文界面出现中文字符（中英混杂）的根因与彻底修复
+
+#### 现象：
+在英文浏览器/英文 UI 模式下，启动朗读失败时，弹窗顶部报错显示：
+`Failed to start: 没有可朗读的内容，先在书页里翻到有正文的一页`
+前半句是英文，后半句是中文。
+
+#### 根因：
+1. `popup.js` 根据浏览器环境匹配到英文字典 `UI_LOCALE = "en"`，调用了 `t("startFailed")`：
+   ```javascript
+   startFailed: (msg) => `Failed to start: ${msg}`
+   ```
+2. 后台脚本（`background-playbooks.js` / `background-koodo.js` / `background-weread.js`）向前台返回的 `result.error` 均为硬编码的中文字符串（如 `"没有可朗读的内容，先在书页里翻到有正文的一页"`、`"找不到当前标签页"` 等）。
+3. 前台 `popup.js` 在 `startReading()` 处直接将 `result.error` 原样塞入了模板中，导致中文字符泄漏至英文及其他外语界面。
+
+#### 修复措施：
+1. 在 `popup.js` 的所有 6 套语言包（`zh-CN`, `zh-TW`, `en`, `es`, `ja`, `ko`）中扩充标准化错误字典：
+   - `errNoContentPage`: 当前页无正文提示（"No readable content on this page. Please flip to a page with body text first."）
+   - `errNoContent`: 无正文提示（"No readable content found."）
+   - `errKoodoNotReady`: Koodo 未加载完成提示
+   - `errWereadNotReady`: 微信读书未捕获提示
+   - `errPlayerConnect`: 播放器连线失败提示
+   - `errNoTab`: 标签页未找到提示
+2. 引入 `localizeError(rawError)` 自动转译函数：
+   在接收到 background 返回的任何错误信息时，自动根据当前 `UI_LOCALE` 转译为对应目标语言文本。
+   - 在英文界面下显示纯正英文：`Failed to start: No readable content on this page. Please flip to a page with body text first.`
+   - 彻底杜绝任何中文泄漏。
+
+---
+
+### 2. 双叶跨页时效性与原地起播兜底优化
+
+#### 根因排查与潜在风险：
+- 旧代码在 `getMergedDataForTab()` 中配置了 `SPREAD_MAX_GAP_MS = 2500`。
+- 如果用户在一个页面停驻阅读（或点击停止）超过 2.5 秒，一旦一侧 iframe 刷新或重新上报（例如点击开始朗读时），时间差会瞬间超过 2500ms。
+- 旧逻辑无差别地执行了 `spread.right = null; await chrome.storage.session.set(...)`，在 Storage 层面物理删除了另一侧的有效正文！
+
+#### 修复措施：
+1. **限定时效性校验生效场景**：
+   只有在正在等待翻页（`state.waitingForNextPage === true`）时，才触发跨翻页的陈旧单叶丢弃；用户处于停驻或非翻页阅读状态时，双叶均是当前视口内的合法正文，绝不丢弃任何一叶。
+2. **`computeFullChunksForTab` 裁剪回退兜底**：
+   若 `startTrim`（视口起点裁剪）极端情况下将当前页全部文字裁剪扣尽（`pageItems.length === 0`），自动回退为从该页第 1 段从头开播（`pageItems = latest.data`），绝不返回空内容报错。
+
+
+---
+
+## 2026-10-27 架构升级：书籍维度音色记忆体系（Per-Book Voice Preference）与 LRU 自动淘汰
+
+### 1. 业务背景与用户痛点
+- **现状**：
+  扩展原逻辑具有正文语言自动匹配（`autoMatchVoiceToPageLang`）：打开书籍若判定为繁体中文则默认选择繁体音色（如 `zh-TW-HsiaoChen`），英文则默认选择英文音色。
+- **痛点**：
+  许多用户在阅读繁体书籍（如《21世紀的21堂課》）时，习惯或偏好使用**简体中文音色**（如 `zh-CN-Xiaoxiao`）；也有用户希望用西班牙语音色朗读英文书。
+  然而在旧逻辑下：
+  1. 用户在弹窗里手动切换为简中音色；
+  2. 听完几页、点击停止、或者翻页后重新打开弹窗；
+  3. `autoMatchVoiceToPageLang` 再次无差别扫描当前页文本，发现依然是繁体字，**强行将用户的选择重置回繁体音色**！
+  4. 用户每次翻页或重开弹窗都必须繁琐地重新选一次音色。
+
+---
+
+### 2. 核心架构设计
+
+为了实现“**新书自动检测推荐语言，调过音色的书永久记住自定义音色，换书切换互不干扰**”，在 `popup.js` 建立了**书籍维度音色记忆体系**：
+
+#### 2.1 书籍全局唯一标识（`bookKey`）生成算法
+覆盖三大阅读器平台，精准识别当前阅读的具体书籍：
+- **Google Play 图书**：
+  Play Books 每本书在 URL 查询参数中有平台全局唯一的 `id`（例如 `https://play.google.com/books/reader?id=ARMt6fcon1A1...`），提取该 ID 生成 `playbooks:${id}`；兜底提取干净的书名后缀。
+- **微信读书（WeChat Reading）**：
+  提取 URL 路径中的书籍唯一 ID（`/web/reader/{bookId}`），生成 `weread:${bookId}`。
+- **Koodo Reader**：
+  提取网页标签页 Title（Koodo 标题格式为 `《书名》 - Koodo Reader`），去除后缀生成 `koodo:${cleanTitle}`。
+- **通用兜底**：
+  其他网页阅读器根据 URL 路径与域名生成 `generic:${hostname}${pathname}`。
+
+#### 2.2 双层决策时序与生命周期
+
+```mermaid
+flowchart TD
+    A["打开 Popup 载入正文"] --> B["获取当前激活标签页 & 计算 bookKey"]
+    B --> C{"bookVoicePreferences 字典中<br>是否存在该书籍记录？"}
+    C -- "存在（用户曾为该书自定义音色）" --> D["恢复该书专属音色（如繁体书选简中 Xiaoxiao）"]
+    D --> E["设置 currentBookHasCustomVoice = true<br>完全跳过自动匹配检测"]
+    C -- "不存在（新书）" --> F["执行正文语言自动匹配<br>(autoMatchVoiceToPageLang)"]
+    F --> G["英文默认配英语、繁体配繁体、简体配简体"]
+    
+    H["用户在下拉框中手动更改了语言或音色"] --> I["触发 change 事件"]
+    I --> J["调用 saveBookVoicePreference(currentActiveBookKey, lang, voice)"]
+    J --> K["持久化写入 chrome.storage.local<br>更新当前书籍 updatedAt 时间戳"]
+    K --> L{"记录总数 > 100 本？"}
+    L -- "是" --> M["按 updatedAt 升序排序，自动淘汰删除最旧的书籍记录"]
+    L -- "否" --> N["完成保存"]
+```
+
+#### 2.3 存储防膨胀机制（LRU 100 本上限淘汰）
+- 每条记录极其微小（约 60 字节），即使记录 1000 本书也仅占约 60 KB，占扩展配额 10MB 的不到 0.6%。
+- 为实现极致整洁，在 `saveBookVoicePreference` 中内建 **LRU 淘汰策略**：
+  `MAX_BOOK_PREFERENCES = 100`。
+  当记录总数超过 100 本时，自动按 `updatedAt` 时间戳升序排序，剔除最久未读的书籍，永久杜绝无序膨胀。
+
+#### 2.4 零感知本地数据库存储（无需手动刷新）
+- 该机制完全利用 `chrome.storage.local` 高速本地键值存储，在用户点击切换音色的毫秒瞬间完成持久化，下次打开毫秒级读取恢复。
+- 用户在日常使用中 **100% 自动无感运行**，完全无需手动刷新扩展或网页。
