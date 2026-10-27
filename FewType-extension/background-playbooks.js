@@ -63,24 +63,29 @@ async function getMergedDataForTab(tabId) {
   if (left && right && leftData.length > 0 && rightData.length > 0) {
     const gap = Math.abs(left.updatedAt - right.updatedAt);
     if (gap > SPREAD_MAX_GAP_MS) {
-      if (left.updatedAt > right.updatedAt) {
-        logEvent("background", "双叶时间差过大，丢弃陈旧右叶", {
-          gapMs: gap,
-          leftPreview: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
-          discardedRight: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
-        });
-        rightData = [];
-        spread.right = null;
-        await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
-      } else {
-        logEvent("background", "双叶时间差过大，丢弃陈旧左叶", {
-          gapMs: gap,
-          rightPreview: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
-          discardedLeft: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
-        });
-        leftData = [];
-        spread.left = null;
-        await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
+      // 只有在翻页等待新页期间（waitingForNextPage=true），才需要做跨翻页的旧叶丢弃；
+      // 若处于停驻/未翻页状态，双叶均是当前可见视口内容，绝不能因停留时间或单叶刷新而丢弃另一侧！
+      const state = await getReadingState();
+      if (state.waitingForNextPage) {
+        if (left.updatedAt > right.updatedAt) {
+          logEvent("background", "双叶时间差过大，丢弃陈旧右叶", {
+            gapMs: gap,
+            leftPreview: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+            discardedRight: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+          });
+          rightData = [];
+          spread.right = null;
+          await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
+        } else {
+          logEvent("background", "双叶时间差过大，丢弃陈旧左叶", {
+            gapMs: gap,
+            rightPreview: rightData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+            discardedLeft: leftData.slice(0, 2).map((d) => textPreview(d.text, 10)),
+          });
+          leftData = [];
+          spread.left = null;
+          await chrome.storage.session.set({ [spreadKey(tabId)]: spread });
+        }
       }
     }
   }
@@ -271,6 +276,10 @@ async function computeFullChunksForTab(tabId) {
       kept.push(item);
     }
     pageItems = kept;
+    if (pageItems.length === 0) {
+      logEvent("background", "startTrim 裁掉了整页所有正文，回退为全页播放");
+      pageItems = latest.data;
+    }
     logEvent("background", `应用 startTrim skipPrefix 长度=${skipPrefix.length}`, {
       preview: pageItems.slice(0, 2).map((d) => textPreview(d.text, 20)),
     });
@@ -561,15 +570,28 @@ async function appendLatestForTab(tabId, voice, fromZero = false) {
 }
 
 async function startReading(tabId, voice, rate) {
-  // 向 content 查询视口内朗读起点（任意标点之后）；失败则从头
+  // 广播通知可见 frame 强制刷新一次上报（确保双叶与最新 DOM 均落库）
+  chrome.tabs.sendMessage(tabId, { type: "PB_FORCE_REPORT" }).catch(() => {});
+
+  // 向 content 查询视口内朗读起点（任意标点之后）及当前可见页数据；失败则从头
   let startTrim = null;
   try {
     const result = await chrome.tabs.sendMessage(tabId, { type: "PLAYBOOKS_GET_START_INDEX" });
-    if (result && typeof result.skipPrefix === "string" && result.skipPrefix.length > 0) {
-      startTrim = { skipPrefix: result.skipPrefix };
-      logEvent("background", `起点查询成功 skipPrefix 长度=${startTrim.skipPrefix.length}`);
-    } else {
-      logEvent("background", "起点查询返回空前缀，从头开始");
+    if (result) {
+      if (typeof result.skipPrefix === "string" && result.skipPrefix.length > 0) {
+        startTrim = { skipPrefix: result.skipPrefix };
+        logEvent("background", `起点查询成功 skipPrefix 长度=${startTrim.skipPrefix.length}`);
+      } else {
+        logEvent("background", "起点查询返回空前缀，从头开始");
+      }
+      if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+        logEvent("background", `从起点查询同步当前页文本: ${result.data.length}段, pageLeft=${result.pageLeft}`);
+        await saveSpreadLeafForTab(tabId, {
+          url: result.url || "",
+          data: result.data,
+          pageLeft: result.pageLeft || 0,
+        });
+      }
     }
   } catch (e) {
     logEvent("background", `起点查询失败，从头开始: ${e.message}`);
@@ -577,7 +599,13 @@ async function startReading(tabId, voice, rate) {
 
   await beginNewPageProcessing(); // 全新开始朗读，重置这一页的续接前缀和已发送计数
   await setReadingState({ startTrim });
-  const result = await playLatestForTab(tabId, voice, rate);
+  let result = await playLatestForTab(tabId, voice, rate);
+  if (!result.ok) {
+    // 容错重试：若因瞬时异步延迟尚未拿到 chunks，等待 250ms 让 PB_FORCE_REPORT 落库后重试一次
+    logEvent("background", `playLatestForTab 首次失败 (${result.error})，等待 250ms 重试一次`);
+    await new Promise((r) => setTimeout(r, 250));
+    result = await playLatestForTab(tabId, voice, rate);
+  }
   // 只用一次，避免同页追加/翻页接续时再次裁掉页首
   await setReadingState({ startTrim: null });
   if (!result.ok) return result;
@@ -607,7 +635,10 @@ async function stopReading() {
     // 通知 content 停止空页周期上报：防止残留实例的旧页面空页上报在下次
     // 开始朗读时被误当成"当前页是空页"处理而误翻页（对齐 Koodo 的同类修复）。
     chrome.tabs.sendMessage(prev.tabId, { type: "PB_STOP_READING" }).catch(() => {});
-    await clearTabSpread(prev.tabId);
+    // 注意：严禁在此处调用 clearTabSpread(prev.tabId)！
+    // 用户停止朗读后仍在当前书页，清除 spread 会导致当前页文本被清空；
+    // 当用户再次点击"开始朗读"时，因 storage 无数据且 content 没翻页不重发，
+    // 会误报"没有可朗读的内容，先在书页里翻到有正文的一页"。
   }
   await setReadingState({ ...DEFAULT_STATE });
   chrome.runtime.sendMessage({ type: "OFFSCREEN_STOP" }).catch(() => {

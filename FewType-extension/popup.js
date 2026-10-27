@@ -31,6 +31,12 @@ const I18N = {
     metaCount: (n) => `共 ${n} 段`,
     synthesizing: "正在合成语音…",
     startFailed: (msg) => `启动失败：${msg}`,
+    errNoContentPage: "没有可朗读的内容，先在书页里翻到有正文的一页",
+    errNoContent: "没有可朗读的内容",
+    errKoodoNotReady: "还没有提取到章节内容，请稍等页面加载完成或刷新页面",
+    errWereadNotReady: "还没有采集到章节内容，请翻一页触发重绘后再试",
+    errPlayerConnect: (msg) => `无法连接朗读播放器：${msg}`,
+    errNoTab: "找不到当前标签页",
     unknownError: "未知错误",
     stopped: "已停止",
     pausedStatus: "已暂停（关闭这个窗口不影响）",
@@ -93,6 +99,12 @@ const I18N = {
     metaCount: (n) => `共 ${n} 段`,
     synthesizing: "正在合成語音…",
     startFailed: (msg) => `啟動失敗：${msg}`,
+    errNoContentPage: "沒有可朗讀的內容，請先在書頁中翻到有正文的一頁",
+    errNoContent: "沒有可朗讀的內容",
+    errKoodoNotReady: "尚未擷取到章節內容，請稍候頁面載入完成或重新整理頁面",
+    errWereadNotReady: "尚未擷取到章節內容，請翻一頁觸發重繪後再試",
+    errPlayerConnect: (msg) => `無法連線朗讀播放器：${msg}`,
+    errNoTab: "找不到目前分頁",
     unknownError: "未知錯誤",
     stopped: "已停止",
     pausedStatus: "已暫停（關閉這個視窗不影響）",
@@ -155,6 +167,12 @@ const I18N = {
     metaCount: (n) => `${n} segments`,
     synthesizing: "Synthesizing audio...",
     startFailed: (msg) => `Failed to start: ${msg}`,
+    errNoContentPage: "No readable content on this page. Please flip to a page with body text first.",
+    errNoContent: "No readable content found.",
+    errKoodoNotReady: "Chapter content not loaded yet. Please wait for page to finish loading or refresh.",
+    errWereadNotReady: "Chapter content not captured yet. Please flip a page to trigger re-rendering.",
+    errPlayerConnect: (msg) => `Cannot connect to audio player: ${msg}`,
+    errNoTab: "Current tab not found",
     unknownError: "Unknown error",
     stopped: "Stopped",
     pausedStatus: "Paused (closing this window won't affect playback)",
@@ -217,6 +235,12 @@ const I18N = {
     metaCount: (n) => (n === 1 ? "1 segmento" : `${n} segmentos`),
     synthesizing: "Generando audio…",
     startFailed: (msg) => `No se pudo iniciar: ${msg}`,
+    errNoContentPage: "No hay contenido para leer en esta página. Vaya primero a una página con texto principal.",
+    errNoContent: "No se encontró contenido para leer.",
+    errKoodoNotReady: "El contenido del capítulo aún no se ha cargado. Espere o actualice la página.",
+    errWereadNotReady: "El contenido del capítulo aún no se ha capturado. Pase una página para volver a intentarlo.",
+    errPlayerConnect: (msg) => `No se puede conectar al reproductor: ${msg}`,
+    errNoTab: "No se encuentra la pestaña actual",
     unknownError: "Error desconocido",
     stopped: "Detenido",
     pausedStatus: "En pausa (cerrar esta ventana no lo afecta)",
@@ -279,6 +303,12 @@ const I18N = {
     metaCount: (n) => `${n} セグメント`,
     synthesizing: "音声を生成中…",
     startFailed: (msg) => `開始に失敗しました：${msg}`,
+    errNoContentPage: "読み上げ可能なコンテンツがありません。本文のあるページを開いてください。",
+    errNoContent: "読み上げ可能なコンテンツがありません。",
+    errKoodoNotReady: "章のコンテンツがまだ読み込まれていません。完了まで待つかページを再読み込みしてください。",
+    errWereadNotReady: "章のコンテンツがまだ取得されていません。ページをめくって再試行してください。",
+    errPlayerConnect: (msg) => `オーディオプレーヤーに接続できません：${msg}`,
+    errNoTab: "現在のタブが見つかりません",
     unknownError: "不明なエラー",
     stopped: "停止しました",
     pausedStatus: "一時停止中（このウィンドウを閉じても影響しません）",
@@ -341,6 +371,12 @@ const I18N = {
     metaCount: (n) => `${n}개 문단`,
     synthesizing: "음성 생성 중…",
     startFailed: (msg) => `시작 실패: ${msg}`,
+    errNoContentPage: "낭독할 콘텐츠가 없습니다. 본문이 있는 페이지로 먼저 이동해 주세요.",
+    errNoContent: "낭독할 콘텐츠가 없습니다.",
+    errKoodoNotReady: "챕터 내용을 아직 불러오지 못했습니다. 페이지 로딩을 기다리거나 새로고침해 주세요.",
+    errWereadNotReady: "챕터 내용을 아직 가져오지 못했습니다. 한 페이지 넘겨 다시 시도해 주세요.",
+    errPlayerConnect: (msg) => `오디오 플레이어에 연결할 수 없습니다: ${msg}`,
+    errNoTab: "현재 탭을 찾을 수 없습니다",
     unknownError: "알 수 없는 오류",
     stopped: "정지됨",
     pausedStatus: "일시정지됨 (이 창을 닫아도 영향 없음)",
@@ -407,6 +443,36 @@ function detectUiLanguage() {
 
 function t(key) {
   return I18N[UI_LOCALE][key];
+}
+
+function localizeError(rawError) {
+  if (!rawError) return t("unknownError");
+  if (typeof rawError !== "string") return String(rawError);
+
+  if (rawError.includes("没有可朗读的内容，先在书页里翻到有正文的一页") || rawError.includes("沒有可朗讀的內容，請先在書頁中翻到有正文的一頁")) {
+    return t("errNoContentPage");
+  }
+  if (rawError.includes("没有可朗读的内容") || rawError.includes("沒有可朗讀的內容")) {
+    return t("errNoContent");
+  }
+  if (rawError.includes("还没有提取到章节内容") || rawError.includes("尚未擷取到章節內容")) {
+    return t("errKoodoNotReady");
+  }
+  if (rawError.includes("还没有采集到章节内容") || rawError.includes("尚未擷取到章節內容")) {
+    return t("errWereadNotReady");
+  }
+  if (rawError.includes("找不到当前标签页") || rawError.includes("找不到目前分頁")) {
+    return t("errNoTab");
+  }
+  const playerPrefixes = ["无法连接朗读播放器：", "無法連線朗讀播放器：", "Cannot connect to audio player: "];
+  for (const prefix of playerPrefixes) {
+    if (rawError.startsWith(prefix)) {
+      const detail = rawError.slice(prefix.length);
+      const fn = t("errPlayerConnect");
+      return typeof fn === "function" ? fn(detail) : `${fn} ${detail}`;
+    }
+  }
+  return rawError;
 }
 
 // 音色选项数据：分组标签和每条音色都走 I18N，用 labelKey 引用对应文案。
@@ -873,12 +939,130 @@ function detectTextLang(text) {
   return null;
 }
 
-// 页面正文语言 → 自动匹配语言/音色下拉（覆盖上次记忆里不匹配的音色）。
-// 只提供"打开面板时的默认值"：用户一旦手动改过语言/音色，本会话内不再自动覆盖
-// （可能故意用简体音色念繁体书、用西语音色念英语等，那是用户的自由）。
+// ---- 书籍维度音色记忆（Per-Book Voice Preference）----
+// 解决痛点：
+// 用户朗读繁体中文书籍时可能希望使用简体中文音色（如 Xiaoxiao），但在翻页、停止重开或重开弹窗时，
+// 旧逻辑每次都会因正文是繁体字而无差别强行重置为繁体音色。同理包括想用西班牙语音色朗读英语等自由场景。
+// 引入 Per-Book 记忆体系后：
+// 1. 打开新书：正文语言自动检测匹配（英文配英文、繁体配繁体、简体配简体）；
+// 2. 调过音色的书：持久化记录该书的专属音色（如繁体书选了简中 Xiaoxiao），无论翻页、切书、停止再开始均永久生效；
+// 3. 存储防膨胀：最多保留最近活跃的 100 本书，自动执行 LRU 淘汰清理，零垃圾残留。
+const BOOK_VOICE_MAP_KEY = "bookVoicePreferences";
+const MAX_BOOK_PREFERENCES = 100;
+
+let currentActiveBookKey = null;
+let currentBookHasCustomVoice = false;
 let userTouchedSelection = false;
+
+// 提取当前书籍的唯一标识（bookKey）
+function getBookKey(tab, result) {
+  if (!tab && !result) return null;
+  const tabUrl = (tab && tab.url) || "";
+  const tabTitle = (tab && tab.title) || "";
+  const resultUrl = (result && result.url) || "";
+
+  // 1. Google Play 图书：优先提取 URL 中的 id= 参数（Play Books 平台全局唯一）
+  if (tabUrl.includes("play.google.com/books/reader") || resultUrl.includes("googleusercontent.com/books/reader")) {
+    try {
+      const u = new URL(tabUrl || resultUrl);
+      const bookId = u.searchParams.get("id") || u.searchParams.get("w-btf") || u.searchParams.get("docid");
+      if (bookId) return `playbooks:${bookId}`;
+    } catch (e) {}
+    const cleanTitle = tabTitle.replace(/\s*-\s*Google\s*(?:Play\s*)?(?:图书|圖書|Books).*$/i, "").trim();
+    if (cleanTitle) return `playbooks:${cleanTitle}`;
+    return "playbooks:default";
+  }
+
+  // 2. 微信读书 WeChat Reading：提取 /web/reader/{bookId}
+  if (tabUrl.includes("weread.qq.com")) {
+    const match = tabUrl.match(/\/web\/reader\/([a-zA-Z0-9_\-]+)/);
+    if (match && match[1]) return `weread:${match[1]}`;
+    const cleanTitle = tabTitle.replace(/\s*-\s*微信读书.*$/i, "").trim();
+    if (cleanTitle) return `weread:${cleanTitle}`;
+    return "weread:default";
+  }
+
+  // 3. Koodo Reader：提取标签页书名（格式为 《书名》 - Koodo Reader）
+  if (tabUrl.includes("koodoreader.com") || tabUrl.includes("koodo") || tabTitle.includes("Koodo Reader")) {
+    const cleanTitle = tabTitle.replace(/\s*-\s*Koodo\s*Reader.*$/i, "").trim();
+    if (cleanTitle) return `koodo:${cleanTitle}`;
+    return "koodo:default";
+  }
+
+  // 4. 通用兜底
+  if (tabUrl) {
+    try {
+      const u = new URL(tabUrl);
+      return `generic:${u.hostname}${u.pathname}`;
+    } catch (e) {}
+  }
+  return tabTitle ? `generic:${tabTitle}` : null;
+}
+
+// 读取某本书的自定义音色偏好
+async function getBookVoicePreference(bookKey) {
+  if (!bookKey) return null;
+  const store = await chrome.storage.local.get(BOOK_VOICE_MAP_KEY);
+  const map = store[BOOK_VOICE_MAP_KEY] || {};
+  return map[bookKey] || null;
+}
+
+// 保存某本书的自定义音色偏好（带 LRU 100 本上限淘汰）
+async function saveBookVoicePreference(bookKey, lang, voice) {
+  if (!lang || !voice) return;
+  if (!bookKey) {
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      bookKey = getBookKey(tabs && tabs[0] ? tabs[0] : null, null);
+      if (bookKey) currentActiveBookKey = bookKey;
+    } catch (e) {}
+  }
+  if (!bookKey) {
+    await chrome.storage.local.set({ [LAST_LANG_KEY]: lang, [LAST_VOICE_KEY]: voice });
+    return;
+  }
+
+  const store = await chrome.storage.local.get(BOOK_VOICE_MAP_KEY);
+  const map = store[BOOK_VOICE_MAP_KEY] || {};
+
+  map[bookKey] = {
+    lang,
+    voice,
+    updatedAt: Date.now(),
+  };
+
+  // LRU 防膨胀：若记录超过 100 本，按 updatedAt 升序排列，淘汰最旧的记录
+  const keys = Object.keys(map);
+  if (keys.length > MAX_BOOK_PREFERENCES) {
+    keys.sort((a, b) => (map[a].updatedAt || 0) - (map[b].updatedAt || 0));
+    const toRemove = keys.slice(0, keys.length - MAX_BOOK_PREFERENCES);
+    toRemove.forEach((k) => delete map[k]);
+  }
+
+  await chrome.storage.local.set({
+    [BOOK_VOICE_MAP_KEY]: map,
+    [LAST_LANG_KEY]: lang,
+    [LAST_VOICE_KEY]: voice,
+  });
+}
+
+// 应用指定的语言与音色至下拉框 UI
+function applyVoiceSelection(lang, voice) {
+  const langSel = document.getElementById("lang");
+  const voiceSel = document.getElementById("voice");
+  if (lang && [...langSel.options].some((o) => o.value === lang)) {
+    langSel.value = lang;
+    fillVoiceSelect();
+  }
+  if (voice && [...voiceSel.options].some((o) => o.value === voice)) {
+    voiceSel.value = voice;
+    syncVoiceCustomUI(false);
+  }
+}
+
+// 页面正文语言 → 自动匹配语言/音色下拉（仅在新书、且用户从未手动改过该书音色时提供默认推荐）。
 function autoMatchVoiceToPageLang(text) {
-  if (userTouchedSelection) return;
+  if (currentBookHasCustomVoice || userTouchedSelection) return;
   const langKey = detectTextLang(text);
   if (!langKey) return;
   const group = langGroups.find((g) => g.key === langKey);
@@ -900,6 +1084,36 @@ function autoMatchVoiceToPageLang(text) {
   }
 }
 
+// 核心决策同步函数：判断当前书籍是否有专属记忆，决定是恢复专属音色还是走新书自动推荐
+async function syncBookVoicePreference(result) {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs && tabs[0] ? tabs[0] : null;
+    const bookKey = getBookKey(tab, result);
+    currentActiveBookKey = bookKey;
+
+    if (bookKey) {
+      const pref = await getBookVoicePreference(bookKey);
+      if (pref && pref.lang && pref.voice) {
+        // 本书已有用户自定义音色偏好，直接应用专属配置，绝不触发繁体/默认自动重置
+        currentBookHasCustomVoice = true;
+        applyVoiceSelection(pref.lang, pref.voice);
+        return;
+      }
+    }
+
+    // 新书（从未手动配置过音色）：执行正文语言自动检测匹配（英文配英文、繁体配繁体、简体配简体）
+    currentBookHasCustomVoice = false;
+    if (result && Array.isArray(result.data)) {
+      autoMatchVoiceToPageLang(result.data.map((d) => d.text || "").join("\n"));
+    }
+  } catch (e) {
+    if (result && Array.isArray(result.data)) {
+      autoMatchVoiceToPageLang(result.data.map((d) => d.text || "").join("\n"));
+    }
+  }
+}
+
 function render(result) {
   const meta = document.getElementById("meta");
   const list = document.getElementById("list");
@@ -914,8 +1128,8 @@ function render(result) {
     result.updatedAt
   ).toLocaleTimeString()} · ${result.url}`;
 
-  // 按正文语言自动匹配音色（覆盖英语音色读中文这种失败组合）
-  autoMatchVoiceToPageLang(result.data.map((d) => d.text || "").join("\n"));
+  // 书籍维度音色同步：已自定义音色则恢复记忆，新书则自动检测正文语言推荐默认音色
+  syncBookVoicePreference(result);
 
   result.data.forEach((item) => {
     const div = document.createElement("div");
@@ -987,7 +1201,8 @@ function startReading() {
   setStatus(t("synthesizing"));
   chrome.runtime.sendMessage({ type: "START_READING", voice, rate }, (result) => {
     if (!result || !result.ok) {
-      setStatus(t("startFailed")((result && result.error) || t("unknownError")), "error");
+      const errorMsg = localizeError(result && result.error);
+      setStatus(t("startFailed")(errorMsg), "error");
       return;
     }
     refreshReadingState();
@@ -1041,16 +1256,21 @@ function restoreLastRate() {
 
 document.getElementById("lang").addEventListener("change", (e) => {
   userTouchedSelection = true;
-  chrome.storage.local.set({ [LAST_LANG_KEY]: e.target.value });
-  // 语言切换后重建音色下拉，并同步保存当前音色
+  currentBookHasCustomVoice = true;
+  const newLang = e.target.value;
+  // 语言切换后重建音色下拉
   fillVoiceSelect();
   const voiceSel = document.getElementById("voice");
-  chrome.storage.local.set({ [LAST_VOICE_KEY]: voiceSel.value });
+  // 持久化保存到当前书籍专属偏好（带 LRU 100 本上限淘汰与全局回退）
+  saveBookVoicePreference(currentActiveBookKey, newLang, voiceSel.value);
 });
 
 document.getElementById("voice").addEventListener("change", (e) => {
   userTouchedSelection = true;
-  chrome.storage.local.set({ [LAST_VOICE_KEY]: e.target.value });
+  currentBookHasCustomVoice = true;
+  const langSel = document.getElementById("lang");
+  // 持久化保存到当前书籍专属偏好（带 LRU 100 本上限淘汰与全局回退）
+  saveBookVoicePreference(currentActiveBookKey, langSel.value, e.target.value);
 });
 
 // 自定义音色下拉开合：点触发钮切换，点外部/Esc 关闭
@@ -1106,14 +1326,29 @@ document.getElementById("clearLog").addEventListener("click", () => {
   });
 });
 
-// 启动：先按浏览器系统语言铺好界面，再拉取音色清单并恢复上次偏好；正文的自动语言匹配
-// 必须在恢复偏好之后执行（fetchLatest 本地很快、loadVoices 网络较慢，若并发会竞态：
-// autoMatch 切好的语言会被 restoreLastSelection 覆盖回去）。
+// 启动：先按浏览器系统语言铺好界面，再拉取音色清单并恢复书籍偏好或全局上次偏好；
+// 正文的自动语言匹配必须在恢复偏好之后执行。
 UI_LOCALE = detectUiLanguage();
 applyUiLanguage();
 applyBridgeTheme();
-loadVoices().then(() => {
-  restoreLastSelection();
+loadVoices().then(async () => {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentActiveBookKey = getBookKey(tabs && tabs[0] ? tabs[0] : null, null);
+    if (currentActiveBookKey) {
+      const pref = await getBookVoicePreference(currentActiveBookKey);
+      if (pref && pref.lang && pref.voice) {
+        currentBookHasCustomVoice = true;
+        applyVoiceSelection(pref.lang, pref.voice);
+      } else {
+        restoreLastSelection();
+      }
+    } else {
+      restoreLastSelection();
+    }
+  } catch (e) {
+    restoreLastSelection();
+  }
   fetchLatest();
 });
 restoreLastRate();
